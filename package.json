@@ -1,0 +1,9 @@
+{
+  "name": "kleros-skills",
+  "version": "1.0.0",
+  "description": "Kleros Skills — Knowledge for AI agents working with Kleros",
+  "scripts": {
+    "test": "node --test test/index.test.js"
+  },
+  "license": "MIT"
+}
