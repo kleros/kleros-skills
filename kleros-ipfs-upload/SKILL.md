@@ -163,6 +163,11 @@ The endpoint is `POST /upload-to-ipfs` with:
 
 - **Body**: `multipart/form-data` with one or more parts named `file`. To upload multiple files in one paid request, append multiple `file` parts to the same `FormData`.
 - **Headers**: `X-PAYMENT` is added automatically by the x402-fetch wrapper. Do not hand-craft it.
+- **Size limit**: the gateway caps the total request body at **4 MiB** (4,194,304 bytes) and replies `413 Payload Too Large` for anything bigger. The check runs **before** the x402 paywall, so an oversize attempt does not spend USDC. Multipart framing adds a small overhead on top of raw file bytes — if a single file is near the limit, expect a 413; consider chunking or splitting the artifact. Sanity-check sizes locally before posting:
+
+  ```bash
+  test "$(stat -f%z /path/to/file)" -le 4194304 || echo "too big for the Kleros gateway"
+  ```
 
 ## Response shape
 
@@ -200,6 +205,7 @@ On success the gateway returns `200` with JSON:
 | `200` | Success. Parse `cids[]`. | — |
 | `400` | Missing `operation` query param. | Add `?operation=evidence` (or another tag). |
 | `402` | Payment challenge. | Should never reach user code — `x402-fetch` handles it transparently. If it bubbles up, the wrapper wasn't applied. |
+| `413` | Request body exceeds 4 MiB. **No USDC spent** — the check runs before the paywall. | Shrink, split, or compress the artifact. See "Size limit" under "Request shape". |
 | `5xx` | Transient upstream issue (Filebase, Graph Node, or the gateway itself). | Retry once after a short delay. Don't hammer. |
 | Facilitator error during 402 → 200 retry | CDP rate-limit, signing failure, insufficient USDC. | Inspect the wrapper's thrown error; check wallet balance and key correctness. |
 
