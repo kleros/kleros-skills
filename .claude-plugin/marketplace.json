@@ -1,0 +1,17 @@
+{
+  "name": "kleros-skills",
+  "owner": { "name": "Kleros", "url": "https://kleros.io" },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Claude Code skills for interacting with the Kleros ecosystem."
+  },
+  "plugins": [
+    {
+      "name": "kleros",
+      "source": "./",
+      "version": "1.0.0",
+      "description": "Skills for Kleros: x402 IPFS uploads, and more to come.",
+      "author": { "name": "Kleros", "url": "https://kleros.io" }
+    }
+  ]
+}

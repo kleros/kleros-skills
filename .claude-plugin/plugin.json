@@ -1,0 +1,11 @@
+{
+  "name": "kleros",
+  "version": "1.0.0",
+  "description": "Skills for interacting with the Kleros ecosystem from Claude Code. Today: x402-paid IPFS uploads for evidence, meta-evidence, policies, Curate items, and justifications.",
+  "author": { "name": "Kleros", "url": "https://kleros.io" },
+  "homepage": "https://kleros.io",
+  "repository": "https://github.com/kleros/kleros-skills",
+  "license": "MIT",
+  "keywords": ["kleros", "ipfs", "x402", "evidence", "meta-evidence", "dispute-resolution"],
+  "skills": ["./kleros-ipfs-upload"]
+}
