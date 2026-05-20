@@ -44,7 +44,7 @@ EVM_PRIVATE_KEY=0xYourPayerKey npx tsx pay-and-upload.ts /path/to/file.json
 
 On success the script prints each CID on its own line (so you can capture them with `$(npx tsx pay-and-upload.ts ...)`). On failure it exits non-zero and logs the gateway's error body to stderr.
 
-Defaults: `OPERATION=evidence`, `PIN_TO_GRAPH=true`, `GATEWAY_URL=https://kleros-ipfs-gateway.fly.dev`. Override `OPERATION` and `PIN_TO_GRAPH` with env vars; see the "Request shape" section for valid values.
+Defaults: `OPERATION=evidence`, `GATEWAY_URL=https://kleros-ipfs-gateway.fly.dev`. Override `OPERATION` with an env var; see the "Request shape" section for valid values.
 
 If you're writing your own client inside an existing Node project, the core is small enough to inline:
 
@@ -52,7 +52,6 @@ If you're writing your own client inside an existing Node project, the core is s
 import { wrapFetchWithPayment, createSigner } from "x402-fetch";
 
 const operation = process.env.OPERATION ?? "evidence";
-const pinToGraph = process.env.PIN_TO_GRAPH ?? "true";
 
 const signer = await createSigner("base", privateKey);
 const fetchWithPay = wrapFetchWithPayment(fetch, signer);
@@ -61,7 +60,7 @@ const form = new FormData();
 form.append("file", new Blob([bytes]), "evidence.json");
 
 const url = `https://kleros-ipfs-gateway.fly.dev/upload-to-ipfs` +
-  `?operation=${encodeURIComponent(operation)}&pinToGraph=${pinToGraph}`;
+  `?operation=${encodeURIComponent(operation)}`;
 const res = await fetchWithPay(url, { method: "POST", body: form });
 const { cids } = await res.json();
 ```
@@ -154,12 +153,6 @@ The endpoint is `POST /upload-to-ipfs` with:
     | `meta-evidence` | Meta-evidence JSON referenced by a court / arbitrator / dispute smart contract (rules, party agreements, policies). |
     | `justification` | Juror / arbitrator justification payloads. |
     | _any other string_ | Accepted as-is. Use sparingly — the conventions above keep ecosystem tooling consistent. |
-
-  - `pinToGraph` (optional, boolean as string `true` / `false`, upstream default `false`) — if `true`, the file is *also* indexed by Kleros's Graph Node so the Kleros subgraph can resolve and query it.
-
-    **For every Kleros-ecosystem upload — i.e., everything this skill should be triggering on — set `pinToGraph=true`.** Evidence, meta-evidence, policies, Curate item metadata, and justifications are all critical artifacts that need to be subgraph-discoverable; that's the entire point of having dedicated infrastructure for them. The gateway operator does not bill extra for the Graph index.
-
-    The upstream `false` default exists for non-Kleros callers — but those callers shouldn't be using this skill at all (see "When NOT to use this skill"). If you find yourself reaching for `pinToGraph=false`, treat it as a signal to re-check whether this skill is the right tool for the job.
 
 - **Body**: `multipart/form-data` with one or more parts named `file`. To upload multiple files in one paid request, append multiple `file` parts to the same `FormData`.
 - **Headers**: `X-PAYMENT` is added automatically by the x402-fetch wrapper. Do not hand-craft it.

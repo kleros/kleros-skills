@@ -26,7 +26,6 @@
  *                       of the env vars above is missing.
  *   GATEWAY_URL         defaults to https://kleros-ipfs-gateway.fly.dev
  *   OPERATION           defaults to "evidence"
- *   PIN_TO_GRAPH        defaults to "true"
  *
  * Output:
  *   stdout = one CID per line (matches scripts/pay-and-upload.ts so capture
@@ -89,7 +88,6 @@ for (const key of required) {
 const gatewayUrl =
   process.env.GATEWAY_URL ?? "https://kleros-ipfs-gateway.fly.dev";
 const operation = process.env.OPERATION ?? "evidence";
-const pinToGraph = process.env.PIN_TO_GRAPH ?? "true";
 
 const cdp = new CdpClient({
   apiKeyId: creds.CDP_API_KEY_ID!,
@@ -132,7 +130,7 @@ form.append(
 
 const url = `${gatewayUrl}/upload-to-ipfs?operation=${encodeURIComponent(
   operation
-)}&pinToGraph=${pinToGraph}`;
+)}`;
 console.error(`POST ${url}`);
 
 const res = await fetchWithPay(url, { method: "POST", body: form });

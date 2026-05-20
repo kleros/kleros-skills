@@ -14,7 +14,6 @@
  *   EVM_PRIVATE_KEY  payer's Base mainnet private key (required)
  *   GATEWAY_URL      defaults to https://kleros-ipfs-gateway.fly.dev
  *   OPERATION        free-form tag, defaults to "evidence"
- *   PIN_TO_GRAPH     "true" to also pin to The Graph; defaults to "true"
  *
  * Output: on success, prints each returned IPFS CID on its own line so the
  * calling agent can parse them with a one-liner.
@@ -42,7 +41,6 @@ const privateKey = (
 const gatewayUrl =
   process.env.GATEWAY_URL ?? "https://kleros-ipfs-gateway.fly.dev";
 const operation = process.env.OPERATION ?? "evidence";
-const pinToGraph = process.env.PIN_TO_GRAPH ?? "true";
 
 const signer = await createSigner("base", privateKey);
 const fetchWithPay = wrapFetchWithPayment(fetch, signer);
@@ -57,7 +55,7 @@ form.append(
 
 const url = `${gatewayUrl}/upload-to-ipfs?operation=${encodeURIComponent(
   operation
-)}&pinToGraph=${pinToGraph}`;
+)}`;
 console.error(`POST ${url}`);
 
 const res = await fetchWithPay(url, { method: "POST", body: form });
