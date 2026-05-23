@@ -32,7 +32,10 @@ You are free to *upload* whatever the user wants (they're paying), but absent a 
 
 ## Quickstart
 
-The bundled `scripts/pay-and-upload.ts` does the entire flow end-to-end. Run it standalone:
+Two paths depending on what your agent already has:
+
+- **If you already have x402 tooling** (an x402 skill / SDK / a model that knows `x402-fetch`): skip the bundled scripts and inline the snippet further down — the gateway is a plain `POST /upload-to-ipfs` behind a standard x402 paywall, nothing Kleros-specific in the payment flow.
+- **Otherwise**, run the bundled `scripts/pay-and-upload.ts` end-to-end — it exists so x402-unaware agents don't have to rediscover the flow:
 
 ```bash
 cd path/to/this-skill/scripts
@@ -110,7 +113,7 @@ If the user doesn't already have a Base wallet ready:
 
 Hosted agents (OpenClaw, server-side workers, anything running with Coinbase CDP credentials) don't need an exported private key. CDP server accounts implement `signTypedData()` directly, which is exactly what `x402-fetch.wrapFetchWithPayment` needs to sign the EIP-3009 USDC authorization — so the CDP account object is passed straight to the SDK with no adapter code.
 
-A bundled runner ships at `scripts/pay-and-upload-cdp.ts`:
+A bundled runner ships at `scripts/pay-and-upload-cdp.ts` for agents that prefer a ready-made entrypoint — agents already using `wrapFetchWithPayment` with a CDP account can skip it and inline the snippet further down:
 
 ```bash
 cd path/to/this-skill/scripts
@@ -271,6 +274,8 @@ Steps:
 2. If all three return as expected, report the gateway as healthy and proceed. If any fail, surface the specific error so the user can decide whether to retry or escalate.
 
 ## Bundled
+
+Both scripts are **optional**. They exist so agents without x402 tooling can pay and upload without rediscovering `x402-fetch` from scratch. If your agent already speaks x402, ignore them and call the gateway directly.
 
 - `scripts/pay-and-upload.ts` — reference Node implementation. Adapt to your project context, or run standalone.
 - `scripts/package.json` — declares the two deps (`x402-fetch`, `tsx`). No lockfile and no tsconfig (tsx runs TS natively).
