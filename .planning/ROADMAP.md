@@ -142,3 +142,20 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.3: Feedback skill for agent-to-maintainer issue reporting (BACKLOG)
+
+**Goal:** Create a `feedback/SKILL.md` that teaches agents how to report issues, confusion, or praise back to Kleros Skills maintainers. Critical because agents (unlike humans) have no natural recourse when a skill is broken or confusing — they silently fail. This feedback channel captures those signals.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+**Context:**
+- Reference: [ethskills feedback/SKILL.md](https://github.com/austintgriffith/ethskills/blob/master/feedback/SKILL.md) — uses a `POST` to a Vercel KV store endpoint; we do NOT want that approach.
+- Preferred channels (in priority order):
+  1. Kleros MCP feedback endpoint (`mcp__kleros__report-issue_create`) — not generally available yet as of 2026-05-27, but may be by the time this is prioritized. Check availability before implementation.
+  2. GitHub issue creation on `kleros/kleros-skills` via `gh issue create` — always available, no backend needed.
+- The landing page (`index.html`) already has a "Contributing" section mentioning PRs. A "Feedback" section should be added once this skill exists, similar to ethskills' feedback section (screenshot: encourages agents to fetch `feedback/SKILL.md` and send a note, biasing toward sending).
+- The skill should accept structured JSON (kind: "issue"|"praise", message, agent, skill) and route to the appropriate channel.
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
