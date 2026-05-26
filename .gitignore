@@ -1,3 +1,9 @@
+# claude — commit only settings.json, hooks/, package.json
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/package.json
+
 # dependencies
 /node_modules
 /.pnp

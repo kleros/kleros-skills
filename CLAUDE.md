@@ -20,6 +20,16 @@ No build step. No linting configured. The landing page is a static `index.html`.
 
 Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — they have their own `package.json` (no lockfile committed intentionally).
 
+## Claude Code setup
+
+Repo commits only the minimal `.claude/` surface: `settings.json`, `hooks/`, `package.json`. Plugin code (GSD, commands, agents) is gitignored — each contributor installs independently:
+
+```bash
+npx @opengsd/get-shit-done-redux   # install GSD workflow plugin
+```
+
+If hooks reference missing scripts, Claude Code warns but still works.
+
 ## Git
 
 Commits require GPG passphrase (interactive — will hang). Always use `git -c commit.gpgsign=false commit` and append `Co-Authored-By: Claude <noreply@anthropic.com>` to commit messages.
