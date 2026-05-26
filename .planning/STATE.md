@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Unified Curate Skill
-status: completed
+status: executing
 stopped_at: Phase 2 context gathered
-last_updated: "2026-05-26T23:13:20.744Z"
-last_activity: "2026-05-27 - Completed quick task: Add top-level SKILL.md entry point"
+last_updated: "2026-05-26T23:46:27.177Z"
+last_activity: 2026-05-26 -- Phase 02 execution started
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 1
-  total_plans: 3
+  total_plans: 9
   completed_plans: 3
-  percent: 11
+  percent: 10
 ---
 
 ## Current Position
 
-Phase: 1 of 5 (Architecture) ✓
-Plan: 3/3 complete
-Status: Phase 1 complete — ready for Phase 2
-Last activity: 2026-05-27 - Completed quick task: Add top-level SKILL.md entry point
+Phase: 02 (shared-references) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 02
+Last activity: 2026-05-26 -- Phase 02 execution started
 
 Progress: [██░░░░░░░░] 20%
 
@@ -28,7 +28,7 @@ Progress: [██░░░░░░░░] 20%
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** AI agents can safely and correctly interact with any Kleros Curate registry
-**Current focus:** Phase 2 — Shared References (extract shared content into reference files)
+**Current focus:** Phase 02 — shared-references
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 |---|-------------|------|--------|-----------|
 | 260526-vz9 | Update landing page to show only real skills | 2026-05-26 | aaa2c00 | [260526-vz9-update-landing-page-to-show-only-real-sk](./quick/260526-vz9-update-landing-page-to-show-only-real-sk/) |
 | 260527-a01 | Add top-level SKILL.md entry point + llms.txt symlink | 2026-05-27 | f3a1803 | -- |
+| 260527-a02 | Add prompt box + persistent setup section to landing page | 2026-05-27 | 7fe40b3 | -- |
 
 ## Session Continuity
 
