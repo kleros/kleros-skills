@@ -1,3 +1,8 @@
+---
+name: kleros-skills
+description: Use when a request involves Kleros, decentralized justice, or decentralized dispute resolution. Applies to interacting with Kleros Curate token-curated registries (Light Curate, Stake Curate / PGTCR, Scout), uploading dispute evidence or metadata to IPFS via the Kleros x402 gateway, submitting or challenging registry items, funding appeals, deploying new registries, and reading on-chain arbitration state. Covers PNK staking, juror selection, ERC-792 Arbitrable/Arbitrator interfaces, Kleros court hierarchy, and ecosystem tooling on Ethereum, Gnosis, and Sepolia.
+---
+
 # Kleros Skills — The missing knowledge between AI agents and Kleros.
 
 Kleros is a decentralized justice protocol. Disputes go to randomly-drawn jurors who stake PNK tokens, review evidence, and vote. Honest jurors earn rewards; dishonest ones lose their stake. The system handles everything from token-curated registries to escrow disputes to oracle verification.
