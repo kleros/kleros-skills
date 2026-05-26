@@ -125,3 +125,12 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.2: Top-level routing skill as entry point for all Kleros skills (BACKLOG)
+
+**Goal:** Create a top-level SKILL.md that serves as the primary entry point for the entire kleros-skills plugin, routing agents to the correct individual skill (kleros-ipfs-upload, kleros-curate, future skills) based on user intent. Reference: [ethskills SKILL.md](https://github.com/austintgriffith/ethskills/blob/master/SKILL.md) as an example of a multi-skill routing entry point.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
