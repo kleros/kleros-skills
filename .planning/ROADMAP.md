@@ -114,3 +114,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Flavor References | 0/? | Not started | - |
 | 4. Triggering | 0/? | Not started | - |
 | 5. Publishing | 0/? | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Rename kleros-curate to kleros-curate-v1 (BACKLOG)
+
+**Goal:** Rename the skill from `kleros-curate` to `kleros-curate-v1` and make it explicit throughout the skill content that it targets Curate applications built on Kleros protocol v1 (not a version of the Curate app itself, but the version of the underlying Kleros arbitration protocol).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
