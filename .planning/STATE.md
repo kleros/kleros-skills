@@ -19,7 +19,7 @@ progress:
 Phase: 1 of 5 (Architecture)
 Plan: -- (not yet planned)
 Status: Ready to plan
-Last activity: 2026-05-26 — Roadmap created, 24 requirements mapped to 5 phases
+Last activity: 2026-05-26 - Completed quick task 260526-vz9: Update landing page to show only real skills
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,12 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ### Pending Todos
 
 0 pending todos
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260526-vz9 | Update landing page to show only real skills | 2026-05-26 | aaa2c00 | [260526-vz9-update-landing-page-to-show-only-real-sk](./quick/260526-vz9-update-landing-page-to-show-only-real-sk/) |
 
 ## Session Continuity
 
