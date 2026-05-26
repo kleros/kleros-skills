@@ -387,9 +387,10 @@ function renderMarkdown(md) {
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    if (/^```(\w*)\s*$/.test(line)) {
+    const trimmed = line.trimStart();
+    if (/^```(\w*)\s*$/.test(trimmed)) {
       let block = '';
-      for (i++; i < lines.length && !/^```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
+      for (i++; i < lines.length && !/^\s*```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
       i++;
       out += '<pre><code>' + block + '</code></pre>';
       continue;
@@ -400,11 +401,12 @@ function renderMarkdown(md) {
       i++;
       continue;
     }
-    if (/^\|.+\|$/.test(line)) {
+    if (/^\s*\|.+\|\s*$/.test(line)) {
       const rows = [];
-      while (i < lines.length && /^\|.+\|$/.test(lines[i])) {
-        if (!/^\|[-:\s|]+\|$/.test(lines[i])) {
-          rows.push(lines[i].split('|').slice(1, -1).map(c => c.trim()));
+      while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) {
+        const stripped = lines[i].trim();
+        if (!/^\|[-:\s|]+\|$/.test(stripped)) {
+          rows.push(stripped.split('|').slice(1, -1).map(c => c.trim()));
         }
         i++;
       }
@@ -427,20 +429,32 @@ function renderMarkdown(md) {
       out += '<blockquote>' + block.replace(/\n/g, '<br>') + '</blockquote>';
       continue;
     }
-    if (/^[-*]\s+(.+)$/.test(line)) {
+    if (/^\s*[-*]\s+(.+)$/.test(line)) {
       out += '<ul>';
-      while (i < lines.length && /^[-*]\s+(.+)$/.test(lines[i])) {
-        out += '<li>' + inline(RegExp.$1) + '</li>';
+      while (i < lines.length && /^\s*[-*]\s+(.+)$/.test(lines[i])) {
+        /^\s*[-*]\s+(.+)$/.test(lines[i]);
+        let li = inline(RegExp.$1);
         i++;
+        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+          li += ' ' + inline(lines[i].trim());
+          i++;
+        }
+        out += '<li>' + li + '</li>';
       }
       out += '</ul>';
       continue;
     }
-    if (/^\d+\.\s+(.+)$/.test(line)) {
+    if (/^\s*\d+\.\s+(.+)$/.test(line)) {
       out += '<ol>';
-      while (i < lines.length && /^\d+\.\s+(.+)$/.test(lines[i])) {
-        out += '<li>' + inline(RegExp.$1) + '</li>';
+      while (i < lines.length && /^\s*\d+\.\s+(.+)$/.test(lines[i])) {
+        /^\s*\d+\.\s+(.+)$/.test(lines[i]);
+        let li = inline(RegExp.$1);
         i++;
+        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+          li += ' ' + inline(lines[i].trim());
+          i++;
+        }
+        out += '<li>' + li + '</li>';
       }
       out += '</ol>';
       continue;
