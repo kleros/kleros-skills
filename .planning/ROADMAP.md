@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `kleros-curate/references/` directory exists with the correct file stubs (named per research recommendations)
   3. SKILL.md contains a routing decision tree that maps user intent to LGTCR, PGTCR, or Scout
   4. No piece of information appears in both SKILL.md and a reference file
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Create kleros-curate/SKILL.md skeleton with routing decision tree, non-negotiables, and action index
+- [ ] 01-02-PLAN.md — Create flavor reference stubs (light-curate.md, stake-curate.md, scout-registries.md)
+- [ ] 01-03-PLAN.md — Create shared reference stubs (shared-metaevidence.md, shared-deposits.md, shared-item-json.md, shared-abi-fragments.md, shared-ipfs-upload.md)
 **UI hint**: no
 
 ### Phase 2: Shared References
@@ -83,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Architecture | 0/? | Not started | - |
+| 1. Architecture | 0/3 | Not started | - |
 | 2. Shared References | 0/? | Not started | - |
 | 3. Flavor References | 0/? | Not started | - |
 | 4. Triggering | 0/? | Not started | - |
