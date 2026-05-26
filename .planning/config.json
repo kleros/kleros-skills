@@ -1,0 +1,8 @@
+{
+  "project_code": "KS",
+  "workflow": {
+    "research": true,
+    "commit_docs": true,
+    "text_mode": false
+  }
+}
