@@ -1,0 +1,90 @@
+# Roadmap: Kleros Skills — v1.0 Unified Curate Skill
+
+## Overview
+
+Three draft curate skills (2,366 lines across LGTCR, PGTCR, Scout) are restructured into a single published `kleros-curate` skill with a routing entry point, shared reference files, and flavor-specific reference files. Phases follow the content dependency chain: define structure first, extract shared content second, write flavor content third, finalize triggering fourth, publish last.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Architecture** - Define the `kleros-curate/` skeleton, SKILL.md structure, and routing decision tree
+- [ ] **Phase 2: Shared References** - Extract and write all shared content into `references/` files, applying writing quality standards
+- [ ] **Phase 3: Flavor References** - Write flavor-specific reference files for LGTCR, PGTCR, and Scout
+- [ ] **Phase 4: Triggering** - Finalize the YAML description and triggering strategy
+- [ ] **Phase 5: Publishing** - Wire `kleros-curate` into the plugin catalog, bump version, tag
+
+## Phase Details
+
+### Phase 1: Architecture
+**Goal**: The `kleros-curate/` directory structure and SKILL.md skeleton exist with a working routing decision tree and no content duplication
+**Depends on**: Nothing (first phase)
+**Requirements**: ARCH-01, ARCH-02, ARCH-03, ARCH-04
+**Success Criteria** (what must be TRUE):
+  1. `kleros-curate/SKILL.md` exists and is under 500 lines / 5k words
+  2. `kleros-curate/references/` directory exists with the correct file stubs (named per research recommendations)
+  3. SKILL.md contains a routing decision tree that maps user intent to LGTCR, PGTCR, or Scout
+  4. No piece of information appears in both SKILL.md and a reference file
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 2: Shared References
+**Goal**: All content shared across two or more flavors is extracted into standalone reference files with consistent writing quality
+**Depends on**: Phase 1
+**Requirements**: FACT-01, FACT-02, FACT-03, FACT-04, FACT-05, FACT-06, WRIT-01, WRIT-02, WRIT-03, WRIT-04
+**Success Criteria** (what must be TRUE):
+  1. `shared-metaevidence.md` covers both RPC log and GraphQL retrieval paths with LGTCR-specific two-stream note
+  2. `shared-deposits.md` covers native-only computation (LGTCR) and ERC20+native computation (PGTCR) in one place
+  3. `shared-item-json.md` and `shared-abi-fragments.md` exist as canonical single-source references
+  4. All reference files use imperative/infinitive form and explain the WHY behind constraints
+  5. Reference files over 300 lines have a table of contents; files over 10k words trigger grep search patterns in SKILL.md
+  6. Flavor-specific nuances (Scout seed-first, PGTCR withdrawal, LGTCR two-stream) are preserved and clearly scoped
+**Plans**: TBD
+
+### Phase 3: Flavor References
+**Goal**: Each flavor has a dedicated reference file covering its unique operations, preserving all flavor-specific content from the draft skills
+**Depends on**: Phase 2
+**Requirements**: FLAV-01, FLAV-02, FLAV-03
+**Success Criteria** (what must be TRUE):
+  1. `light-curate.md` covers LGTCR operations, factory deploy, schema confirmation check, and fundAppeal math without duplicating shared content
+  2. `stake-curate.md` covers PGTCR operations, Goldsky GraphQL, ERC20 mechanics, status model, and admin actions without duplicating shared content
+  3. `scout-registries.md` covers all 4 Scout registries with addresses, seed templates, LightGeneralizedTCRView helper, scout-api, and image guidance
+**Plans**: TBD
+
+### Phase 4: Triggering
+**Goal**: SKILL.md YAML description triggers correctly on all three flavors within the 1,536-character cap
+**Depends on**: Phase 3
+**Requirements**: TRIG-01, TRIG-02, TRIG-03
+**Success Criteria** (what must be TRUE):
+  1. YAML description is in third-person "pushy" style and fits within 1,536 characters
+  2. Description includes all required positive triggers: Curate, Light Curate, LGTCR, PGTCR, Stake Curate, PermanentGTCR, Scout, registry, token list, address tags, CDN
+  3. Description explicitly excludes generic IPFS uploads (handled by `kleros-ipfs-upload`) and non-Kleros registries
+**Plans**: TBD
+
+### Phase 5: Publishing
+**Goal**: `kleros-curate` is registered in the plugin catalog, versioned, tagged, and ready for installation
+**Depends on**: Phase 4
+**Requirements**: PUB-01, PUB-02, PUB-03, PUB-04
+**Success Criteria** (what must be TRUE):
+  1. `plugin.json` `skills[]` includes `"./kleros-curate"` and version is bumped
+  2. `marketplace.json` `plugins[]` has an entry for `kleros-curate` (name matches directory, no version field)
+  3. `CHANGELOG.md` records the release under a new version entry
+  4. Git tag `kleros-curate@v1.0.0` exists on the release commit
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Architecture | 0/? | Not started | - |
+| 2. Shared References | 0/? | Not started | - |
+| 3. Flavor References | 0/? | Not started | - |
+| 4. Triggering | 0/? | Not started | - |
+| 5. Publishing | 0/? | Not started | - |

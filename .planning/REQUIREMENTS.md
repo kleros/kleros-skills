@@ -76,36 +76,36 @@ Requirements for the unified Curate skill. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | TBD | Pending |
-| ARCH-02 | TBD | Pending |
-| ARCH-03 | TBD | Pending |
-| ARCH-04 | TBD | Pending |
-| FACT-01 | TBD | Pending |
-| FACT-02 | TBD | Pending |
-| FACT-03 | TBD | Pending |
-| FACT-04 | TBD | Pending |
-| FACT-05 | TBD | Pending |
-| FACT-06 | TBD | Pending |
-| FLAV-01 | TBD | Pending |
-| FLAV-02 | TBD | Pending |
-| FLAV-03 | TBD | Pending |
-| WRIT-01 | TBD | Pending |
-| WRIT-02 | TBD | Pending |
-| WRIT-03 | TBD | Pending |
-| WRIT-04 | TBD | Pending |
-| TRIG-01 | TBD | Pending |
-| TRIG-02 | TBD | Pending |
-| TRIG-03 | TBD | Pending |
-| PUB-01 | TBD | Pending |
-| PUB-02 | TBD | Pending |
-| PUB-03 | TBD | Pending |
-| PUB-04 | TBD | Pending |
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 1 | Pending |
+| ARCH-03 | Phase 1 | Pending |
+| ARCH-04 | Phase 1 | Pending |
+| FACT-01 | Phase 2 | Pending |
+| FACT-02 | Phase 2 | Pending |
+| FACT-03 | Phase 2 | Pending |
+| FACT-04 | Phase 2 | Pending |
+| FACT-05 | Phase 2 | Pending |
+| FACT-06 | Phase 2 | Pending |
+| WRIT-01 | Phase 2 | Pending |
+| WRIT-02 | Phase 2 | Pending |
+| WRIT-03 | Phase 2 | Pending |
+| WRIT-04 | Phase 2 | Pending |
+| FLAV-01 | Phase 3 | Pending |
+| FLAV-02 | Phase 3 | Pending |
+| FLAV-03 | Phase 3 | Pending |
+| TRIG-01 | Phase 4 | Pending |
+| TRIG-02 | Phase 4 | Pending |
+| TRIG-03 | Phase 4 | Pending |
+| PUB-01 | Phase 5 | Pending |
+| PUB-02 | Phase 5 | Pending |
+| PUB-03 | Phase 5 | Pending |
+| PUB-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1.0 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-26*
-*Last updated: 2026-05-26 after initial definition*
+*Last updated: 2026-05-26 after roadmap creation*
