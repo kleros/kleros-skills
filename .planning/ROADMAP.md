@@ -13,7 +13,7 @@ Three draft curate skills (2,366 lines across LGTCR, PGTCR, Scout) are restructu
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Architecture** - Define the `kleros-curate/` skeleton, SKILL.md structure, and routing decision tree
+- [x] **Phase 1: Architecture** - Define the `kleros-curate/` skeleton, SKILL.md structure, and routing decision tree
 - [ ] **Phase 2: Shared References** - Extract and write all shared content into `references/` files, applying writing quality standards
 - [ ] **Phase 3: Flavor References** - Write flavor-specific reference files for LGTCR, PGTCR, and Scout
 - [ ] **Phase 4: Triggering** - Finalize the YAML description and triggering strategy
@@ -36,9 +36,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 Plans:
 
-- [ ] 01-01-PLAN.md — Create kleros-curate/SKILL.md skeleton with routing decision tree, non-negotiables, and action index
-- [ ] 01-02-PLAN.md — Create flavor reference stubs (light-curate.md, stake-curate.md, scout-registries.md)
-- [ ] 01-03-PLAN.md — Create shared reference stubs (shared-metaevidence.md, shared-deposits.md, shared-item-json.md, shared-abi-fragments.md, shared-ipfs-upload.md)
+- [x] 01-01-PLAN.md — Create kleros-curate/SKILL.md skeleton with routing decision tree, non-negotiables, and action index
+- [x] 01-02-PLAN.md — Create flavor reference stubs (light-curate.md, stake-curate.md, scout-registries.md)
+- [x] 01-03-PLAN.md — Create shared reference stubs (shared-metaevidence.md, shared-deposits.md, shared-item-json.md, shared-abi-fragments.md, shared-ipfs-upload.md)
 
 **Cross-cutting constraints:**
 
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Architecture | 0/3 | Not started | - |
+| 1. Architecture | 3/3 | ✓ Complete | 2026-05-26 |
 | 2. Shared References | 0/? | Not started | - |
 | 3. Flavor References | 0/? | Not started | - |
 | 4. Triggering | 0/? | Not started | - |
