@@ -19,7 +19,7 @@ progress:
 Phase: 1 of 5 (Architecture) ✓
 Plan: 3/3 complete
 Status: Phase 1 complete — ready for Phase 2
-Last activity: 2026-05-26 -- Phase 01 executed (3/3 plans complete)
+Last activity: 2026-05-27 - Completed quick task: Add top-level SKILL.md entry point
 
 Progress: [██░░░░░░░░] 20%
 
@@ -64,6 +64,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260526-vz9 | Update landing page to show only real skills | 2026-05-26 | aaa2c00 | [260526-vz9-update-landing-page-to-show-only-real-sk](./quick/260526-vz9-update-landing-page-to-show-only-real-sk/) |
+| 260527-a01 | Add top-level SKILL.md entry point + llms.txt symlink | 2026-05-27 | f3a1803 | -- |
 
 ## Session Continuity
 
