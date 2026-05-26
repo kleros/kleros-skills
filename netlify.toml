@@ -1,4 +1,10 @@
 [[redirects]]
+from = "/llms.txt"
+to = "/SKILL.md"
+status = 200
+force = true
+
+[[redirects]]
 from = "/:skill"
 to = "/:skill/SKILL.md"
 status = 200
