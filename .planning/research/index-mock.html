@@ -10,7 +10,6 @@
 <meta property="og:type" content="website">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -188,19 +187,6 @@ h2 {
   border-top: 1px solid var(--border);
 }
 
-.draft-badge {
-  display: inline-block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--dim);
-  border: 1px solid var(--border);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  margin-left: 0.5rem;
-  vertical-align: middle;
-}
-
 /* Modal */
 .skill { cursor: pointer; }
 .modal-backdrop {
@@ -221,7 +207,7 @@ h2 {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  max-width: 960px;
+  max-width: 720px;
   width: 100%;
   max-height: 85vh;
   overflow: hidden;
@@ -310,29 +296,52 @@ h2 {
 
 <button class="hero-btn copy-btn" data-url="SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Kleros Skills / SKILL.md</button>
 
-<h2>Published Skills</h2>
-
-<div class="skill" style="margin-top:1rem;">
-  <div class="skill-name">Kleros IPFS Upload</div>
-  <div class="skill-desc">Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet). For dispute evidence, meta-evidence, court policies, Curate item metadata, and juror justifications.</div>
-  <button class="copy-btn" data-url="kleros-ipfs-upload/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> kleros-ipfs-upload/SKILL.md</button>
+<div class="skill" style="margin-top:2rem;">
+  <div class="skill-name">Curate</div>
+  <div class="skill-desc">Kleros Curate — decentralized token-curated registries. Create, manage, and challenge list submissions using Kleros arbitration.</div>
+  <button class="copy-btn" data-url="curate-v1/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> curate-v1/SKILL.md</button>
 </div>
 
-<h2>Coming Soon</h2>
-
-<div class="skill" style="margin-top:1rem; opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Light<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Operate Kleros Curate Light lists (LightGeneralizedTCR) &mdash; submit items, remove items, challenge requests, submit evidence, fund appeals, and create new lists.</div>
+<div class="skill">
+  <div class="skill-name">Curate Scout</div>
+  <div class="skill-desc">Scout integration for Kleros Curate — automated monitoring and alerting for registry submissions and challenges.</div>
+  <button class="copy-btn" data-url="curate-v1-scout/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> curate-v1-scout/SKILL.md</button>
 </div>
 
-<div class="skill" style="opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Stake (PGTCR)<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Operate Kleros PGTCR / Stake Curate (PermanentGTCR) lists &mdash; GraphQL-based querying, item submission with ERC20 stake, challenges, appeals, and list deployment.</div>
+<div class="skill">
+  <div class="skill-name">Dispute Resolution</div>
+  <div class="skill-desc">How Kleros dispute resolution works — juror selection, evidence submission, appeals, and the court hierarchy. The core of decentralized justice.</div>
+  <button class="copy-btn" data-url="dispute-resolution/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> dispute-resolution/SKILL.md</button>
 </div>
 
-<div class="skill" style="opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Scout<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Runtime guide for Scout registries on Gnosis &mdash; automated monitoring and operations for Kleros Curate token-curated registries.</div>
+<div class="skill">
+  <div class="skill-name">Escrow</div>
+  <div class="skill-desc">Kleros Escrow — trustless payment escrow with Kleros arbitration for dispute resolution between parties.</div>
+  <button class="copy-btn" data-url="escrow/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> escrow/SKILL.md</button>
+</div>
+
+<div class="skill">
+  <div class="skill-name">Reality</div>
+  <div class="skill-desc">Kleros + Reality.eth integration — onchain oracle for verified real-world data with Kleros as the final arbitrator for disputed answers.</div>
+  <button class="copy-btn" data-url="reality/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> reality/SKILL.md</button>
+</div>
+
+<div class="skill">
+  <div class="skill-name">Proof of Humanity</div>
+  <div class="skill-desc">Sybil-resistant identity registry powered by Kleros — social verification combined with dispute resolution to build a list of unique humans.</div>
+  <button class="copy-btn" data-url="proof-of-humanity/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> proof-of-humanity/SKILL.md</button>
+</div>
+
+<div class="skill">
+  <div class="skill-name">Tokens &amp; Staking</div>
+  <div class="skill-desc">PNK token mechanics, juror staking, court selection, and the cryptoeconomic incentives behind Kleros dispute resolution.</div>
+  <button class="copy-btn" data-url="tokens-staking/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> tokens-staking/SKILL.md</button>
+</div>
+
+<div class="skill">
+  <div class="skill-name">Smart Contracts</div>
+  <div class="skill-desc">Kleros smart contract architecture — Arbitrable, Arbitrator interfaces, ERC-792 standard, and how to integrate Kleros arbitration into your own contracts.</div>
+  <button class="copy-btn" data-url="smart-contracts/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> smart-contracts/SKILL.md</button>
 </div>
 
 <h2>How to Use</h2>
@@ -341,20 +350,20 @@ h2 {
 <div class="how-to-methods">
   <div class="how-to-method">
     <div class="how-to-method-title">Just tell your Agent</div>
-    <div class="how-to-method-desc">Give any agent a Kleros Skills URL and tell it to go learn. Works in ChatGPT, Claude, Cursor, Copilot &mdash; anything.</div>
+    <div class="how-to-method-desc">Give any agent a Kleros Skills URL and tell it to go learn. Works in ChatGPT, Claude, Cursor, Copilot — anything.</div>
     <code>"Read Kleros Skills before you start building"</code>
   </div>
   <div class="how-to-method">
     <div class="how-to-method-title">curl / fetch</div>
     <div class="how-to-method-desc">For scripting, pipelines, and system prompts. Clean markdown back, ready to use.</div>
-    <code>curl -s https://skills.kleros.io/SKILL.md</code>
+    <code>curl -s https://kleros-skills.example.com/SKILL.md</code>
   </div>
 </div>
 
 <h2>Contributing</h2>
-<p class="section-text">Something wrong or missing? Humans and agents alike are welcome to <a href="https://github.com/kleros/kleros-skills">open a PR</a>.</p>
+<p class="section-text">Something wrong or missing? Humans and agents alike are welcome to <a href="https://github.com/kleros">open a PR</a>.</p>
 
-<div class="footer">MIT License &middot; <a href="https://kleros.io">Kleros</a> &middot; <a href="https://github.com/kleros/kleros-skills">GitHub</a></div>
+<div class="footer">MIT License · <a href="https://kleros.io">Kleros</a> · <a href="https://github.com/kleros">GitHub</a></div>
 
 <div id="modal" class="modal-backdrop" aria-hidden="true">
   <div class="modal-box" role="dialog" aria-modal="true">
@@ -388,10 +397,9 @@ function renderMarkdown(md) {
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    const trimmed = line.trimStart();
-    if (/^```(\w*)\s*$/.test(trimmed)) {
+    if (/^```(\w*)\s*$/.test(line)) {
       let block = '';
-      for (i++; i < lines.length && !/^\s*```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
+      for (i++; i < lines.length && !/^```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
       i++;
       out += '<pre><code>' + block + '</code></pre>';
       continue;
@@ -402,12 +410,11 @@ function renderMarkdown(md) {
       i++;
       continue;
     }
-    if (/^\s*\|.+\|\s*$/.test(line)) {
+    if (/^\|.+\|$/.test(line)) {
       const rows = [];
-      while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) {
-        const stripped = lines[i].trim();
-        if (!/^\|[-:\s|]+\|$/.test(stripped)) {
-          rows.push(stripped.split('|').slice(1, -1).map(c => c.trim()));
+      while (i < lines.length && /^\|.+\|$/.test(lines[i])) {
+        if (!/^\|[-:\s|]+\|$/.test(lines[i])) {
+          rows.push(lines[i].split('|').slice(1, -1).map(c => c.trim()));
         }
         i++;
       }
@@ -430,32 +437,20 @@ function renderMarkdown(md) {
       out += '<blockquote>' + block.replace(/\n/g, '<br>') + '</blockquote>';
       continue;
     }
-    if (/^\s*[-*]\s+(.+)$/.test(line)) {
+    if (/^[-*]\s+(.+)$/.test(line)) {
       out += '<ul>';
-      while (i < lines.length && /^\s*[-*]\s+(.+)$/.test(lines[i])) {
-        /^\s*[-*]\s+(.+)$/.test(lines[i]);
-        let li = inline(RegExp.$1);
+      while (i < lines.length && /^[-*]\s+(.+)$/.test(lines[i])) {
+        out += '<li>' + inline(RegExp.$1) + '</li>';
         i++;
-        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
-          li += ' ' + inline(lines[i].trim());
-          i++;
-        }
-        out += '<li>' + li + '</li>';
       }
       out += '</ul>';
       continue;
     }
-    if (/^\s*\d+\.\s+(.+)$/.test(line)) {
+    if (/^\d+\.\s+(.+)$/.test(line)) {
       out += '<ol>';
-      while (i < lines.length && /^\s*\d+\.\s+(.+)$/.test(lines[i])) {
-        /^\s*\d+\.\s+(.+)$/.test(lines[i]);
-        let li = inline(RegExp.$1);
+      while (i < lines.length && /^\d+\.\s+(.+)$/.test(lines[i])) {
+        out += '<li>' + inline(RegExp.$1) + '</li>';
         i++;
-        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
-          li += ' ' + inline(lines[i].trim());
-          i++;
-        }
-        out += '<li>' + li + '</li>';
       }
       out += '</ol>';
       continue;
@@ -475,7 +470,6 @@ document.querySelectorAll('.copy-btn[data-url]').forEach(btn => {
   btn.addEventListener('click', async (e) => {
     e.stopPropagation();
     const url = btn.dataset.url;
-    if (!url) return;
     try { await navigator.clipboard.writeText(url); } catch(err) {
       const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
     }
@@ -517,11 +511,7 @@ function closeModal() {
   modal.setAttribute('aria-hidden', 'true');
 }
 
-document.querySelectorAll('.skill[style*="cursor: default"]').forEach(card => {
-  card.style.pointerEvents = 'auto';
-});
-
-document.querySelectorAll('.skill:not([style*="cursor: default"])').forEach(card => {
+document.querySelectorAll('.skill').forEach(card => {
   const copyBtn = card.querySelector('.copy-btn[data-url]');
   const title = card.querySelector('.skill-name');
   if (!copyBtn || !title) return;
