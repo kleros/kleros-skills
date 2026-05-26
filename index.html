@@ -144,40 +144,101 @@ h2 {
   font-size: 13px;
 }
 
-.how-to-methods {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.75rem;
-  margin-top: 1rem;
+.clarifier {
+  color: var(--fg);
+  font-size: 14px;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
 }
-.how-to-method {
+
+.command-line {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--hover);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.75rem 1rem;
-  background: var(--hover);
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
 }
-.how-to-method-title {
+.command-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.command-line code {
+  flex: 1;
   font-size: 13px;
+  color: var(--fg);
+  background: none;
+  border: none;
+  padding: 0;
+}
+.command-line .copy-btn {
+  flex-shrink: 0;
+}
+
+.setup-list {
+  margin-top: 1rem;
+}
+.setup-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 200px;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+.setup-row:first-child { border-top: 1px solid var(--border); }
+.setup-tool {
+  font-size: 14px;
   font-weight: 600;
   color: var(--accent);
-  margin-bottom: 0.25rem;
+  padding-top: 0.15rem;
 }
-.how-to-method-desc {
-  font-size: 12px;
-  color: var(--dim);
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+.setup-artifact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-.how-to-method code {
-  display: block;
-  font-family: monospace;
+.setup-howto {
   font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.setup-artifact code {
+  display: block;
+  font-size: 12px;
   color: var(--fg);
-  background: var(--bg);
+  background: var(--hover);
   border: 1px solid var(--border);
   border-radius: 3px;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.75rem;
+  white-space: pre-wrap;
   word-break: break-all;
+}
+.setup-artifact code.is-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.setup-note {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .setup-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .setup-note { margin-top: 0.25rem; }
+  .command-line { flex-wrap: wrap; }
 }
 
 .footer {
@@ -306,9 +367,15 @@ h2 {
  ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
 </div>
 
-<p class="tagline">The missing knowledge between AI agents and Kleros, the decentralized justice protocol.<span class="cursor"></span></p>
+<p class="clarifier">The missing knowledge between AI agents and Kleros, the decentralized justice protocol. Works in Claude, ChatGPT, Cursor, or any agent.</p>
 
-<button class="hero-btn copy-btn" data-url="SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Kleros Skills / SKILL.md</button>
+<div class="command-line">
+  <span class="command-label">Prompt</span>
+  <code>Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+  <button class="copy-btn" data-url="Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy prompt</button>
+</div>
+
+<p class="section-text">Per session. To install once in Claude Code, Cursor, or Codex, see <a href="#persistent-setup">Persistent Setup</a> below.</p>
 
 <h2>Published Skills</h2>
 
@@ -335,19 +402,52 @@ h2 {
   <div class="skill-desc">Runtime guide for Scout registries on Gnosis &mdash; automated monitoring and operations for Kleros Curate token-curated registries.</div>
 </div>
 
-<h2>How to Use</h2>
-<p class="section-text">Give your AI agent any Kleros Skills URL. It fetches the page, reads the content, and instantly knows more about Kleros. No install, no CLI, no package manager.</p>
+<h2 id="persistent-setup">Persistent Setup</h2>
+<p class="section-text">Optional. If you'd rather not paste the prompt above every session, configure your tool once below.</p>
 
-<div class="how-to-methods">
-  <div class="how-to-method">
-    <div class="how-to-method-title">Just tell your Agent</div>
-    <div class="how-to-method-desc">Give any agent a Kleros Skills URL and tell it to go learn. Works in ChatGPT, Claude, Cursor, Copilot &mdash; anything.</div>
-    <code>"Read Kleros Skills before you start building"</code>
+<div class="setup-list">
+  <div class="setup-row">
+    <span class="setup-tool">Codex</span>
+    <div class="setup-artifact">
+      <span class="setup-howto">1. Create this file in your repo root</span>
+      <code>AGENTS.md</code>
+      <span class="setup-howto">2. Paste this inside the file</span>
+      <code class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+    </div>
+    <span class="setup-note">Pointer (per repo). Codex fetches Kleros Skills on each task.</span>
   </div>
-  <div class="how-to-method">
-    <div class="how-to-method-title">curl / fetch</div>
-    <div class="how-to-method-desc">For scripting, pipelines, and system prompts. Clean markdown back, ready to use.</div>
-    <code>curl -s https://skills.kleros.io/SKILL.md</code>
+  <div class="setup-row">
+    <span class="setup-tool">Cursor</span>
+    <div class="setup-artifact">
+      <span class="setup-howto">1. Create this Cursor rule file</span>
+      <code>.cursor/rules/kleros-skills.mdc</code>
+      <span class="setup-howto">2. Paste this inside the file</span>
+      <code class="is-content">---
+description: Kleros knowledge pack for decentralized justice
+alwaysApply: true
+---
+
+Before interacting with Kleros protocol, uploading evidence, or working with Curate registries, read https://skills.kleros.io/SKILL.md and follow it.</code>
+    </div>
+    <span class="setup-note">Pointer (per repo). Cursor fetches when the rule fires.</span>
+  </div>
+  <div class="setup-row">
+    <span class="setup-tool">Claude Code</span>
+    <div class="setup-artifact">
+      <span class="setup-howto">1. Add the marketplace catalog</span>
+      <code>/plugin marketplace add kleros/kleros-skills</code>
+      <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
+      <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
+    </div>
+    <span class="setup-note">Install (user-wide). Plugin reads from disk, granular skill loading.</span>
+  </div>
+  <div class="setup-row">
+    <span class="setup-tool">Scripts</span>
+    <div class="setup-artifact">
+      <span class="setup-howto">Run in your shell</span>
+      <code>curl -s https://skills.kleros.io/SKILL.md</code>
+    </div>
+    <span class="setup-note">Fetch + bake (per script). Embed in pipelines or system prompts.</span>
   </div>
 </div>
 
