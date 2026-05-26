@@ -2,15 +2,14 @@
   "name": "kleros-skills",
   "owner": { "name": "Kleros", "url": "https://kleros.io" },
   "metadata": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Claude Code skills for interacting with the Kleros ecosystem."
   },
   "plugins": [
     {
-      "name": "kleros",
+      "name": "kleros-ipfs-upload",
       "source": "./",
-      "version": "1.0.0",
-      "description": "Skills for Kleros: x402 IPFS uploads, and more to come.",
+      "description": "Upload files to IPFS through the Kleros x402 payment gateway.",
       "author": { "name": "Kleros", "url": "https://kleros.io" }
     }
   ]
