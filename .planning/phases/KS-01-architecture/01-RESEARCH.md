@@ -452,17 +452,19 @@ Not applicable. Phase 1 creates markdown files (documentation artifacts). No cod
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **SKILL.md placeholder description: what trigger phrases?**
    - What we know: Final description is Phase 4 work (TRIG-01 to TRIG-03, 1,536-char cap)
    - What's unclear: Should Phase 1 placeholder be minimal ("Kleros Curate skill — see description Phase 4") or a working draft covering all 3 flavors?
    - Recommendation: Use a working draft description in Phase 1 that covers all trigger phrases but is not length-optimized. This allows basic triggering during Phase 2/3 work without blocking on Phase 4.
+   - RESOLVED: Plan 01-01 specifies a working draft description covering all 3 flavors with positive + negative triggers.
 
 2. **Should Phase 1 include a `when_to_use` frontmatter field?**
    - What we know: `when_to_use` is a supported field that appends to `description` in the skill listing, counts against the same 1,536-char cap
    - What's unclear: Whether splitting description + when_to_use improves triggering vs single description field
    - Recommendation: Omit `when_to_use` in Phase 1 skeleton; revisit in Phase 4 during description optimization.
+   - RESOLVED: Plan 01-01 omits `when_to_use` in Phase 1; deferred to Phase 4.
 
 ---
 
