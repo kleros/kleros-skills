@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Shared References** - Extract and write all shared content into `references/` files, applying writing quality standards
 - [ ] **Phase 3: Flavor References** - Write flavor-specific reference files for LGTCR, PGTCR, and Scout
 - [x] **Phase 4: Triggering** - Finalize the YAML description and triggering strategy (completed 2026-05-27)
-- [ ] **Phase 5: Publishing** - Wire `kleros-curate` into the plugin catalog, bump version, tag
+- [x] **Phase 5: Publishing** - Wire `kleros-curate` into the plugin catalog, bump version, tag (completed 2026-05-27)
 
 ## Phase Details
 
@@ -130,7 +130,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02-PLAN.md — Update CHANGELOG.md comparison link, output tag commands for user, create GitHub release
+- [x] 05-02-PLAN.md — Update CHANGELOG.md comparison link, output tag commands for user, create GitHub release
 
 ## Progress
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Shared References | 6/6 | ✓ Complete | 2026-05-27 |
 | 3. Flavor References | 3/3 | ✓ Complete | 2026-05-27 |
 | 4. Triggering | 1/1 | Complete   | 2026-05-27 |
-| 5. Publishing | 1/2 | In Progress|  |
+| 5. Publishing | 2/2 | Complete   | 2026-05-27 |
 
 ## Backlog
 
