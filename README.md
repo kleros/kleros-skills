@@ -38,6 +38,7 @@ Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kle
 SKILL.md                    # Top-level entry point / router (also served as /llms.txt)
 index.html                  # Landing page (deployed on Netlify)
 kleros-ipfs-upload/         # Published skill — IPFS uploads via x402
+kleros-curate/              # Published skill — Curate token-curated registries (Light Curate, Stake Curate, Scout)
 openclaw-skill/             # OpenClaw-compatible skill package
 .claude-plugin/             # Claude Code plugin manifest
   plugin.json               # Plugin definition (version source of truth)

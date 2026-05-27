@@ -61,24 +61,23 @@ describe("index.html", () => {
   });
 
   describe("Dark purple color palette", () => {
-    it("should use a dark purple background color", () => {
+    it("should use a dark hero panel color (--dark CSS variable)", () => {
       html = fs.readFileSync(indexPath, "utf-8");
-      // Should have a dark purple-ish background (low lightness, purple hue)
+      // Hybrid design: --bg is light cream body, --dark is dark purple hero panel
       assert.match(
         html,
-        /--bg:\s*#[0-9a-fA-F]{6}/,
-        "Should have a --bg CSS variable"
+        /--dark:\s*#[0-9a-fA-F]{6}/,
+        "Should have a --dark CSS variable for the dark hero panel"
       );
-      // Extract the bg color and verify it's purple-ish
-      const bgMatch = html.match(/--bg:\s*#([0-9a-fA-F]{6})/);
-      assert.ok(bgMatch, "Should have --bg color");
-      const r = parseInt(bgMatch[1].slice(0, 2), 16);
-      const g = parseInt(bgMatch[1].slice(2, 4), 16);
-      const b = parseInt(bgMatch[1].slice(4, 6), 16);
-      // For dark purple: R and B should be higher than G, and values should be low (dark)
-      assert.ok(r < 80, `Red channel should be low for dark bg, got ${r}`);
-      assert.ok(g < 80, `Green channel should be low for dark bg, got ${g}`);
-      assert.ok(b < 80, `Blue channel should be low for dark bg, got ${b}`);
+      const darkMatch = html.match(/--dark:\s*#([0-9a-fA-F]{6})/);
+      assert.ok(darkMatch, "Should have --dark color");
+      const r = parseInt(darkMatch[1].slice(0, 2), 16);
+      const g = parseInt(darkMatch[1].slice(2, 4), 16);
+      const b = parseInt(darkMatch[1].slice(4, 6), 16);
+      // Dark purple hero: values should be low and purple-hued
+      assert.ok(r < 80, `Red channel should be low for dark hero, got ${r}`);
+      assert.ok(g < 80, `Green channel should be low for dark hero, got ${g}`);
+      assert.ok(b < 80, `Blue channel should be low for dark hero, got ${b}`);
       // Purple hue: blue >= red > green (approximately)
       assert.ok(
         b >= g,
@@ -135,7 +134,7 @@ describe("index.html", () => {
 
     it("should have a tagline", () => {
       html = fs.readFileSync(indexPath, "utf-8");
-      assert.match(html, /class="clarifier"/);
+      assert.match(html, /class="[^"]*clarifier[^"]*"/);
     });
   });
 });
