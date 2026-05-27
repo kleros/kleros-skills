@@ -1,356 +1,574 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kleros Skills — Kleros Knowledge for AI Agents</title>
-<meta name="description" content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
-<meta property="og:title" content="Kleros Skills">
-<meta property="og:description" content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
-<meta property="og:type" content="website">
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Kleros Skills">
-<meta name="twitter:description" content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
-<style>
-:root {
-  /* Dark Purple palette */
-  --bg: #0e0a1a;
-  --fg: #d4cde8;
-  --dim: #7a6f9a;
-  --accent: #b366ff;
-  --border: #1e1530;
-  --hover: #16102a;
-  --green: #b366ff;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kleros Skills — Kleros Knowledge for AI Agents</title>
+  <meta name="description"
+    content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
+  <meta property="og:title" content="Kleros Skills">
+  <meta property="og:description"
+    content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Kleros Skills">
+  <meta name="twitter:description"
+    content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
+  <style>
+    :root {
+      /* Dark Purple palette */
+      --bg: #0e0a1a;
+      --fg: #d4cde8;
+      --dim: #7a6f9a;
+      --accent: #b366ff;
+      --border: #1e1530;
+      --hover: #16102a;
+      --green: #b366ff;
+    }
 
-.ascii {
-  color: var(--accent);
-  font-size: 16px;
-  line-height: 1.15;
-  white-space: pre;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.5px;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-.tagline {
-  color: var(--fg);
-  font-size: 16px;
-  margin-bottom: 1.5rem;
-}
-.cursor {
-  display: inline-block;
-  width: 8px;
-  height: 1.1em;
-  background: var(--accent);
-  vertical-align: text-bottom;
-  animation: blink 1s step-end infinite;
-  margin-left: 2px;
-}
-@keyframes blink { 50% { opacity: 0; } }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
 
-.hero-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 15px;
-  padding: 0.5rem 1rem;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.15s;
-  margin-bottom: 2.5rem;
-}
-.hero-btn:hover { background: var(--hover); }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
 
-h2 {
-  color: var(--accent);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  margin: 2.5rem 0 1.25rem 0;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-  font-weight: 400;
-}
+    a:hover {
+      text-decoration: underline;
+    }
 
-.skill {
-  margin-bottom: 1.25rem;
-  padding: 0.6rem 0.85rem;
-  border-radius: 3px;
-  transition: background 0.1s;
-}
-.skill:hover { background: var(--hover); }
-.skill-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fg);
-}
-.skill-desc {
-  color: var(--dim);
-  font-size: 13px;
-  margin: 0.3rem 0 0.5rem 0;
-}
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--green);
-  font-family: inherit;
-  font-size: 12px;
-  padding: 0.3rem 0.6rem;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.copy-btn:hover {
-  border-color: var(--green);
-  background: rgba(179, 102, 255, 0.05);
-}
-.copy-btn.copied {
-  border-color: var(--green);
-  color: var(--green);
-}
-.copy-btn svg, .hero-btn svg {
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
-}
+    .ascii {
+      color: var(--accent);
+      font-size: 13px;
+      line-height: 1.15;
+      white-space: pre;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
 
-.section-text {
-  color: var(--dim);
-  font-size: 13px;
-}
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
 
-.clarifier {
-  color: var(--fg);
-  font-size: 14px;
-  margin-bottom: 1.25rem;
-  line-height: 1.6;
-}
+    .ico {
+      color: var(--accent);
+      white-space: pre;
+      font-family: inherit;
+      font-size: 4px;
+      line-height: 1.0;
+      flex-shrink: 0;
+      margin: 0;
+    }
 
-.command-line {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: var(--hover);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.6rem 1rem;
-  margin-bottom: 0.75rem;
-}
-.command-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--accent);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.command-line code {
-  flex: 1;
-  font-size: 13px;
-  color: var(--fg);
-  background: none;
-  border: none;
-  padding: 0;
-}
-.command-line .copy-btn {
-  flex-shrink: 0;
-}
+    @media (max-width: 800px) {
+      .hero {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
 
-.setup-list {
-  margin-top: 1rem;
-}
-.setup-row {
-  display: grid;
-  grid-template-columns: 100px 1fr 200px;
-  gap: 1rem;
-  padding: 1.25rem 0;
-  border-bottom: 1px solid var(--border);
-  align-items: start;
-}
-.setup-row:first-child { border-top: 1px solid var(--border); }
-.setup-tool {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent);
-  padding-top: 0.15rem;
-}
-.setup-artifact {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.setup-howto {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--accent);
-  font-weight: 600;
-}
-.setup-artifact code {
-  display: block;
-  font-size: 12px;
-  color: var(--fg);
-  background: var(--hover);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 0.5rem 0.75rem;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-.setup-artifact code.is-content {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.setup-note {
-  font-size: 12px;
-  color: var(--dim);
-  line-height: 1.5;
-}
+      .ico {
+        font-size: 3.5px;
+      }
 
-@media (max-width: 700px) {
-  .setup-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-  .setup-note { margin-top: 0.25rem; }
-  .command-line { flex-wrap: wrap; }
-}
+      .ascii {
+        font-size: 10px;
+      }
+    }
 
-.footer {
-  color: var(--dim);
-  font-size: 12px;
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-}
+    .tagline {
+      color: var(--fg);
+      font-size: 16px;
+      margin-bottom: 1.5rem;
+    }
 
-.draft-badge {
-  display: inline-block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--dim);
-  border: 1px solid var(--border);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  margin-left: 0.5rem;
-  vertical-align: middle;
-}
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1.1em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+    }
 
-/* Modal */
-.skill { cursor: pointer; }
-.modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  animation: fadeIn 0.2s ease;
-}
-.modal-backdrop.open { display: flex; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
 
-.modal-box {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  max-width: 960px;
-  width: 100%;
-  max-height: 85vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.25s ease;
-}
-@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 15px;
+      padding: 0.5rem 1rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 2.5rem;
+    }
 
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.modal-header-actions { display: flex; align-items: center; gap: 0.75rem; }
-.modal-title { color: var(--accent); font-size: 15px; font-weight: 600; }
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--dim);
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-  font-size: 20px;
-  transition: color 0.15s;
-}
-.modal-close:hover { color: var(--fg); }
+    .hero-btn:hover {
+      background: var(--hover);
+    }
 
-.modal-body {
-  padding: 1.25rem 1.5rem;
-  overflow-y: auto;
-  color: var(--fg);
-  font-size: 14px;
-  line-height: 1.65;
-}
-.modal-body h1, .modal-body h2, .modal-body h3 { color: var(--accent); margin: 1.25em 0 0.5em 0; font-weight: 600; }
-.modal-body h1 { font-size: 1.35em; }
-.modal-body h2 { font-size: 1.15em; }
-.modal-body h3 { font-size: 1.05em; }
-.modal-body p { margin: 0.75em 0; }
-.modal-body ul, .modal-body ol { margin: 0.75em 0; padding-left: 1.5em; }
-.modal-body li { margin: 0.35em 0; }
-.modal-body code { background: var(--hover); color: var(--accent); padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.92em; }
-.modal-body pre { background: var(--hover); border: 1px solid var(--border); border-radius: 3px; padding: 1rem; overflow-x: auto; margin: 1em 0; }
-.modal-body pre code { background: none; padding: 0; color: var(--fg); }
-.modal-body blockquote { border-left: 3px solid var(--accent); margin: 1em 0; padding-left: 1em; color: var(--dim); }
-.modal-body table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 13px; }
-.modal-body th, .modal-body td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
-.modal-body th { background: var(--hover); color: var(--accent); }
-.modal-body a { color: var(--accent); }
-.modal-body strong { color: var(--fg); font-weight: 600; }
+    h2 {
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin: 2.5rem 0 1.25rem 0;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+    }
 
-.modal-loading { color: var(--dim); }
-.modal-error { color: #c94a4a; }
-</style>
+    .skill {
+      margin-bottom: 1.25rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 3px;
+      transition: background 0.1s;
+    }
+
+    .skill:hover {
+      background: var(--hover);
+    }
+
+    .skill-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .skill-desc {
+      color: var(--dim);
+      font-size: 13px;
+      margin: 0.3rem 0 0.5rem 0;
+    }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 0.3rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--green);
+      background: rgba(179, 102, 255, 0.05);
+    }
+
+    .copy-btn.copied {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .copy-btn svg,
+    .hero-btn svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .section-text {
+      color: var(--dim);
+      font-size: 13px;
+    }
+
+    .clarifier {
+      color: var(--fg);
+      font-size: 14px;
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .command-line {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .command-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .command-line code {
+      flex: 1;
+      font-size: 13px;
+      color: var(--fg);
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .command-line .copy-btn {
+      flex-shrink: 0;
+    }
+
+    .setup-list {
+      margin-top: 1rem;
+    }
+
+    .setup-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "tool note"
+        "artifact artifact";
+      column-gap: 1.5rem;
+      row-gap: 1rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+      align-items: baseline;
+    }
+
+    .setup-row:first-child {
+      border-top: 1px solid var(--border);
+    }
+
+    .setup-tool {
+      grid-area: tool;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .setup-note {
+      grid-area: note;
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.5;
+      text-align: right;
+      max-width: 56ch;
+      font-style: italic;
+    }
+
+    .setup-artifact {
+      grid-area: artifact;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .setup-howto {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .setup-artifact code {
+      display: block;
+      font-size: 12px;
+      color: var(--fg);
+      background: var(--hover);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.5rem 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .setup-artifact code.is-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @media (max-width: 700px) {
+      .setup-row {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "tool"
+          "note"
+          "artifact";
+        row-gap: 0.5rem;
+      }
+
+      .setup-note {
+        text-align: left;
+        max-width: none;
+      }
+
+      .command-line {
+        flex-wrap: wrap;
+      }
+    }
+
+    .footer {
+      color: var(--dim);
+      font-size: 12px;
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .draft-badge {
+      display: inline-block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* Modal */
+    .skill {
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-width: 960px;
+      width: 100%;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .modal-title {
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 1;
+      font-size: 20px;
+      transition: color 0.15s;
+    }
+
+    .modal-close:hover {
+      color: var(--fg);
+    }
+
+    .modal-body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      color: var(--fg);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .modal-body h1,
+    .modal-body h2,
+    .modal-body h3 {
+      color: var(--accent);
+      margin: 1.25em 0 0.5em 0;
+      font-weight: 600;
+    }
+
+    .modal-body h1 {
+      font-size: 1.35em;
+    }
+
+    .modal-body h2 {
+      font-size: 1.15em;
+    }
+
+    .modal-body h3 {
+      font-size: 1.05em;
+    }
+
+    .modal-body p {
+      margin: 0.75em 0;
+    }
+
+    .modal-body ul,
+    .modal-body ol {
+      margin: 0.75em 0;
+      padding-left: 1.5em;
+    }
+
+    .modal-body li {
+      margin: 0.35em 0;
+    }
+
+    .modal-body code {
+      background: var(--hover);
+      color: var(--accent);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      font-size: 0.92em;
+    }
+
+    .modal-body pre {
+      background: var(--hover);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+
+    .modal-body pre code {
+      background: none;
+      padding: 0;
+      color: var(--fg);
+    }
+
+    .modal-body blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 1em 0;
+      padding-left: 1em;
+      color: var(--dim);
+    }
+
+    .modal-body table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 13px;
+    }
+
+    .modal-body th,
+    .modal-body td {
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+    }
+
+    .modal-body th {
+      background: var(--hover);
+      color: var(--accent);
+    }
+
+    .modal-body a {
+      color: var(--accent);
+    }
+
+    .modal-body strong {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
+    .modal-loading {
+      color: var(--dim);
+    }
+
+    .modal-error {
+      color: #c94a4a;
+    }
+  </style>
 </head>
+
 <body>
 
-<!--
+  <!--
   Kleros Skills — Kleros Knowledge for AI Agents
   Adapted from ethskills (https://github.com/austintgriffith/ethskills)
 
@@ -358,6 +576,36 @@ h2 {
   Fetch any URL and read it into your context.
 -->
 
+<div class="hero">
+<pre class="ico">                     ▄██████▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▖
+                   ▗▟████████████▄▄              ▀▜████
+                  ▄█████  ▝▀▀████████▙▄▖         ▗█████▙
+                ▗▛▘████▌       ▝▀▜████████▄▄    ▗████▛ ▜▙
+               ▟▀ ▗████▘            ▀▀████████▙▄████▛   ▜▙
+             ▄▛▘  ▟███▛                 ▝▀▜████████▛     ▜▙
+           ▗▟▀   ▗████▘                ▄▄▟██████████▄    ▝█▌
+          ▄▛▘    ▟███▛            ▄▄▟██████████████████▄   ▝█▖
+        ▗█▘     ▗████▘       ▄▄▟████████████▛▀████▀▜████▄  ▝█▖
+       ▟▛       ▟████   ▄▄▟████████████▛▀▀   ▐████  ▝▜████▄ ▝█▖
+     ▗█▘       ▗████▙▟█████████████▀▀▘       ▐███▛    ▝▜████▄▝█▖
+   ▗▟█▙▄▄▄     ▐██████████████▛▀▀            ████▌      ▝▜█████▙
+    ██████████████████████▀▀▘                ████▘        ▝▜████▙
+    ▝▙   ▝▀▀▀▀█████████▀                    ▐████           ▝▜███▙
+     ▝▙       ▐█████████▄                   ▐███▌             ▀███▙
+      ▐▙      ▐███████████▙▖                ████▌              ▗███▘
+       ▜▖     ▐███ ▀█████████▄▖            ▗████            ▗▄███▛
+        ▜▖    ▐███   ▝▀████████▙▄          ▐████          ▄▟████▀
+         █▖   ▐███      ▝▀████████▄▖       ▟███▌       ▗▟██████▘
+         ▝█   ▐███         ▀▜███████▙▄     ████▌    ▗▄████▛▘▟▛
+          ▝▙   ███▌           ▀▜███████▙▖ ▗████   ▄▟███▛▀ ▗▟▘
+           ▐▙  ███▌             ▝▀████████▟████▗▟████▀▘  ▄▛▘
+            ▜▌ ███▌                ▝▀█████████████▛▘    ▟▛
+             ▜▖███▌                 ▄▄█████████▛▀     ▗█▘
+              ████▌         ▗▄▄▄▟█████████████▙      ▟▛
+              ▝███▌  ▄▄▄▟███████████▛▀▀▀▘  ▝███▙   ▗▟▀
+               ▝█████████████▀▀▀▀           ▝███▙ ▄█▘
+                ▝▀▀▜███████▄▄▄▄▄▄▄▄▄▄▄▄▖     ▝████▛
+                                   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▘</pre>
 <div class="ascii">
  ██╗  ██╗██╗     ███████╗██████╗  ██████╗ ███████╗   ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
  ██║ ██╔╝██║     ██╔════╝██╔══██╗██╔═══██╗██╔════╝   ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
@@ -366,296 +614,326 @@ h2 {
  ██║  ██╗███████╗███████╗██║  ██║╚██████╔╝███████║   ███████║██║  ██╗██║███████╗███████╗███████║
  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
 </div>
-
-<p class="clarifier">The missing knowledge between AI agents and Kleros, the decentralized justice protocol. Works in Claude, ChatGPT, Cursor, or any agent.</p>
-
-<div class="command-line">
-  <span class="command-label">Prompt</span>
-  <code>Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
-  <button class="copy-btn" data-url="Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy prompt</button>
 </div>
 
-<p class="section-text">Per session. To install once in Claude Code, Cursor, or Codex, see <a href="#persistent-setup">Persistent Setup</a> below.</p>
+  <p class="clarifier">The missing knowledge between AI agents and Kleros, the decentralized justice protocol. Works in
+    Claude, ChatGPT, Cursor, or any agent.</p>
 
-<h2>Skills</h2>
-
-<div class="skill" style="margin-top:1rem;">
-  <div class="skill-name">Kleros IPFS Upload</div>
-  <div class="skill-desc">Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet). For dispute evidence, meta-evidence, court policies, Curate item metadata, and juror justifications.</div>
-  <button class="copy-btn" data-url="kleros-ipfs-upload/SKILL.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> kleros-ipfs-upload/SKILL.md</button>
-</div>
-
-<h2>Coming Soon</h2>
-
-<div class="skill" style="margin-top:1rem; opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Light<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Operate Kleros Curate Light lists (LightGeneralizedTCR) &mdash; submit items, remove items, challenge requests, submit evidence, fund appeals, and create new lists.</div>
-</div>
-
-<div class="skill" style="opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Stake (PGTCR)<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Operate Kleros PGTCR / Stake Curate (PermanentGTCR) lists &mdash; GraphQL-based querying, item submission with ERC20 stake, challenges, appeals, and list deployment.</div>
-</div>
-
-<div class="skill" style="opacity: 0.6; cursor: default;">
-  <div class="skill-name">Curate Scout<span class="draft-badge">draft</span></div>
-  <div class="skill-desc">Runtime guide for Scout registries on Gnosis &mdash; automated monitoring and operations for Kleros Curate token-curated registries.</div>
-</div>
-
-<h2 id="persistent-setup">Persistent Setup</h2>
-<p class="section-text">Optional. If you'd rather not paste the prompt above every session, configure your tool once below.</p>
-
-<div class="setup-list">
-  <div class="setup-row">
-    <span class="setup-tool">Codex</span>
-    <div class="setup-artifact">
-      <span class="setup-howto">1. Create this file in your repo root</span>
-      <code>AGENTS.md</code>
-      <span class="setup-howto">2. Paste this inside the file</span>
-      <code class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
-    </div>
-    <span class="setup-note">Pointer (per repo). Codex fetches Kleros Skills on each task.</span>
+  <div class="command-line">
+    <span class="command-label">Prompt</span>
+    <code>Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+    <button class="copy-btn"
+      data-url="Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol."><svg
+        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+      </svg> Copy prompt</button>
   </div>
-  <div class="setup-row">
-    <span class="setup-tool">Cursor</span>
-    <div class="setup-artifact">
-      <span class="setup-howto">1. Create this Cursor rule file</span>
-      <code>.cursor/rules/kleros-skills.mdc</code>
-      <span class="setup-howto">2. Paste this inside the file</span>
-      <code class="is-content">---
+
+  <p class="section-text">Per session. To install once in Claude Code, Cursor, or Codex, see <a
+      href="#persistent-setup">Persistent Setup</a> below.</p>
+
+  <h2>Skills</h2>
+
+  <div class="skill" style="margin-top:1rem;">
+    <div class="skill-name">Kleros IPFS Upload</div>
+    <div class="skill-desc">Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet).
+      For dispute evidence, meta-evidence, court policies, Curate item metadata, and juror justifications.</div>
+    <button class="copy-btn" data-url="kleros-ipfs-upload/SKILL.md"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+      </svg> kleros-ipfs-upload/SKILL.md</button>
+  </div>
+
+  <h2>Coming Soon</h2>
+
+  <div class="skill" style="margin-top:1rem; opacity: 0.6; cursor: default;">
+    <div class="skill-name">Curate Light<span class="draft-badge">draft</span></div>
+    <div class="skill-desc">Operate Kleros Curate Light lists (LightGeneralizedTCR) &mdash; submit items, remove items,
+      challenge requests, submit evidence, fund appeals, and create new lists.</div>
+  </div>
+
+  <div class="skill" style="opacity: 0.6; cursor: default;">
+    <div class="skill-name">Curate Stake (PGTCR)<span class="draft-badge">draft</span></div>
+    <div class="skill-desc">Operate Kleros PGTCR / Stake Curate (PermanentGTCR) lists &mdash; GraphQL-based querying,
+      item submission with ERC20 stake, challenges, appeals, and list deployment.</div>
+  </div>
+
+  <div class="skill" style="opacity: 0.6; cursor: default;">
+    <div class="skill-name">Curate Scout<span class="draft-badge">draft</span></div>
+    <div class="skill-desc">Runtime guide for Scout registries on Gnosis &mdash; automated monitoring and operations for
+      Kleros Curate token-curated registries.</div>
+  </div>
+
+  <h2 id="persistent-setup">Persistent Setup</h2>
+  <p class="section-text">Optional. If you'd rather not paste the prompt above every session, configure your tool once
+    below.</p>
+
+  <div class="setup-list">
+    <div class="setup-row">
+      <span class="setup-tool">Codex</span>
+      <div class="setup-artifact">
+        <span class="setup-howto">1. Create this file in your repo root</span>
+        <code>AGENTS.md</code>
+        <span class="setup-howto">2. Paste this inside the file</span>
+        <code
+          class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+      </div>
+      <span class="setup-note">Pointer (per repo)
+        <br />Codex fetches Kleros Skills on each task</span>
+    </div>
+    <div class="setup-row">
+      <span class="setup-tool">Cursor</span>
+      <div class="setup-artifact">
+        <span class="setup-howto">1. Create this Cursor rule file</span>
+        <code>.cursor/rules/kleros-skills.mdc</code>
+        <span class="setup-howto">2. Paste this inside the file</span>
+        <code
+          class="is-content">---
 description: Kleros knowledge pack for decentralized justice
 alwaysApply: true
 ---
 
 Before interacting with Kleros protocol, uploading evidence, or working with Curate registries, read https://skills.kleros.io/SKILL.md and follow it.</code>
-    </div>
-    <span class="setup-note">Pointer (per repo). Cursor fetches when the rule fires.</span>
-  </div>
-  <div class="setup-row">
-    <span class="setup-tool">Claude Code</span>
-    <div class="setup-artifact">
-      <span class="setup-howto">1. Add the marketplace catalog</span>
-      <code>/plugin marketplace add kleros/kleros-skills</code>
-      <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
-      <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
-    </div>
-    <span class="setup-note">Install (user-wide). Plugin reads from disk, granular skill loading.</span>
-  </div>
-  <div class="setup-row">
-    <span class="setup-tool">OpenClaw</span>
-    <div class="setup-artifact">
-      <span class="setup-howto">Run in your terminal</span>
-      <code>clawhub install kleros-skills</code>
-    </div>
-    <span class="setup-note">Install (per project). Cloned into ./skills/.</span>
-  </div>
-  <div class="setup-row">
-    <span class="setup-tool">Scripts</span>
-    <div class="setup-artifact">
-      <span class="setup-howto">Run in your shell</span>
-      <code>curl -s https://skills.kleros.io/SKILL.md</code>
-    </div>
-    <span class="setup-note">Fetch + bake (per script). Embed in pipelines or system prompts.</span>
-  </div>
-</div>
-
-<h2>Contributing</h2>
-<p class="section-text">Something wrong or missing? Humans and agents alike are welcome to <a href="https://github.com/kleros/kleros-skills">open a PR</a>.</p>
-
-<div class="footer">MIT License &middot; <a href="https://kleros.io">Kleros</a> &middot; <a href="https://github.com/kleros/kleros-skills">GitHub</a></div>
-
-<div id="modal" class="modal-backdrop" aria-hidden="true">
-  <div class="modal-box" role="dialog" aria-modal="true">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-title">Skill</span>
-      <div class="modal-header-actions">
-        <button type="button" class="copy-btn" id="modal-copy-btn" data-url="" title="Copy skill URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> <span id="modal-copy-label"></span></button>
-        <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
       </div>
+      <span class="setup-note">Pointer (per repo)
+        <br />Cursor fetches when the rule fires</span>
     </div>
-    <div class="modal-body" id="modal-body"></div>
+    <div class="setup-row">
+      <span class="setup-tool">Claude Code</span>
+      <div class="setup-artifact">
+        <span class="setup-howto">1. Add the marketplace catalog</span>
+        <code>/plugin marketplace add kleros/kleros-skills</code>
+        <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
+        <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
+      </div>
+      <span class="setup-note">Install (user-wide)
+        <br />Plugin reads from disk, granular skill loading</span>
+    </div>
+    <div class="setup-row">
+      <span class="setup-tool">OpenClaw</span>
+      <div class="setup-artifact">
+        <span class="setup-howto">Run in your terminal</span>
+        <code>clawhub install kleros-skills</code>
+      </div>
+      <span class="setup-note">Install (per project), cloned into ./skills/</span>
+    </div>
+    <div class="setup-row">
+      <span class="setup-tool">Scripts</span>
+      <div class="setup-artifact">
+        <span class="setup-howto">Run in your shell</span>
+        <code>curl -s https://skills.kleros.io/SKILL.md</code>
+      </div>
+      <span class="setup-note">Fetch + bake (per script)
+        <br />Embed in pipelines or system prompts</span>
+    </div>
   </div>
-</div>
 
-<script>
-// Minimal markdown to HTML (no external deps). Escapes HTML in text.
-function renderMarkdown(md) {
-  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const inline = s => esc(s)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  let raw = md.replace(/\r\n?/g, '\n');
-  if (raw.startsWith('---\n')) {
-    const end = raw.indexOf('\n---', 4);
-    if (end !== -1) raw = raw.slice(end + 4).replace(/^\n+/, '');
-  }
-  let out = '';
-  const lines = raw.split('\n');
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmed = line.trimStart();
-    if (/^```(\w*)\s*$/.test(trimmed)) {
-      let block = '';
-      for (i++; i < lines.length && !/^\s*```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
-      i++;
-      out += '<pre><code>' + block + '</code></pre>';
-      continue;
-    }
-    if (/^(#{1,3})\s+(.+)$/.test(line)) {
-      const l = RegExp.$1.length;
-      out += '<h' + l + '>' + inline(RegExp.$2) + '</h' + l + '>';
-      i++;
-      continue;
-    }
-    if (/^\s*\|.+\|\s*$/.test(line)) {
-      const rows = [];
-      while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) {
-        const stripped = lines[i].trim();
-        if (!/^\|[-:\s|]+\|$/.test(stripped)) {
-          rows.push(stripped.split('|').slice(1, -1).map(c => c.trim()));
-        }
-        i++;
+  <h2>Contributing</h2>
+  <p class="section-text">Something wrong or missing? Humans and agents alike are welcome to <a
+      href="https://github.com/kleros/kleros-skills">open a PR</a>.</p>
+
+  <div class="footer">MIT License &middot; <a href="https://kleros.io">Kleros</a> &middot; <a
+      href="https://github.com/kleros/kleros-skills">GitHub</a></div>
+
+  <div id="modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">Skill</span>
+        <div class="modal-header-actions">
+          <button type="button" class="copy-btn" id="modal-copy-btn" data-url="" title="Copy skill URL"><svg
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg> <span id="modal-copy-label"></span></button>
+          <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // Minimal markdown to HTML (no external deps). Escapes HTML in text.
+    function renderMarkdown(md) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const inline = s => esc(s)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      let raw = md.replace(/\r\n?/g, '\n');
+      if (raw.startsWith('---\n')) {
+        const end = raw.indexOf('\n---', 4);
+        if (end !== -1) raw = raw.slice(end + 4).replace(/^\n+/, '');
       }
-      if (rows.length) {
-        out += '<table><thead><tr>';
-        rows[0].forEach(c => { out += '<th>' + inline(c) + '</th>'; });
-        out += '</tr></thead><tbody>';
-        for (let r = 1; r < rows.length; r++) {
-          out += '<tr>';
-          rows[r].forEach(c => { out += '<td>' + inline(c) + '</td>'; });
-          out += '</tr>';
-        }
-        out += '</tbody></table>';
-      }
-      continue;
-    }
-    if (/^>\s?(.*)$/.test(line)) {
-      let block = inline(RegExp.$1);
-      for (i++; i < lines.length && /^>\s?(.*)$/.test(lines[i]); i++) block += '\n' + inline(RegExp.$1);
-      out += '<blockquote>' + block.replace(/\n/g, '<br>') + '</blockquote>';
-      continue;
-    }
-    if (/^\s*[-*]\s+(.+)$/.test(line)) {
-      out += '<ul>';
-      while (i < lines.length && /^\s*[-*]\s+(.+)$/.test(lines[i])) {
-        /^\s*[-*]\s+(.+)$/.test(lines[i]);
-        let li = inline(RegExp.$1);
-        i++;
-        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
-          li += ' ' + inline(lines[i].trim());
+      let out = '';
+      const lines = raw.split('\n');
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i];
+        const trimmed = line.trimStart();
+        if (/^```(\w*)\s*$/.test(trimmed)) {
+          let block = '';
+          for (i++; i < lines.length && !/^\s*```\s*$/.test(lines[i]); i++) block += esc(lines[i]) + '\n';
           i++;
+          out += '<pre><code>' + block + '</code></pre>';
+          continue;
         }
-        out += '<li>' + li + '</li>';
-      }
-      out += '</ul>';
-      continue;
-    }
-    if (/^\s*\d+\.\s+(.+)$/.test(line)) {
-      out += '<ol>';
-      while (i < lines.length && /^\s*\d+\.\s+(.+)$/.test(lines[i])) {
-        /^\s*\d+\.\s+(.+)$/.test(lines[i]);
-        let li = inline(RegExp.$1);
-        i++;
-        while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
-          li += ' ' + inline(lines[i].trim());
+        if (/^(#{1,3})\s+(.+)$/.test(line)) {
+          const l = RegExp.$1.length;
+          out += '<h' + l + '>' + inline(RegExp.$2) + '</h' + l + '>';
           i++;
+          continue;
         }
-        out += '<li>' + li + '</li>';
+        if (/^\s*\|.+\|\s*$/.test(line)) {
+          const rows = [];
+          while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) {
+            const stripped = lines[i].trim();
+            if (!/^\|[-:\s|]+\|$/.test(stripped)) {
+              rows.push(stripped.split('|').slice(1, -1).map(c => c.trim()));
+            }
+            i++;
+          }
+          if (rows.length) {
+            out += '<table><thead><tr>';
+            rows[0].forEach(c => { out += '<th>' + inline(c) + '</th>'; });
+            out += '</tr></thead><tbody>';
+            for (let r = 1; r < rows.length; r++) {
+              out += '<tr>';
+              rows[r].forEach(c => { out += '<td>' + inline(c) + '</td>'; });
+              out += '</tr>';
+            }
+            out += '</tbody></table>';
+          }
+          continue;
+        }
+        if (/^>\s?(.*)$/.test(line)) {
+          let block = inline(RegExp.$1);
+          for (i++; i < lines.length && /^>\s?(.*)$/.test(lines[i]); i++) block += '\n' + inline(RegExp.$1);
+          out += '<blockquote>' + block.replace(/\n/g, '<br>') + '</blockquote>';
+          continue;
+        }
+        if (/^\s*[-*]\s+(.+)$/.test(line)) {
+          out += '<ul>';
+          while (i < lines.length && /^\s*[-*]\s+(.+)$/.test(lines[i])) {
+            /^\s*[-*]\s+(.+)$/.test(lines[i]);
+            let li = inline(RegExp.$1);
+            i++;
+            while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+              li += ' ' + inline(lines[i].trim());
+              i++;
+            }
+            out += '<li>' + li + '</li>';
+          }
+          out += '</ul>';
+          continue;
+        }
+        if (/^\s*\d+\.\s+(.+)$/.test(line)) {
+          out += '<ol>';
+          while (i < lines.length && /^\s*\d+\.\s+(.+)$/.test(lines[i])) {
+            /^\s*\d+\.\s+(.+)$/.test(lines[i]);
+            let li = inline(RegExp.$1);
+            i++;
+            while (i < lines.length && /^\s{2,}/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) && !/^\s*\d+\.\s/.test(lines[i]) && lines[i].trim() !== '' && !/^\s*\|/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+              li += ' ' + inline(lines[i].trim());
+              i++;
+            }
+            out += '<li>' + li + '</li>';
+          }
+          out += '</ol>';
+          continue;
+        }
+        if (line.trim() === '') {
+          i++;
+          continue;
+        }
+        out += '<p>' + inline(line) + '</p>';
+        i++;
       }
-      out += '</ol>';
-      continue;
+      return out;
     }
-    if (line.trim() === '') {
-      i++;
-      continue;
-    }
-    out += '<p>' + inline(line) + '</p>';
-    i++;
-  }
-  return out;
-}
 
-// Copy URL on copy button click (stop propagation so card click doesn't fire)
-document.querySelectorAll('.copy-btn[data-url]').forEach(btn => {
-  btn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    const url = btn.dataset.url;
-    if (!url) return;
-    try { await navigator.clipboard.writeText(url); } catch(err) {
-      const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
-    }
-    const orig = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
-  });
-});
-
-// Modal: open on card click, fetch skill and render markdown
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modal-title');
-const modalBody = document.getElementById('modal-body');
-const modalClose = document.getElementById('modal-close');
-const modalCopyBtn = document.getElementById('modal-copy-btn');
-const modalCopyLabel = document.getElementById('modal-copy-label');
-
-function openModal(title, path, skillUrl) {
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  modalTitle.textContent = title;
-  modalCopyBtn.dataset.url = skillUrl;
-  modalCopyLabel.textContent = skillUrl;
-  modalBody.innerHTML = '<p class="modal-loading">Loading...</p>';
-  modalBody.classList.remove('modal-error');
-
-  fetch(path)
-    .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
-    .then(text => { modalBody.innerHTML = renderMarkdown(text); })
-    .catch(err => {
-      modalBody.classList.add('modal-error');
-      modalBody.innerHTML = '<p>Could not load skill: ' + ('' + err.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '.</p>';
+    // Copy URL on copy button click (stop propagation so card click doesn't fire)
+    document.querySelectorAll('.copy-btn[data-url]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        if (!url) return;
+        try { await navigator.clipboard.writeText(url); } catch (err) {
+          const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+        }
+        const orig = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+      });
     });
-}
 
-function closeModal() {
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-}
+    // Modal: open on card click, fetch skill and render markdown
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalClose = document.getElementById('modal-close');
+    const modalCopyBtn = document.getElementById('modal-copy-btn');
+    const modalCopyLabel = document.getElementById('modal-copy-label');
 
-document.querySelectorAll('.skill[style*="cursor: default"]').forEach(card => {
-  card.style.pointerEvents = 'auto';
-});
+    function openModal(title, path, skillUrl) {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      modalTitle.textContent = title;
+      modalCopyBtn.dataset.url = skillUrl;
+      modalCopyLabel.textContent = skillUrl;
+      modalBody.innerHTML = '<p class="modal-loading">Loading...</p>';
+      modalBody.classList.remove('modal-error');
 
-document.querySelectorAll('.skill:not([style*="cursor: default"])').forEach(card => {
-  const copyBtn = card.querySelector('.copy-btn[data-url]');
-  const title = card.querySelector('.skill-name');
-  if (!copyBtn || !title) return;
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('.copy-btn')) return;
-    const skillUrl = copyBtn.dataset.url;
-    openModal(title.textContent, skillUrl, skillUrl);
-  });
-});
+      fetch(path)
+        .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
+        .then(text => { modalBody.innerHTML = renderMarkdown(text); })
+        .catch(err => {
+          modalBody.classList.add('modal-error');
+          modalBody.innerHTML = '<p>Could not load skill: ' + ('' + err.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '.</p>';
+        });
+    }
 
-modalCopyBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const url = modalCopyBtn.dataset.url;
-  if (!url) return;
-  try { await navigator.clipboard.writeText(url); } catch(err) {
-    const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
-  }
-  const orig = modalCopyBtn.innerHTML;
-  modalCopyBtn.classList.add('copied');
-  modalCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-  setTimeout(() => { modalCopyBtn.innerHTML = orig; modalCopyBtn.classList.remove('copied'); }, 1500);
-});
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
 
-modalClose.addEventListener('click', closeModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-</script>
+    document.querySelectorAll('.skill[style*="cursor: default"]').forEach(card => {
+      card.style.pointerEvents = 'auto';
+    });
+
+    document.querySelectorAll('.skill:not([style*="cursor: default"])').forEach(card => {
+      const copyBtn = card.querySelector('.copy-btn[data-url]');
+      const title = card.querySelector('.skill-name');
+      if (!copyBtn || !title) return;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.copy-btn')) return;
+        const skillUrl = copyBtn.dataset.url;
+        openModal(title.textContent, skillUrl, skillUrl);
+      });
+    });
+
+    modalCopyBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const url = modalCopyBtn.dataset.url;
+      if (!url) return;
+      try { await navigator.clipboard.writeText(url); } catch (err) {
+        const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+      }
+      const orig = modalCopyBtn.innerHTML;
+      modalCopyBtn.classList.add('copied');
+      modalCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      setTimeout(() => { modalCopyBtn.innerHTML = orig; modalCopyBtn.classList.remove('copied'); }, 1500);
+    });
+
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  </script>
 </body>
+
 </html>
