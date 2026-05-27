@@ -104,7 +104,10 @@ Plans:
   2. Description includes all required positive triggers: Curate, Light Curate, LGTCR, PGTCR, Stake Curate, PermanentGTCR, Scout, registry, token list, address tags, CDN
   3. Description explicitly excludes generic IPFS uploads (handled by `kleros-ipfs-upload`) and non-Kleros registries
 
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+
+- [ ] 04-01-PLAN.md — Rewrite kleros-curate/SKILL.md YAML description with three-pass aggressive trigger style (1,300–1,536 chars)
 
 ### Phase 5: Publishing
 
@@ -130,7 +133,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Architecture | 3/3 | ✓ Complete | 2026-05-26 |
 | 2. Shared References | 6/6 | ✓ Complete | 2026-05-27 |
 | 3. Flavor References | 3/3 | ✓ Complete | 2026-05-27 |
-| 4. Triggering | 0/? | Not started | - |
+| 4. Triggering | 0/1 | Not started | - |
 | 5. Publishing | 0/? | Not started | - |
 
 ## Backlog
