@@ -126,7 +126,7 @@ Plans:
 
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Full surface audit + fix README.md project structure tree + run npm test + update-digests + commit clean pre-tag state
+- [x] 05-01-PLAN.md — Full surface audit + fix README.md project structure tree + run npm test + update-digests + commit clean pre-tag state
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Shared References | 6/6 | ✓ Complete | 2026-05-27 |
 | 3. Flavor References | 3/3 | ✓ Complete | 2026-05-27 |
 | 4. Triggering | 1/1 | Complete   | 2026-05-27 |
-| 5. Publishing | 0/2 | Not started | - |
+| 5. Publishing | 1/2 | In Progress|  |
 
 ## Backlog
 

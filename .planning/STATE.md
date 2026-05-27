@@ -4,31 +4,31 @@ milestone: v1.0
 milestone_name: Unified Curate Skill
 status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-05-27T04:56:27.015Z"
-last_activity: 2026-05-27 -- Phase 05 planning complete
+last_updated: "2026-05-27T05:14:58.468Z"
+last_activity: 2026-05-27
 progress:
   total_phases: 13
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
   percent: 31
 ---
 
 ## Current Position
 
-Phase: 04 (triggering) — EXECUTING
-Plan: 1 of 1
+Phase: 05 (publishing) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 05 planning complete
+Last activity: 2026-05-27
 
-Progress: [███░░░░░░░] 27%
+Progress: [█████████░] 93%
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** AI agents can safely and correctly interact with any Kleros Curate registry
-**Current focus:** Phase 04 — triggering
+**Current focus:** Phase 05 — publishing
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 |-------|-------|-------|----------|
 | 1 | 3/3 | ~15 min | ~10 min |
 | 02 | 6 | - | - |
+| Phase 05-publishing P01 | 15min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -51,6 +52,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 - Research phase: Single skill + references/ architecture selected over three separate skills (context not shared between skills, users don't know which flavor they need)
 - Research phase: Domain-organization pattern (references/) validated as official Anthropic pattern
+- [Phase ?]: align tests with restyle
 
 ### Blockers
 
@@ -71,6 +73,6 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 ## Session Continuity
 
-Last session: 2026-05-27T04:45:17.577Z
+Last session: 2026-05-27T05:14:58.460Z
 Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/KS-05-publishing/05-CONTEXT.md
+Resume file: None

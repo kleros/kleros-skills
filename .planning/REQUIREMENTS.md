@@ -44,9 +44,9 @@ Requirements for the unified Curate skill. Each maps to roadmap phases.
 
 ### Publishing
 
-- [ ] **PUB-01**: `kleros-curate` directory added to `plugin.json` skills array
-- [ ] **PUB-02**: Plugin entry added to `marketplace.json` catalog
-- [ ] **PUB-03**: `plugin.json` version bumped, CHANGELOG.md updated
+- [x] **PUB-01**: `kleros-curate` directory added to `plugin.json` skills array
+- [x] **PUB-02**: Plugin entry added to `marketplace.json` catalog
+- [x] **PUB-03**: `plugin.json` version bumped, CHANGELOG.md updated
 - [ ] **PUB-04**: Git tag `kleros-curate@v1.0.0`
 
 ## Future Requirements
@@ -96,9 +96,9 @@ Requirements for the unified Curate skill. Each maps to roadmap phases.
 | TRIG-01 | Phase 4 | Pending |
 | TRIG-02 | Phase 4 | Pending |
 | TRIG-03 | Phase 4 | Pending |
-| PUB-01 | Phase 5 | Pending |
-| PUB-02 | Phase 5 | Pending |
-| PUB-03 | Phase 5 | Pending |
+| PUB-01 | Phase 5 | Complete |
+| PUB-02 | Phase 5 | Complete |
+| PUB-03 | Phase 5 | Complete |
 | PUB-04 | Phase 5 | Pending |
 
 **Coverage:**
