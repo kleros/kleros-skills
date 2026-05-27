@@ -20,7 +20,7 @@
       "type": "skill-md",
       "description": "Operate Kleros Curate token-curated registries — submit, challenge, appeal, deploy (Light Curate, Stake Curate, Scout)",
       "url": "https://skills.kleros.io/kleros-curate/SKILL.md",
-      "digest": "sha256:cc333a88d2a7a1df5e22410e649691a77da27f95ff85121f1d819460db30aee2"
+      "digest": "sha256:240b6eb8e78e3644977c1515144540926e05901042e403855d17b3446c978f5d"
     },
     {
       "name": "openclaw-skill",
