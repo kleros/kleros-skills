@@ -124,7 +124,12 @@ Plans:
 **Plans**: 2 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 05-01-PLAN.md — Full surface audit + fix README.md project structure tree + run npm test + update-digests + commit clean pre-tag state
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-02-PLAN.md — Update CHANGELOG.md comparison link, output tag commands for user, create GitHub release
 
 ## Progress
