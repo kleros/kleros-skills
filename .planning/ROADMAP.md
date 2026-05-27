@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Architecture** - Define the `kleros-curate/` skeleton, SKILL.md structure, and routing decision tree
 - [ ] **Phase 2: Shared References** - Extract and write all shared content into `references/` files, applying writing quality standards
 - [ ] **Phase 3: Flavor References** - Write flavor-specific reference files for LGTCR, PGTCR, and Scout
-- [ ] **Phase 4: Triggering** - Finalize the YAML description and triggering strategy
+- [x] **Phase 4: Triggering** - Finalize the YAML description and triggering strategy (completed 2026-05-27)
 - [ ] **Phase 5: Publishing** - Wire `kleros-curate` into the plugin catalog, bump version, tag
 
 ## Phase Details
@@ -107,7 +107,7 @@ Plans:
 **Plans**: 1 plan
 Plans:
 
-- [ ] 04-01-PLAN.md — Rewrite kleros-curate/SKILL.md YAML description with three-pass aggressive trigger style (1,300–1,536 chars)
+- [x] 04-01-PLAN.md — Rewrite kleros-curate/SKILL.md YAML description with three-pass aggressive trigger style (1,300–1,536 chars)
 
 ### Phase 5: Publishing
 
@@ -133,7 +133,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Architecture | 3/3 | ✓ Complete | 2026-05-26 |
 | 2. Shared References | 6/6 | ✓ Complete | 2026-05-27 |
 | 3. Flavor References | 3/3 | ✓ Complete | 2026-05-27 |
-| 4. Triggering | 0/1 | Not started | - |
+| 4. Triggering | 1/1 | Complete   | 2026-05-27 |
 | 5. Publishing | 0/? | Not started | - |
 
 ## Backlog
