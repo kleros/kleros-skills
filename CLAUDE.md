@@ -6,8 +6,7 @@ Work style: telegraph; noun-phrases ok; drop filler/grammar; min tokens
 
 Claude Code plugin marketplace containing skills for the Kleros ecosystem. Each skill is a standalone markdown file (`SKILL.md`) inside its own directory, teaching AI agents how to interact with Kleros protocol components.
 
-Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet).
-Drafts: `curate-v1/` (Light Curate, Stake Curate), `curate-v1-scout/` (Scout registries). Not yet registered as plugins.
+Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet), `kleros-curate` (Curate registries — Light Curate, Stake Curate, Scout).
 
 ## Commands
 
@@ -46,7 +45,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
   marketplace.json    # catalog index — no version on individual plugin entries
 ```
 
-**Naming rule:** each plugin `name` in `plugin.json` must match its skill directory name exactly.
+**Naming rule:** the plugin `name` in `plugin.json` is `kleros-skills` (multi-skill plugin). Each skill directory listed in `skills[]` must exist.
 
 **Versioning:** `plugin.json` is the single source of truth for plugin version. `marketplace.json` `metadata.version` tracks catalog-level changes. `CHANGELOG.md` at repo root tracks all changes (Keep a Changelog format).
 
