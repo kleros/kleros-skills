@@ -106,6 +106,26 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 **Scout registry addresses + seed templates** → `references/scout-registries.md`
   grep: `grep -n "0x\|ATQ\|Address Tags\|Tokens\|CDN" references/scout-registries.md`
 
+## Common workflows
+
+**Submit an item (any flavor):**
+1. `references/shared-metaevidence.md` — fetch schema (columns) and policy URI
+2. `references/shared-item-json.md` — build the item.json payload
+3. `references/shared-ipfs-upload.md` — upload item.json to IPFS, get CID
+4. `references/shared-deposits.md` — compute exact msg.value
+5. Flavor reference (`light-curate.md` or `stake-curate.md`) — send the addItem transaction
+
+**Challenge or remove an item:**
+1. `references/shared-metaevidence.md` — fetch the applicable policy (clearing policy for removal; registration policy for challenge)
+2. `references/shared-ipfs-upload.md` — upload evidence JSON to IPFS
+3. `references/shared-deposits.md` — compute the challenge deposit
+4. Flavor reference — send the challenge or removeItem transaction
+
+**Deploy a new registry:**
+1. `references/shared-metaevidence.md` — prepare MetaEvidence JSON (policy URI + column schema)
+2. `references/shared-ipfs-upload.md` — upload MetaEvidence JSON to IPFS
+3. Flavor reference — call the factory deploy function
+
 ## Reference files
 
 These 8 files are loaded on demand — only when needed for the current task. The action index above points
