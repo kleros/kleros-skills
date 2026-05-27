@@ -63,12 +63,12 @@ Plans:
 **Plans**: 6 plans
 Plans:
 
-- [ ] 02-01-PLAN.md — Fill shared-abi-fragments.md: all Curate contract signatures in Solidity-style (LGTCR, PGTCR, IArbitrator, factories, events + topic0)
-- [ ] 02-02-PLAN.md — Fill shared-metaevidence.md: eth_getLogs retrieval, sort rule, LGTCR two-stream, PGTCR Goldsky path
-- [ ] 02-03-PLAN.md — Fill shared-deposits.md: hard rules, arbitrationCost read, LGTCR 4 formulas, PGTCR two-asset model, appeal formula
-- [ ] 02-04-PLAN.md — Fill shared-item-json.md: output shape, columns deep-copy, values construction, schema confirmation, failure modes
-- [ ] 02-05-PLAN.md — Fill shared-ipfs-upload.md: durability rationale, kleros-ipfs-upload reference, Pinata/Graph procedures, double-slash trap
-- [ ] 02-06-PLAN.md — Add "Common workflows" section to SKILL.md (Submit item / Challenge-remove / Deploy registry loading sequences)
+- [x] 02-01-PLAN.md — Fill shared-abi-fragments.md: all Curate contract signatures in Solidity-style (LGTCR, PGTCR, IArbitrator, factories, events + topic0)
+- [x] 02-02-PLAN.md — Fill shared-metaevidence.md: eth_getLogs retrieval, sort rule, LGTCR two-stream, PGTCR Goldsky path
+- [x] 02-03-PLAN.md — Fill shared-deposits.md: hard rules, arbitrationCost read, LGTCR 4 formulas, PGTCR two-asset model, appeal formula
+- [x] 02-04-PLAN.md — Fill shared-item-json.md: output shape, columns deep-copy, values construction, schema confirmation, failure modes
+- [x] 02-05-PLAN.md — Fill shared-ipfs-upload.md: durability rationale, kleros-ipfs-upload reference, Pinata/Graph procedures, double-slash trap
+- [x] 02-06-PLAN.md — Add "Common workflows" section to SKILL.md (Submit item / Challenge-remove / Deploy registry loading sequences)
 
 ### Phase 3: Flavor References
 
@@ -118,7 +118,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Architecture | 3/3 | ✓ Complete | 2026-05-26 |
-| 2. Shared References | 0/6 | Not started | - |
+| 2. Shared References | 4/6 | In Progress|  |
 | 3. Flavor References | 0/? | Not started | - |
 | 4. Triggering | 0/? | Not started | - |
 | 5. Publishing | 0/? | Not started | - |
