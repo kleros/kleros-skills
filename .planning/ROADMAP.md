@@ -81,7 +81,12 @@ Plans:
   2. `stake-curate.md` covers PGTCR operations, Goldsky GraphQL, ERC20 mechanics, status model, and admin actions without duplicating shared content
   3. `scout-registries.md` covers all 4 Scout registries with addresses, seed templates, LightGeneralizedTCRView helper, scout-api, and image guidance
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+- [ ] 03-01-PLAN.md — Fill light-curate.md: LGTCR operations (submit, challenge, remove, evidence, fundAppeal algorithm, factory deploy)
+- [ ] 03-02-PLAN.md — Fill stake-curate.md: PGTCR operations, Goldsky endpoints, 4 GraphQL queries, derived-status pseudocode, ERC20 approval flow
+- [ ] 03-03-PLAN.md — Fill scout-registries.md: 4 registry addresses, 4 seed templates, view helper, scout-api, image guidance, incentives
 
 ### Phase 4: Triggering
 
@@ -119,7 +124,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Architecture | 3/3 | ✓ Complete | 2026-05-26 |
 | 2. Shared References | 4/6 | In Progress|  |
-| 3. Flavor References | 0/? | Not started | - |
+| 3. Flavor References | 0/3 | Not started | - |
 | 4. Triggering | 0/? | Not started | - |
 | 5. Publishing | 0/? | Not started | - |
 
