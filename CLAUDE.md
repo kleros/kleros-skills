@@ -62,7 +62,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 
 Each published skill lives in `skillname/SKILL.md` with YAML frontmatter (`name`, `description`). The `description` field is what Claude Code uses to decide when to trigger the skill — it must include both positive triggers and negative triggers (when NOT to use).
 
-Draft skills (not yet registered) may use different file naming but should be restructured to `skillname/SKILL.md` before publishing.
+**YAML quoting rule:** Always wrap `description` values in double quotes. Unquoted colons and em dashes break GitHub's YAML parser even though Claude Code handles them fine. Discovered when `kleros-curate` description (1,413 chars with colons in "Light Curate (LGTCR, optimistic challenge window)") rendered as an error on GitHub.
 
 ## Multi-surface update rule
 
@@ -112,7 +112,7 @@ Static files serving agent discovery standards:
 
 ## Publishing a new skill
 
-1. Create `skillname/SKILL.md` with YAML frontmatter (`name`, `description`)
+1. Create `skillname/SKILL.md` with YAML frontmatter (`name`, `description` in double quotes)
 2. Add `"./skillname"` to `plugin.json` `skills[]`
 3. Update `marketplace.json` description if needed; bump `metadata.version`
 4. Bump `plugin.json` `version`
