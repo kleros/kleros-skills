@@ -121,7 +121,11 @@ Plans:
   3. `CHANGELOG.md` records the release under a new version entry
   4. Git tag `kleros-curate@v1.0.0` exists on the release commit
 
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+- [ ] 05-01-PLAN.md — Full surface audit + fix README.md project structure tree + run npm test + update-digests + commit clean pre-tag state
+- [ ] 05-02-PLAN.md — Update CHANGELOG.md comparison link, output tag commands for user, create GitHub release
 
 ## Progress
 
@@ -134,7 +138,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Shared References | 6/6 | ✓ Complete | 2026-05-27 |
 | 3. Flavor References | 3/3 | ✓ Complete | 2026-05-27 |
 | 4. Triggering | 1/1 | Complete   | 2026-05-27 |
-| 5. Publishing | 0/? | Not started | - |
+| 5. Publishing | 0/2 | Not started | - |
 
 ## Backlog
 
