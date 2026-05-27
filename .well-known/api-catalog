@@ -1,0 +1,13 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://kleros-ipfs-gateway.fly.dev/upload-to-ipfs",
+      "service-doc": [
+        {
+          "href": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
+          "type": "text/markdown"
+        }
+      ]
+    }
+  ]
+}
