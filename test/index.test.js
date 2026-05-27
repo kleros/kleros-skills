@@ -135,7 +135,7 @@ describe("index.html", () => {
 
     it("should have a tagline", () => {
       html = fs.readFileSync(indexPath, "utf-8");
-      assert.match(html, /class="tagline"/);
+      assert.match(html, /class="clarifier"/);
     });
   });
 });
