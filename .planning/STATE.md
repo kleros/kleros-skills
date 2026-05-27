@@ -66,6 +66,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 | 260526-vz9 | Update landing page to show only real skills | 2026-05-26 | aaa2c00 | [260526-vz9-update-landing-page-to-show-only-real-sk](./quick/260526-vz9-update-landing-page-to-show-only-real-sk/) |
 | 260527-a01 | Add top-level SKILL.md entry point + llms.txt symlink | 2026-05-27 | f3a1803 | -- |
 | 260527-a02 | Add prompt box + persistent setup section to landing page | 2026-05-27 | 7fe40b3 | -- |
+| 260527-a03 | Add OpenClaw skill support | 2026-05-27 | ea2268f | -- |
 
 ## Session Continuity
 
