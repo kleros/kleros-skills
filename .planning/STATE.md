@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Unified Curate Skill
-status: verifying
+status: Awaiting next milestone
 stopped_at: Phase 5 context gathered
-last_updated: "2026-05-27T05:26:26.619Z"
-last_activity: 2026-05-27
+last_updated: "2026-05-27T05:39:04.836Z"
+last_activity: 2026-05-27 — Milestone v1.0 completed and archived
 progress:
   total_phases: 13
   completed_phases: 5
@@ -16,12 +16,10 @@ progress:
 
 ## Current Position
 
-Phase: 05 (publishing) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-05-27
-
-Progress: [██████████] 100%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-27 — Milestone v1.0 completed and archived
 
 ## Project Reference
 
@@ -76,3 +74,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 Last session: 2026-05-27T05:26:26.611Z
 Stopped at: Phase 5 context gathered
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
