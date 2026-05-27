@@ -98,15 +98,28 @@ Static single-page site deployed on Netlify. Key features:
 - Symlinks don't work on Netlify — use `[[redirects]]` with `status = 200` instead
 - `/llms.txt` → `/SKILL.md` redirect already configured
 - `/:skill` → `/:skill/SKILL.md` catch-all redirect for skill shorthand URLs
+- Edge function `netlify/edge-functions/markdown-negotiation.ts` — serves SKILL.md when `Accept: text/markdown` on `/`
+- `[[headers]]` set `Link` (describedby + api-catalog) on `/` and `Content-Type` on `/.well-known/api-catalog`
+- Processing order: Edge Functions → Headers → Redirects → Static Files
+
+## Agent readiness
+
+Static files serving agent discovery standards:
+- `robots.txt` — allows all crawlers, Content-Signal directives (ai-train/search/ai-input = yes)
+- `sitemap.xml` — canonical URLs for all published skills
+- `.well-known/agent-skills/index.json` — Agent Skills Discovery RFC v0.2.0 with SHA-256 digests
+- `.well-known/api-catalog` — RFC 9727 Linkset JSON advertising the IPFS upload gateway
 
 ## Publishing a new skill
 
 1. Create `skillname/SKILL.md` with YAML frontmatter (`name`, `description`)
 2. Add `"./skillname"` to `plugin.json` `skills[]`
-3. Add a plugin entry to `marketplace.json` `plugins[]` (name must match directory, no `version` field — that lives in plugin.json only)
-4. Bump `plugin.json` `version` and `marketplace.json` `metadata.version`
-5. Update `CHANGELOG.md`
-6. Commit and tag: `skillname@vX.Y.Z`
+3. Update `marketplace.json` description if needed; bump `metadata.version`
+4. Bump `plugin.json` `version`
+5. Update all multi-surface files (see table above)
+6. Run `npm run update-digests`
+7. Update `CHANGELOG.md`
+8. Commit and tag: `skillname@vX.Y.Z`
 
 ## Gotcha: IPFS CID URLs
 
