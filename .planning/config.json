@@ -3,6 +3,7 @@
   "workflow": {
     "research": true,
     "commit_docs": true,
-    "text_mode": false
+    "text_mode": false,
+    "_auto_chain_active": false
   }
 }
