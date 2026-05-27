@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "kleros-skills",
+      "type": "skill-md",
+      "description": "Root index — routes agents to the right Kleros skill for decentralized justice, dispute resolution, Curate registries, and IPFS uploads",
+      "url": "https://skills.kleros.io/SKILL.md",
+      "digest": "sha256:4d2da3601e07d6e24d193f2ac7688c201d8a070c3f443cc7ca533ab287948ebb"
+    },
+    {
+      "name": "kleros-ipfs-upload",
+      "type": "skill-md",
+      "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
+      "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
+      "digest": "sha256:10e94e648e89dd4e2aa05c4491fa1ecccae0def6cad4eb3eed3dbd2525ca54b9"
+    },
+    {
+      "name": "kleros-curate",
+      "type": "skill-md",
+      "description": "Operate Kleros Curate token-curated registries — submit, challenge, appeal, deploy (Light Curate, Stake Curate, Scout)",
+      "url": "https://skills.kleros.io/kleros-curate/SKILL.md",
+      "digest": "sha256:cc333a88d2a7a1df5e22410e649691a77da27f95ff85121f1d819460db30aee2"
+    },
+    {
+      "name": "openclaw-skill",
+      "type": "skill-md",
+      "description": "OpenClaw integration for Kleros skills — install and manage skills via the clawhub CLI",
+      "url": "https://skills.kleros.io/openclaw-skill/SKILL.md",
+      "digest": "sha256:9739de284470cac3ffd67c6261ed3b18fc7f7fc136705c8c6dc7ae256625ad86"
+    }
+  ]
+}

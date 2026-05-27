@@ -77,6 +77,7 @@ When adding or changing a skill, multiple files must be updated in sync:
 | `.claude-plugin/marketplace.json` | `plugins[]` array (published skills only) |
 | `CHANGELOG.md` | New entry under appropriate version |
 | `sitemap.xml` | Add/remove/rename `<url><loc>` entries for published skill URLs |
+| `.well-known/agent-skills/index.json` | Add/remove skill entries, recalculate `digest` (sha256) when SKILL.md content changes |
 
 Draft/coming-soon skills only need updates to `index.html` (dimmed listing) and optionally `SKILL.md`/`openclaw-skill/SKILL.md` if they're referenced in routing.
 
