@@ -1,3 +1,11 @@
+[[edge_functions]]
+  function = "markdown-negotiation"
+  path = "/"
+
+[[edge_functions]]
+  function = "markdown-negotiation"
+  path = "/index.html"
+
 [[redirects]]
 from = "/llms.txt"
 to = "/SKILL.md"
