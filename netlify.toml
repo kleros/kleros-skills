@@ -6,6 +6,11 @@
   function = "markdown-negotiation"
   path = "/index.html"
 
+[[headers]]
+  for = "/"
+  [headers.values]
+    Link = '''</SKILL.md>; rel="describedby"'''
+
 [[redirects]]
 from = "/llms.txt"
 to = "/SKILL.md"
