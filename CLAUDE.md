@@ -13,8 +13,10 @@ Drafts: `curate-v1/` (Light Curate, Stake Curate), `curate-v1-scout/` (Scout reg
 
 ```bash
 npm test                    # Node built-in test runner (node --test)
-node --test test/index.test.js  # same thing, explicit
+npm run update-digests      # Recalculate SHA-256 hashes in .well-known/agent-skills/index.json
 ```
+
+Run `update-digests` after editing any SKILL.md — it checks all digests and updates stale ones in-place. Commit the updated `index.json` alongside the skill change.
 
 No build step. No linting configured. The landing page is a static `index.html`.
 
