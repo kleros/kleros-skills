@@ -88,6 +88,11 @@ Plans:
 - [ ] 03-02-PLAN.md — Fill stake-curate.md: PGTCR operations, Goldsky endpoints, 4 GraphQL queries, derived-status pseudocode, ERC20 approval flow
 - [ ] 03-03-PLAN.md — Fill scout-registries.md: 4 registry addresses, 4 seed templates, view helper, scout-api, image guidance, incentives
 
+**Cross-cutting constraints:**
+
+- D-12: All Phase 1 HTML source markers stripped
+- All '[Phase 3 content here]' placeholders replaced
+
 ### Phase 4: Triggering
 
 **Goal**: SKILL.md YAML description triggers correctly on all three flavors within the 1,536-character cap
@@ -137,6 +142,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd:review-backlog when ready)
 
 ### Phase 999.2: Top-level routing skill as entry point for all Kleros skills (BACKLOG)
@@ -146,6 +152,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd:review-backlog when ready)
 
 ### Phase 999.3: Feedback skill for agent-to-maintainer issue reporting (BACKLOG)
@@ -155,6 +162,7 @@ Plans:
 **Plans:** 0 plans
 
 **Context:**
+
 - Reference: [ethskills feedback/SKILL.md](https://github.com/austintgriffith/ethskills/blob/master/feedback/SKILL.md) — uses a `POST` to a Vercel KV store endpoint; we do NOT want that approach.
 - Preferred channels (in priority order):
   1. Kleros MCP feedback endpoint (`mcp__kleros__report-issue_create`) — not generally available yet as of 2026-05-27, but may be by the time this is prioritized. Check availability before implementation.
@@ -163,4 +171,5 @@ Plans:
 - The skill should accept structured JSON (kind: "issue"|"praise", message, agent, skill) and route to the appropriate channel.
 
 Plans:
+
 - [ ] TBD (promote with /gsd:review-backlog when ready)
