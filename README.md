@@ -6,20 +6,43 @@ Adapted from [ethskills](https://github.com/austintgriffith/ethskills), credits 
 
 ## Install
 
-In Claude Code:
+**Claude Code:**
 
 ```
-/plugin add-marketplace kleros/kleros-skills
-/plugin install kleros@kleros-skills
+/plugin marketplace add kleros/kleros-skills
+/plugin install kleros-ipfs-upload@kleros-skills
 ```
+
+**OpenClaw:**
+
+```
+clawhub install kleros-skills
+```
+
+**Codex:** Create `AGENTS.md` in your repo root with:
+
+```
+Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.
+```
+
+**Any agent:** Paste the prompt `Read https://skills.kleros.io/SKILL.md` or `curl -s https://skills.kleros.io/SKILL.md`.
 
 ## Skills included
 
-- **kleros-ipfs-upload** — pay-and-upload files to IPFS via the Kleros x402 gateway on Base mainnet. Use for dispute evidence, meta-evidence JSON, court / arbitrator / dispute policies, Curate item metadata, and juror justifications. Costs $0.01 USDC per upload.
+- **kleros-ipfs-upload** — Upload files to IPFS via the Kleros x402 gateway on Base mainnet ($0.01 USDC per upload). For dispute evidence, meta-evidence JSON, court policies, Curate item metadata, and juror justifications.
+- **kleros-curate** *(coming soon)* — Operate Kleros Curate token-curated registries: Light Curate, Stake Curate (PGTCR), and Scout. Submit, challenge, appeal, deploy.
 
-## Getting Started
+## Project structure
 
-Open `index.html` in your browser to view the landing page.
+```
+SKILL.md                    # Top-level entry point / router (also served as /llms.txt)
+index.html                  # Landing page (deployed on Netlify)
+kleros-ipfs-upload/         # Published skill — IPFS uploads via x402
+openclaw-skill/             # OpenClaw-compatible skill package
+.claude-plugin/             # Claude Code plugin manifest
+  plugin.json               # Plugin definition (version source of truth)
+  marketplace.json           # Catalog index
+```
 
 ## Development
 
@@ -28,4 +51,10 @@ npm install
 npm test
 ```
 
+Landing page: `npx serve .` then open `http://localhost:3000`.
 
+## Links
+
+- [skills.kleros.io](https://skills.kleros.io) — Landing page
+- [kleros.io](https://kleros.io) — Kleros protocol
+- [GitHub](https://github.com/kleros/kleros-skills)

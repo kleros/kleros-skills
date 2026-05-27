@@ -63,6 +63,39 @@ Each published skill lives in `skillname/SKILL.md` with YAML frontmatter (`name`
 
 Draft skills (not yet registered) may use different file naming but should be restructured to `skillname/SKILL.md` before publishing.
 
+## Multi-surface update rule
+
+When adding or changing a skill, multiple files must be updated in sync:
+
+| File | What to update |
+|------|---------------|
+| `SKILL.md` (root) | Routing table, "Skills" section, "What to Fetch by Task" table |
+| `index.html` | Skills list, copy buttons, modal click handlers, descriptions |
+| `openclaw-skill/SKILL.md` | "Available Skills" table, "What to Fetch by Task" table, "Key Facts" |
+| `README.md` | "Skills included" list |
+| `.claude-plugin/plugin.json` | `skills[]` array (published skills only) |
+| `.claude-plugin/marketplace.json` | `plugins[]` array (published skills only) |
+| `CHANGELOG.md` | New entry under appropriate version |
+
+Draft/coming-soon skills only need updates to `index.html` (dimmed listing) and optionally `SKILL.md`/`openclaw-skill/SKILL.md` if they're referenced in routing.
+
+## Landing page (`index.html`)
+
+Static single-page site deployed on Netlify. Key features:
+- ASCII art title (single line, centered, overflows body width)
+- Prompt copy box at top with "Persistent Setup" anchor
+- Skill cards with click-to-modal (fetches SKILL.md, renders markdown inline)
+- Persistent Setup section: Codex, Cursor, Claude Code, OpenClaw, Scripts
+- Minimal markdown renderer in `<script>` — supports indented tables/code blocks
+- Draft skills shown dimmed with `draft` badge, non-clickable (`cursor: default`)
+
+## Netlify
+
+- Config: `netlify.toml` at repo root
+- Symlinks don't work on Netlify — use `[[redirects]]` with `status = 200` instead
+- `/llms.txt` → `/SKILL.md` redirect already configured
+- `/:skill` → `/:skill/SKILL.md` catch-all redirect for skill shorthand URLs
+
 ## Publishing a new skill
 
 1. Create `skillname/SKILL.md` with YAML frontmatter (`name`, `description`)
