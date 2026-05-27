@@ -20,16 +20,34 @@
   <meta name="twitter:title" content="Kleros Skills">
   <meta name="twitter:description"
     content="The missing knowledge between AI agents and Kleros, the decentralized justice protocol.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <style>
     :root {
-      /* Dark Purple palette */
-      --bg: #0e0a1a;
-      --fg: #d4cde8;
-      --dim: #7a6f9a;
-      --accent: #b366ff;
-      --border: #1e1530;
-      --hover: #16102a;
-      --green: #b366ff;
+      /* V2 Hybrid palette — light cream body, dark terminal accents */
+      --bg: #f6f1ea;
+      --bg-soft: #efe7dc;
+      --card: #ffffff;
+      --border: #e3d8c8;
+      --border-soft: #ece2d2;
+      --ink: #1f1530;
+      --ink-dim: #6b5f7e;
+      --accent: #6b2fd6;
+      --accent-soft: #f0e6ff;
+      /* dark hero / code-block panel */
+      --dark: #1a1426;
+      --dark-panel: #221a33;
+      --dark-border: #3a2f55;
+      --dark-accent: #c084ff;
+      --dark-fg: #ebe6f7;
+      --dark-dim: #9b8fc4;
+      --danger: #c94a4a;
+
+      --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Menlo', 'Consolas', monospace;
     }
 
     * {
@@ -38,15 +56,15 @@
       box-sizing: border-box;
     }
 
+    html,
     body {
       background: var(--bg);
-      color: var(--fg);
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     a {
@@ -58,360 +76,782 @@
       text-decoration: underline;
     }
 
-    .ascii {
-      color: var(--accent);
+    code,
+    pre {
+      font-family: var(--mono);
+    }
+
+    /* ---------- Layout shell ---------- */
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 56px;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 0 20px;
+      }
+    }
+
+    /* ---------- Top nav ---------- */
+
+    .topnav {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--mono);
       font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--dark);
+      color: var(--dark-accent);
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--mono);
+    }
+
+    .brand-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .topnav nav {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      font-size: 14px;
+    }
+
+    .topnav nav a {
+      color: var(--ink-dim);
+      text-decoration: none;
+    }
+
+    .topnav nav a:hover {
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--ink) !important;
+      font-weight: 500;
+    }
+
+    @media (max-width: 720px) {
+      .topnav nav .hide-mobile {
+        display: none;
+      }
+    }
+
+    /* ---------- Hero terminal panel ---------- */
+
+    .hero-wrap {
+      padding-top: 44px;
+    }
+
+    .hero-panel {
+      background: var(--dark);
+      border-radius: 18px;
+      padding: 36px 40px 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 30px 80px -40px rgba(31, 21, 48, 0.5);
+    }
+
+    .hero-chrome {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .hero-chrome .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3a2f55;
+    }
+
+    .hero-chrome .spacer {
+      flex: 1;
+    }
+
+    .hero-chrome .path {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dark-dim);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .hero-art {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .ascii-k {
+      color: var(--dark-accent);
+      font-family: var(--mono);
+      font-size: 4.2px;
+      line-height: 1.0;
+      white-space: pre;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .ascii-wordmark {
+      color: var(--dark-accent);
+      font-family: var(--mono);
+      font-size: 10px;
       line-height: 1.15;
       white-space: pre;
       letter-spacing: 0.5px;
       margin: 0;
     }
 
-    .hero {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
+    .hero-tagline {
+      margin: 0 auto;
+      font-size: 17px;
+      color: var(--dark-fg);
+      text-align: center;
+      max-width: 920px;
+      line-height: 1.5;
     }
 
-    .ico {
-      color: var(--accent);
-      white-space: pre;
-      font-family: inherit;
-      font-size: 4px;
-      line-height: 1.0;
-      flex-shrink: 0;
-      margin: 0;
+    .hero-tagline em {
+      color: var(--dark-accent);
+      font-style: normal;
     }
 
-    @media (max-width: 800px) {
-      .hero {
+    @media (max-width: 880px) {
+      .hero-art {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 12px;
       }
 
-      .ico {
+      .ascii-k {
         font-size: 3.5px;
       }
 
-      .ascii {
-        font-size: 10px;
+      .ascii-wordmark {
+        font-size: 8px;
       }
     }
 
-    .cursor {
-      display: inline-block;
-      width: 8px;
-      height: 1.1em;
-      background: var(--accent);
-      vertical-align: text-bottom;
-      animation: blink 1s step-end infinite;
-      margin-left: 2px;
-    }
+    @media (max-width: 540px) {
+      .hero-panel {
+        padding: 24px 18px 28px;
+      }
 
-    @keyframes blink {
-      50% {
-        opacity: 0;
+      .ascii-wordmark {
+        font-size: 6.5px;
+      }
+
+      .hero-tagline {
+        font-size: 15px;
+        white-space: normal;
       }
     }
 
-    .hero-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-family: inherit;
-      font-size: 15px;
-      padding: 0.5rem 1rem;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: background 0.15s;
-      margin-bottom: 2.5rem;
-    }
+    /* ---------- Primary CTA (copy prompt) ---------- */
 
-    .hero-btn:hover {
-      background: var(--hover);
-    }
-
-    h2 {
-      color: var(--accent);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin: 2.5rem 0 1.25rem 0;
-      padding-bottom: 0.4rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 400;
-    }
-
-    .skill {
-      margin-bottom: 1.25rem;
-      padding: 0.6rem 0.85rem;
-      border-radius: 3px;
-      transition: background 0.1s;
-    }
-
-    .skill:hover {
-      background: var(--hover);
-    }
-
-    .skill-name {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--fg);
-    }
-
-    .skill-desc {
-      color: var(--dim);
-      font-size: 13px;
-      margin: 0.3rem 0 0.5rem 0;
-    }
-
-    .copy-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: transparent;
+    .cta {
+      margin-top: 28px;
+      background: var(--card);
       border: 1px solid var(--border);
-      color: var(--green);
-      font-family: inherit;
-      font-size: 12px;
-      padding: 0.3rem 0.6rem;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 1px 0 #fff inset, 0 30px 60px -40px rgba(31, 21, 48, 0.18);
     }
 
-    .copy-btn:hover {
-      border-color: var(--green);
-      background: rgba(179, 102, 255, 0.05);
-    }
-
-    .copy-btn.copied {
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    .copy-btn svg,
-    .hero-btn svg {
-      width: 13px;
-      height: 13px;
-      flex-shrink: 0;
-    }
-
-    .section-text {
-      color: var(--dim);
-      font-size: 13px;
-    }
-
-    .clarifier {
-      color: var(--fg);
-      font-size: 14px;
-      margin-bottom: 1.25rem;
-      line-height: 1.6;
-    }
-
-    .command-line {
+    .cta-head {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      background: var(--hover);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.6rem 1rem;
-      margin-bottom: 0.75rem;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    .command-label {
+    .cta-step {
+      font-family: var(--mono);
       font-size: 11px;
+      letter-spacing: 1.8px;
       text-transform: uppercase;
-      letter-spacing: 2px;
       color: var(--accent);
-      font-weight: 600;
+      font-weight: 700;
+    }
+
+    .cta-meta {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--ink-dim);
+    }
+
+    .cta-row {
+      background: var(--bg-soft);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cta-row .prompt-glyph {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 700;
       flex-shrink: 0;
     }
 
-    .command-line code {
+    .cta-row code {
       flex: 1;
-      font-size: 13px;
-      color: var(--fg);
-      background: none;
-      border: none;
-      padding: 0;
-    }
-
-    .command-line .copy-btn {
-      flex-shrink: 0;
-    }
-
-    .setup-list {
-      margin-top: 1rem;
-    }
-
-    .setup-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-areas:
-        "tool note"
-        "artifact artifact";
-      column-gap: 1.5rem;
-      row-gap: 1rem;
-      padding: 1.5rem 0;
-      border-bottom: 1px solid var(--border);
-      align-items: baseline;
-    }
-
-    .setup-row:first-child {
-      border-top: 1px solid var(--border);
-    }
-
-    .setup-tool {
-      grid-area: tool;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .setup-note {
-      grid-area: note;
-      font-size: 12px;
-      color: var(--dim);
+      font-size: 14px;
+      color: var(--ink);
       line-height: 1.5;
-      text-align: right;
-      max-width: 56ch;
-      font-style: italic;
-    }
-
-    .setup-artifact {
-      grid-area: artifact;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .setup-howto {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .setup-artifact code {
-      display: block;
-      font-size: 12px;
-      color: var(--fg);
-      background: var(--hover);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 0.5rem 0.75rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-
-    .setup-artifact code.is-content {
-      white-space: pre-wrap;
+      background: none;
+      padding: 0;
+      border: none;
       word-break: break-word;
     }
 
-    .code-copy-wrap {
-      position: relative;
+    .cta-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    .code-copy-wrap code {
-      padding-right: 2.5rem;
+    .cta-foot p {
+      font-size: 13.5px;
+      color: var(--ink-dim);
     }
 
-    .code-copy-btn {
-      position: absolute;
-      top: 0.4rem;
-      right: 0.4rem;
+    .cta-foot a.linklike {
+      color: var(--accent);
+      font-size: 13.5px;
+      font-weight: 500;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      padding: 0.3rem;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
+      gap: 6px;
     }
 
-    .code-copy-btn:hover {
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    .code-copy-btn.copied {
-      color: var(--green);
-      border-color: var(--green);
-    }
-
-    .code-copy-btn svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    @media (max-width: 700px) {
-      .setup-row {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "tool"
-          "note"
-          "artifact";
-        row-gap: 0.5rem;
-      }
-
-      .setup-note {
-        text-align: left;
-        max-width: none;
-      }
-
-      .command-line {
+    @media (max-width: 540px) {
+      .cta-row {
         flex-wrap: wrap;
       }
     }
 
-    .footer {
-      color: var(--dim);
-      font-size: 12px;
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
+    /* ---------- Buttons ---------- */
 
-    .draft-badge {
-      display: inline-block;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--dim);
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
       border: 1px solid var(--border);
-      padding: 0.1rem 0.4rem;
-      border-radius: 3px;
-      margin-left: 0.5rem;
-      vertical-align: middle;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, color .15s;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
     }
 
-    /* Modal */
-    .skill {
-      cursor: pointer;
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
     }
+
+    .btn.copied {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .btn.big {
+      font-size: 14px;
+      padding: 11px 18px;
+    }
+
+    .btn.dark {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--dark-border);
+      color: var(--dark-fg);
+    }
+
+    .btn.dark:hover {
+      border-color: var(--dark-accent);
+      color: var(--dark-accent);
+    }
+
+    .btn.dark.copied {
+      background: rgba(192, 132, 255, 0.18);
+      border-color: var(--dark-accent);
+      color: var(--dark-accent);
+    }
+
+    .btn svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 1.75;
+    }
+
+    .btn.big svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ---------- Trust strip ---------- */
+
+    .works-with {
+      padding: 36px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      flex-wrap: wrap;
+    }
+
+    .works-with .label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
+    .works-with .agent {
+      font-size: 14px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .works-with .any {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ---------- Section heads ---------- */
+
+    section.block {
+      padding-top: 72px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.4px;
+    }
+
+    .section-head .meta {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .section-head .meta.dim {
+      color: var(--ink-dim);
+    }
+
+    .section-intro {
+      margin: 0 0 26px;
+      font-size: 15px;
+      color: var(--ink-dim);
+      max-width: 640px;
+    }
+
+    .section-intro code {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* ---------- Skill cards ---------- */
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 760px) {
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .skill {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 22px 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      overflow: hidden;
+    }
+
+    .skill::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .skill:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -20px rgba(91, 47, 214, 0.35);
+    }
+
+    .skill-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .skill-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .skill-name {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+
+    .skill-short {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: var(--ink-dim);
+    }
+
+    .skill-desc {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink);
+      opacity: 0.82;
+      flex: 1;
+    }
+
+    .skill-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 2px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-soft);
+    }
+
+    .skill-foot code {
+      font-size: 12px;
+      color: var(--ink-dim);
+    }
+
+    /* ---------- Setup tabs ---------- */
+
+    .setup {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .setup-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-soft);
+      overflow-x: auto;
+    }
+
+    .setup-tab {
+      flex: 1;
+      min-width: 110px;
+      background: transparent;
+      border: none;
+      color: var(--ink-dim);
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 16px 12px;
+      cursor: pointer;
+      position: relative;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, background .15s;
+      white-space: nowrap;
+    }
+
+    .setup-tab:hover {
+      color: var(--ink);
+    }
+
+    .setup-tab[aria-selected="true"] {
+      color: var(--accent);
+      background: var(--card);
+      font-weight: 600;
+      border-bottom-color: var(--accent);
+    }
+
+    .setup-body {
+      padding: 28px 30px 30px;
+    }
+
+    .setup-body-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .setup-body-head h3 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.2px;
+    }
+
+    .setup-body-head .note {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .setup-sub {
+      margin: 0 0 22px;
+      font-size: 13.5px;
+      color: var(--ink-dim);
+    }
+
+    .setup-step {
+      margin-bottom: 18px;
+    }
+
+    .setup-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .setup-howto {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .code-block {
+      position: relative;
+    }
+
+    .code-block pre {
+      margin: 0;
+      background: var(--dark);
+      border: 1px solid var(--dark);
+      border-radius: 8px;
+      padding: 16px 60px 16px 18px;
+      font-size: 13px;
+      color: var(--dark-fg);
+      white-space: pre-wrap;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .code-block .btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    /* ---------- Contribute panel ---------- */
+
+    .contribute {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .contribute .copy {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .contribute h3 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.2px;
+    }
+
+    .contribute p {
+      margin: 6px 0 0;
+      font-size: 14.5px;
+      color: var(--ink-dim);
+    }
+
+    .contribute a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ink);
+      color: var(--bg);
+      text-decoration: none;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-weight: 500;
+      transition: background .15s;
+    }
+
+    .contribute a:hover {
+      background: var(--accent);
+      text-decoration: none;
+    }
+
+    .contribute a svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 1.75;
+    }
+
+    /* ---------- Footer ---------- */
+
+    .footer {
+      margin-top: 64px;
+      padding: 24px 0 36px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-dim);
+    }
+
+    .footer a {
+      color: var(--ink-dim);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .footer a:hover {
+      color: var(--accent);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 18px;
+    }
+
+    /* ---------- Modal (preserved from original) ---------- */
 
     .modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(26, 20, 38, 0.55);
+      backdrop-filter: blur(4px);
       z-index: 100;
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      animation: fadeIn 0.2s ease;
+      animation: fadeIn .2s ease;
     }
 
     .modal-backdrop.open {
@@ -429,16 +869,17 @@
     }
 
     .modal-box {
-      background: var(--bg);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 14px;
       max-width: 960px;
       width: 100%;
       max-height: 85vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      animation: slideUp 0.25s ease;
+      animation: slideUp .25s ease;
+      box-shadow: 0 40px 80px -30px rgba(31, 21, 48, 0.4);
     }
 
     @keyframes slideUp {
@@ -457,19 +898,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1rem 1.25rem;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border);
+      background: var(--bg-soft);
       flex-shrink: 0;
     }
 
     .modal-header-actions {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 10px;
     }
 
     .modal-title {
-      color: var(--accent);
+      color: var(--ink);
       font-size: 15px;
       font-weight: 600;
     }
@@ -477,40 +919,41 @@
     .modal-close {
       background: none;
       border: none;
-      color: var(--dim);
+      color: var(--ink-dim);
       cursor: pointer;
-      padding: 0.25rem;
+      padding: 4px 8px;
+      font-size: 22px;
       line-height: 1;
-      font-size: 20px;
-      transition: color 0.15s;
+      transition: color .15s;
     }
 
     .modal-close:hover {
-      color: var(--fg);
+      color: var(--ink);
     }
 
     .modal-body {
-      padding: 1.25rem 1.5rem;
+      padding: 22px 28px 28px;
       overflow-y: auto;
-      color: var(--fg);
-      font-size: 14px;
+      color: var(--ink);
+      font-size: 14.5px;
       line-height: 1.65;
     }
 
     .modal-body h1,
     .modal-body h2,
     .modal-body h3 {
-      color: var(--accent);
-      margin: 1.25em 0 0.5em 0;
+      color: var(--ink);
+      margin: 1.25em 0 0.5em;
       font-weight: 600;
     }
 
     .modal-body h1 {
-      font-size: 1.35em;
+      font-size: 1.4em;
+      color: var(--accent);
     }
 
     .modal-body h2 {
-      font-size: 1.15em;
+      font-size: 1.2em;
     }
 
     .modal-body h3 {
@@ -532,18 +975,17 @@
     }
 
     .modal-body code {
-      background: var(--hover);
+      background: var(--accent-soft);
       color: var(--accent);
-      padding: 0.15em 0.4em;
+      padding: 0.12em 0.4em;
       border-radius: 3px;
       font-size: 0.92em;
     }
 
     .modal-body pre {
-      background: var(--hover);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 1rem;
+      background: var(--dark);
+      border-radius: 8px;
+      padding: 14px 16px;
       overflow-x: auto;
       margin: 1em 0;
     }
@@ -551,14 +993,14 @@
     .modal-body pre code {
       background: none;
       padding: 0;
-      color: var(--fg);
+      color: var(--dark-fg);
     }
 
     .modal-body blockquote {
       border-left: 3px solid var(--accent);
       margin: 1em 0;
       padding-left: 1em;
-      color: var(--dim);
+      color: var(--ink-dim);
     }
 
     .modal-body table {
@@ -571,13 +1013,13 @@
     .modal-body th,
     .modal-body td {
       border: 1px solid var(--border);
-      padding: 0.4rem 0.6rem;
+      padding: 6px 10px;
       text-align: left;
     }
 
     .modal-body th {
-      background: var(--hover);
-      color: var(--accent);
+      background: var(--bg-soft);
+      color: var(--ink);
     }
 
     .modal-body a {
@@ -585,16 +1027,16 @@
     }
 
     .modal-body strong {
-      color: var(--fg);
+      color: var(--ink);
       font-weight: 600;
     }
 
     .modal-loading {
-      color: var(--dim);
+      color: var(--ink-dim);
     }
 
     .modal-error {
-      color: #c94a4a;
+      color: var(--danger);
     }
   </style>
 </head>
@@ -602,22 +1044,51 @@
 <body>
 
   <!--
-  Kleros Skills — Kleros Knowledge for AI Agents
-  Adapted from ethskills (https://github.com/austintgriffith/ethskills)
+    Kleros Skills — Knowledge for AI Agents
+    Adapted from ethskills (https://github.com/austintgriffith/ethskills)
+    Bot-readable. Each skill lives at /<topic>/SKILL.md
+  -->
 
-  Bot-readable. Each skill lives at /<topic>/SKILL.md
-  Fetch any URL and read it into your context.
--->
+  <div class="page">
 
-<div class="hero">
-<pre class="ico">                     ▄██████▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▖
+    <!-- ===== Top nav ===== -->
+    <header class="topnav">
+      <div class="brand">
+        <span class="brand-mark">K</span>
+        <span>kleros / skills</span>
+        <span class="brand-tag">beta</span>
+      </div>
+      <nav>
+        <a href="#skills" class="hide-mobile">Skills</a>
+        <a href="#setup" class="hide-mobile">Setup</a>
+        <a href="#contribute" class="hide-mobile">Contribute</a>
+        <a class="nav-gh" href="https://github.com/kleros/kleros-skills" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 00-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <!-- ===== Hero terminal panel ===== -->
+    <div class="hero-wrap">
+      <div class="hero-panel">
+        <div class="hero-chrome">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="spacer"></span>
+          <span class="path">~/agents/kleros-skills</span>
+        </div>
+
+        <div class="hero-art">
+<pre class="ascii-k">                     ▄██████▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▖
                    ▗▟████████████▄▄              ▀▜████
                   ▄█████  ▝▀▀████████▙▄▖         ▗█████▙
                 ▗▛▘████▌       ▝▀▜████████▄▄    ▗████▛ ▜▙
                ▟▀ ▗████▘            ▀▀████████▙▄████▛   ▜▙
              ▄▛▘  ▟███▛                 ▝▀▜████████▛     ▜▙
            ▗▟▀   ▗████▘                ▄▄▟██████████▄    ▝█▌
-          ▄▛▘    ▟███▛            ▄▄▟██████████████████▄  ▝█▖
+          ▄▛▘    ▟███▛            ▄▄▟█████████████████▄   ▝█▖
         ▗█▘     ▗████▘       ▄▄▟████████████▛▀████▀▜████▄  ▝█▖
        ▟▛       ▟████   ▄▄▟████████████▛▀▀   ▐████  ▝▜████▄ ▝█▖
      ▗█▘       ▗████▙▟█████████████▀▀▘       ▐███▛    ▝▜████▄▝█▖
@@ -639,161 +1110,281 @@
                ▝█████████████▀▀▀▀           ▝███▙ ▄█▘
                 ▝▀▀▜███████▄▄▄▄▄▄▄▄▄▄▄▄▖     ▝████▛
                                    ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▘</pre>
-<div class="ascii">
- ██╗  ██╗██╗     ███████╗██████╗  ██████╗ ███████╗   ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+<pre class="ascii-wordmark"> ██╗  ██╗██╗     ███████╗██████╗  ██████╗ ███████╗   ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
  ██║ ██╔╝██║     ██╔════╝██╔══██╗██╔═══██╗██╔════╝   ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
  █████╔╝ ██║     █████╗  ██████╔╝██║   ██║███████╗   ███████╗█████╔╝ ██║██║     ██║     ███████╗
  ██╔═██╗ ██║     ██╔══╝  ██╔══██╗██║   ██║╚════██║   ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
  ██║  ██╗███████╗███████╗██║  ██║╚██████╔╝███████║   ███████║██║  ██╗██║███████╗███████╗███████║
- ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
-</div>
-</div>
-
-  <p class="clarifier">The missing knowledge between AI agents and Kleros, the decentralized justice protocol. Works in
-    Claude, ChatGPT, Cursor, or any agent.</p>
-
-  <div class="command-line">
-    <span class="command-label">Prompt</span>
-    <code>Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
-    <button class="copy-btn"
-      data-url="Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol."><svg
-        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg> Copy prompt</button>
-  </div>
-
-  <p class="section-text">Per session. To install once in Claude Code, Cursor, or Codex, see <a
-      href="#persistent-setup">Persistent Setup</a> below.</p>
-
-  <h2>Skills</h2>
-
-  <div class="skill" style="margin-top:1rem;">
-    <div class="skill-name">Kleros IPFS Upload</div>
-    <div class="skill-desc">Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet).
-      For dispute evidence, meta-evidence, court policies, Curate item metadata, and juror justifications.</div>
-    <button class="copy-btn" data-url="kleros-ipfs-upload/SKILL.md"><svg viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg> kleros-ipfs-upload/SKILL.md</button>
-  </div>
-
-  <div class="skill">
-    <div class="skill-name">Kleros Curate</div>
-    <div class="skill-desc">Operate Kleros Curate token-curated registries &mdash; submit items, challenge requests, fund
-      appeals, deploy new lists. Covers Light Curate, Stake Curate (PGTCR), and Scout registries on Ethereum and
-      Gnosis.</div>
-    <button class="copy-btn" data-url="kleros-curate/SKILL.md"><svg viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg> kleros-curate/SKILL.md</button>
-  </div>
-
-  <h2 id="persistent-setup">Persistent Setup</h2>
-  <p class="section-text">Optional. If you'd rather not paste the prompt above every session, configure your tool once
-    below.</p>
-
-  <div class="setup-list">
-    <div class="setup-row">
-      <span class="setup-tool">Codex</span>
-      <div class="setup-artifact">
-        <span class="setup-howto">1. Create this file in your repo root</span>
-        <div class="code-copy-wrap">
-          <code>AGENTS.md</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+ ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝</pre>
         </div>
-        <span class="setup-howto">2. Paste this inside the file</span>
-        <div class="code-copy-wrap">
-          <code class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
-        </div>
+
+        <p class="hero-tagline">The missing knowledge between AI agents and <em>Kleros</em>, the decentralized justice protocol.</p>
       </div>
-      <span class="setup-note">Pointer (per repo)
-        <br />Codex fetches Kleros Skills on each task</span>
     </div>
-    <div class="setup-row">
-      <span class="setup-tool">Cursor</span>
-      <div class="setup-artifact">
-        <span class="setup-howto">1. Create this Cursor rule file</span>
-        <div class="code-copy-wrap">
-          <code>.cursor/rules/kleros-skills.mdc</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+
+    <!-- ===== Primary CTA ===== -->
+    <section class="cta">
+      <div class="cta-head">
+        <span class="cta-step">① Paste this into your agent</span>
+        <span class="cta-meta">One line · works in any agent</span>
+      </div>
+      <div class="cta-row">
+        <span class="prompt-glyph">›</span>
+        <code id="hero-prompt">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+        <button class="btn big" data-copy-target="#hero-prompt" aria-label="Copy prompt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+          <span class="label">Copy prompt</span>
+        </button>
+      </div>
+      <div class="cta-foot">
+        <p>Use the prompt per session, or set it up once below for every chat.</p>
+        <a class="linklike" href="#setup">Or install permanently
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== Works with ===== -->
+    <section class="works-with" aria-label="Compatible agents">
+      <span class="label">Works with</span>
+      <span class="agent">Claude</span>
+      <span class="agent">ChatGPT</span>
+      <span class="agent">Cursor</span>
+      <span class="agent">Codex</span>
+      <span class="agent">OpenClaw</span>
+      <span class="agent any">… any agent</span>
+    </section>
+
+    <!-- ===== Skills ===== -->
+    <section class="block" id="skills">
+      <div class="section-head">
+        <h2>Skills</h2>
+        <span class="meta">2 live · each at /&lt;name&gt;/SKILL.md</span>
+      </div>
+      <p class="section-intro">Each skill is a self-contained knowledge pack at <code>/&lt;name&gt;/SKILL.md</code>. Your agent fetches one on demand. Click a card to preview.</p>
+
+      <div class="skills-grid">
+
+        <div class="skill" data-skill-name="Kleros IPFS Upload" data-skill-path="kleros-ipfs-upload/SKILL.md" role="button" tabindex="0">
+          <div class="skill-tags">
+            <span class="skill-tag">IPFS</span>
+            <span class="skill-tag">x402</span>
+            <span class="skill-tag">Base</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros IPFS Upload</h3>
+            <p class="skill-short">Pin to IPFS via x402 — $0.01 USDC on Base</p>
+          </div>
+          <p class="skill-desc">Upload files to IPFS through the Kleros x402 payment gateway. For dispute evidence, meta-evidence, court policies, Curate item metadata, and juror justifications.</p>
+          <div class="skill-foot">
+            <code>kleros-ipfs-upload/SKILL.md</code>
+            <button class="btn" data-copy-text="kleros-ipfs-upload/SKILL.md" aria-label="Copy path">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              <span class="label">Copy path</span>
+            </button>
+          </div>
         </div>
-        <span class="setup-howto">2. Paste this inside the file</span>
-        <div class="code-copy-wrap">
-          <code class="is-content">---
+
+        <div class="skill" data-skill-name="Kleros Curate" data-skill-path="kleros-curate/SKILL.md" role="button" tabindex="0">
+          <div class="skill-tags">
+            <span class="skill-tag">Curate</span>
+            <span class="skill-tag">Ethereum</span>
+            <span class="skill-tag">Gnosis</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros Curate</h3>
+            <p class="skill-short">Operate token-curated registries end-to-end</p>
+          </div>
+          <p class="skill-desc">Submit items, challenge requests, fund appeals, deploy new lists. Covers Light Curate, Stake Curate (PGTCR), and Scout registries on Ethereum and Gnosis.</p>
+          <div class="skill-foot">
+            <code>kleros-curate/SKILL.md</code>
+            <button class="btn" data-copy-text="kleros-curate/SKILL.md" aria-label="Copy path">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              <span class="label">Copy path</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== Persistent setup ===== -->
+    <section class="block" id="setup">
+      <div class="section-head">
+        <h2>Persistent setup</h2>
+        <span class="meta dim">Optional</span>
+      </div>
+      <p class="section-intro">Configure your tool once and skip the prompt every session. Pick yours:</p>
+
+      <div class="setup" id="setup-widget">
+        <div class="setup-tabs" role="tablist">
+          <button class="setup-tab" role="tab" aria-selected="true" data-tab="codex">Codex</button>
+          <button class="setup-tab" role="tab" aria-selected="false" data-tab="cursor">Cursor</button>
+          <button class="setup-tab" role="tab" aria-selected="false" data-tab="claude">Claude Code</button>
+          <button class="setup-tab" role="tab" aria-selected="false" data-tab="openclaw">OpenClaw</button>
+          <button class="setup-tab" role="tab" aria-selected="false" data-tab="scripts">Scripts</button>
+        </div>
+
+        <div class="setup-body" data-panel="codex">
+          <div class="setup-body-head">
+            <h3>Codex</h3>
+            <span class="note">Pointer · per repo</span>
+          </div>
+          <p class="setup-sub">Codex fetches Kleros Skills on each task.</p>
+          <div class="setup-step">
+            <span class="setup-howto">1. Create this file in your repo root</span>
+            <div class="code-block">
+              <pre>AGENTS.md</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="setup-step">
+            <span class="setup-howto">2. Paste this inside</span>
+            <div class="code-block">
+              <pre>Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-body" data-panel="cursor" hidden>
+          <div class="setup-body-head">
+            <h3>Cursor</h3>
+            <span class="note">Pointer · per repo</span>
+          </div>
+          <p class="setup-sub">Cursor fetches when the rule fires.</p>
+          <div class="setup-step">
+            <span class="setup-howto">1. Create this Cursor rule file</span>
+            <div class="code-block">
+              <pre>.cursor/rules/kleros-skills.mdc</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="setup-step">
+            <span class="setup-howto">2. Paste this inside</span>
+            <div class="code-block">
+<pre>---
 description: Kleros knowledge pack for decentralized justice
 alwaysApply: true
 ---
 
-Before interacting with Kleros protocol, uploading evidence, or working with Curate registries, read https://skills.kleros.io/SKILL.md and follow it.</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+Before interacting with Kleros protocol, uploading evidence, or working with Curate registries, read https://skills.kleros.io/SKILL.md and follow it.</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
         </div>
+
+        <div class="setup-body" data-panel="claude" hidden>
+          <div class="setup-body-head">
+            <h3>Claude Code</h3>
+            <span class="note">Install · user-wide</span>
+          </div>
+          <p class="setup-sub">Plugin reads from disk · granular skill loading.</p>
+          <div class="setup-step">
+            <span class="setup-howto">1. Add the marketplace catalog</span>
+            <div class="code-block">
+              <pre>/plugin marketplace add kleros/kleros-skills</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="setup-step">
+            <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
+            <div class="code-block">
+              <pre>/plugin install kleros-ipfs-upload@kleros-skills</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-body" data-panel="openclaw" hidden>
+          <div class="setup-body-head">
+            <h3>OpenClaw</h3>
+            <span class="note">Install · per project</span>
+          </div>
+          <p class="setup-sub">Cloned into ./skills/ in your project.</p>
+          <div class="setup-step">
+            <span class="setup-howto">Run in your terminal</span>
+            <div class="code-block">
+              <pre>clawhub install kleros-skills</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-body" data-panel="scripts" hidden>
+          <div class="setup-body-head">
+            <h3>Scripts</h3>
+            <span class="note">Fetch + bake</span>
+          </div>
+          <p class="setup-sub">Embed in pipelines or system prompts.</p>
+          <div class="setup-step">
+            <span class="setup-howto">Run in your shell</span>
+            <div class="code-block">
+              <pre>curl -s https://skills.kleros.io/SKILL.md</pre>
+              <button class="btn dark" data-copy-prev aria-label="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <span class="setup-note">Pointer (per repo)
-        <br />Cursor fetches when the rule fires</span>
-    </div>
-    <div class="setup-row">
-      <span class="setup-tool">Claude Code</span>
-      <div class="setup-artifact">
-        <span class="setup-howto">1. Add the marketplace catalog</span>
-        <div class="code-copy-wrap">
-          <code>/plugin marketplace add kleros/kleros-skills</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
-        </div>
-        <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
-        <div class="code-copy-wrap">
-          <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
-        </div>
+    </section>
+
+    <!-- ===== Contribute ===== -->
+    <section class="block" id="contribute">
+      <div class="section-head">
+        <h2>Contribute</h2>
       </div>
-      <span class="setup-note">Install (user-wide)
-        <br />Plugin reads from disk, granular skill loading</span>
-    </div>
-    <div class="setup-row">
-      <span class="setup-tool">OpenClaw</span>
-      <div class="setup-artifact">
-        <span class="setup-howto">Run in your terminal</span>
-        <div class="code-copy-wrap">
-          <code>clawhub install kleros-skills</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+      <div class="contribute">
+        <div class="copy">
+          <h3>Something wrong or missing?</h3>
+          <p>Humans and agents alike are welcome to open a PR. Skills are MIT-licensed and live in a single GitHub repo.</p>
         </div>
+        <a href="https://github.com/kleros/kleros-skills">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 00-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path></svg>
+          Open a PR on GitHub
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
       </div>
-      <span class="setup-note">Install (per project), cloned into ./skills/</span>
-    </div>
-    <div class="setup-row">
-      <span class="setup-tool">Scripts</span>
-      <div class="setup-artifact">
-        <span class="setup-howto">Run in your shell</span>
-        <div class="code-copy-wrap">
-          <code>curl -s https://skills.kleros.io/SKILL.md</code>
-          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
-        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+      <span>MIT License · built with 💜 by <a href="https://kleros.io">Kleros</a></span>
+      <div class="footer-links">
+        <a href="https://kleros.io">kleros.io ↗</a>
+        <a href="https://github.com/kleros/kleros-skills">GitHub ↗</a>
+        <a href="SKILL.md">SKILL.md</a>
       </div>
-      <span class="setup-note">Fetch + bake (per script)
-        <br />Embed in pipelines or system prompts</span>
-    </div>
+    </footer>
+
   </div>
 
-  <h2>Contributing</h2>
-  <p class="section-text">Something wrong or missing? Humans and agents alike are welcome to <a
-      href="https://github.com/kleros/kleros-skills">open a PR</a>.</p>
-
-  <div class="footer">MIT License &middot; <a href="https://kleros.io">Kleros</a> &middot; <a
-      href="https://github.com/kleros/kleros-skills">GitHub</a></div>
-
+  <!-- ===== Modal (preview SKILL.md) ===== -->
   <div id="modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-box" role="dialog" aria-modal="true">
       <div class="modal-header">
         <span class="modal-title" id="modal-title">Skill</span>
         <div class="modal-header-actions">
-          <button type="button" class="copy-btn" id="modal-copy-btn" data-url="" title="Copy skill URL"><svg
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" />
-              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-            </svg> <span id="modal-copy-label"></span></button>
+          <button type="button" class="btn" id="modal-copy-btn" data-url="" aria-label="Copy skill URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            <span id="modal-copy-label">Copy</span>
+          </button>
           <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
         </div>
       </div>
@@ -802,7 +1393,9 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
   </div>
 
   <script>
-    // Minimal markdown to HTML (no external deps). Escapes HTML in text.
+    /* ------------------------------------------------------------ */
+    /* Minimal markdown -> HTML (no external deps)                   */
+    /* ------------------------------------------------------------ */
     function renderMarkdown(md) {
       const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       const inline = s => esc(s)
@@ -902,39 +1495,82 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       return out;
     }
 
-    // Copy URL on copy button click (stop propagation so card click doesn't fire)
-    document.querySelectorAll('.copy-btn[data-url]').forEach(btn => {
+    /* ------------------------------------------------------------ */
+    /* Copy helpers                                                  */
+    /* ------------------------------------------------------------ */
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch {
+        const t = document.createElement('textarea');
+        t.value = text; document.body.appendChild(t); t.select();
+        document.execCommand('copy'); document.body.removeChild(t);
+        return true;
+      }
+    }
+
+    function flashCopied(btn) {
+      const orig = btn.innerHTML;
+      const label = btn.querySelector('.label');
+      btn.classList.add('copied');
+      if (label) {
+        const origLabel = label.textContent;
+        label.textContent = 'Copied!';
+        setTimeout(() => { label.textContent = origLabel; btn.classList.remove('copied'); }, 1500);
+      } else {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+      }
+    }
+
+    /* Copy buttons that target a CSS selector */
+    document.querySelectorAll('[data-copy-target]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const url = btn.dataset.url;
-        if (!url) return;
-        try { await navigator.clipboard.writeText(url); } catch (err) {
-          const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
-        }
-        const orig = btn.innerHTML;
-        btn.classList.add('copied');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+        const target = document.querySelector(btn.dataset.copyTarget);
+        if (!target) return;
+        await copyText(target.textContent.trim());
+        flashCopied(btn);
       });
     });
 
-    // Copy code block text in persistent setup section
-    document.querySelectorAll('.code-copy-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const code = btn.parentElement.querySelector('code');
-        if (!code) return;
-        const text = code.textContent;
-        try { await navigator.clipboard.writeText(text); } catch {
-          const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
-        }
-        btn.classList.add('copied');
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+    /* Copy buttons with literal text */
+    document.querySelectorAll('[data-copy-text]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await copyText(btn.dataset.copyText);
+        flashCopied(btn);
       });
     });
 
-    // Modal: open on card click, fetch skill and render markdown
+    /* Copy buttons that copy the previous sibling <pre> */
+    document.querySelectorAll('[data-copy-prev]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const pre = btn.parentElement.querySelector('pre');
+        if (!pre) return;
+        await copyText(pre.textContent);
+        flashCopied(btn);
+      });
+    });
+
+    /* ------------------------------------------------------------ */
+    /* Setup tabs                                                    */
+    /* ------------------------------------------------------------ */
+    const setupWidget = document.getElementById('setup-widget');
+    setupWidget.addEventListener('click', (e) => {
+      const tab = e.target.closest('.setup-tab');
+      if (!tab) return;
+      const target = tab.dataset.tab;
+      setupWidget.querySelectorAll('.setup-tab').forEach(t => t.setAttribute('aria-selected', t === tab ? 'true' : 'false'));
+      setupWidget.querySelectorAll('.setup-body').forEach(b => {
+        if (b.dataset.panel === target) b.removeAttribute('hidden');
+        else b.setAttribute('hidden', '');
+      });
+    });
+
+    /* ------------------------------------------------------------ */
+    /* Skill modal                                                   */
+    /* ------------------------------------------------------------ */
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -942,15 +1578,14 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
     const modalCopyBtn = document.getElementById('modal-copy-btn');
     const modalCopyLabel = document.getElementById('modal-copy-label');
 
-    function openModal(title, path, skillUrl) {
+    function openModal(title, path) {
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       modalTitle.textContent = title;
-      modalCopyBtn.dataset.url = skillUrl;
-      modalCopyLabel.textContent = skillUrl;
+      modalCopyBtn.dataset.url = path;
+      modalCopyLabel.textContent = path;
       modalBody.innerHTML = '<p class="modal-loading">Loading...</p>';
       modalBody.classList.remove('modal-error');
-
       fetch(path)
         .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
         .then(text => { modalBody.innerHTML = renderMarkdown(text); })
@@ -965,18 +1600,14 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       modal.setAttribute('aria-hidden', 'true');
     }
 
-    document.querySelectorAll('.skill[style*="cursor: default"]').forEach(card => {
-      card.style.pointerEvents = 'auto';
-    });
-
-    document.querySelectorAll('.skill:not([style*="cursor: default"])').forEach(card => {
-      const copyBtn = card.querySelector('.copy-btn[data-url]');
-      const title = card.querySelector('.skill-name');
-      if (!copyBtn || !title) return;
+    document.querySelectorAll('.skill').forEach(card => {
+      const open = () => openModal(card.dataset.skillName, card.dataset.skillPath);
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.copy-btn')) return;
-        const skillUrl = copyBtn.dataset.url;
-        openModal(title.textContent, skillUrl, skillUrl);
+        if (e.target.closest('.btn')) return;
+        open();
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
       });
     });
 
@@ -984,13 +1615,8 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       e.stopPropagation();
       const url = modalCopyBtn.dataset.url;
       if (!url) return;
-      try { await navigator.clipboard.writeText(url); } catch (err) {
-        const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
-      }
-      const orig = modalCopyBtn.innerHTML;
-      modalCopyBtn.classList.add('copied');
-      modalCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(() => { modalCopyBtn.innerHTML = orig; modalCopyBtn.classList.remove('copied'); }, 1500);
+      await copyText(url);
+      flashCopied(modalCopyBtn);
     });
 
     modalClose.addEventListener('click', closeModal);
