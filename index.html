@@ -323,6 +323,45 @@
       word-break: break-word;
     }
 
+    .code-copy-wrap {
+      position: relative;
+    }
+
+    .code-copy-wrap code {
+      padding-right: 2.5rem;
+    }
+
+    .code-copy-btn {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.4rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      padding: 0.3rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .code-copy-btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .code-copy-btn.copied {
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .code-copy-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
     @media (max-width: 700px) {
       .setup-row {
         grid-template-columns: 1fr;
@@ -675,10 +714,15 @@
       <span class="setup-tool">Codex</span>
       <div class="setup-artifact">
         <span class="setup-howto">1. Create this file in your repo root</span>
-        <code>AGENTS.md</code>
+        <div class="code-copy-wrap">
+          <code>AGENTS.md</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
         <span class="setup-howto">2. Paste this inside the file</span>
-        <code
-          class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+        <div class="code-copy-wrap">
+          <code class="is-content">Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kleros protocol.</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
       </div>
       <span class="setup-note">Pointer (per repo)
         <br />Codex fetches Kleros Skills on each task</span>
@@ -687,15 +731,20 @@
       <span class="setup-tool">Cursor</span>
       <div class="setup-artifact">
         <span class="setup-howto">1. Create this Cursor rule file</span>
-        <code>.cursor/rules/kleros-skills.mdc</code>
+        <div class="code-copy-wrap">
+          <code>.cursor/rules/kleros-skills.mdc</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
         <span class="setup-howto">2. Paste this inside the file</span>
-        <code
-          class="is-content">---
+        <div class="code-copy-wrap">
+          <code class="is-content">---
 description: Kleros knowledge pack for decentralized justice
 alwaysApply: true
 ---
 
 Before interacting with Kleros protocol, uploading evidence, or working with Curate registries, read https://skills.kleros.io/SKILL.md and follow it.</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
       </div>
       <span class="setup-note">Pointer (per repo)
         <br />Cursor fetches when the rule fires</span>
@@ -704,9 +753,15 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       <span class="setup-tool">Claude Code</span>
       <div class="setup-artifact">
         <span class="setup-howto">1. Add the marketplace catalog</span>
-        <code>/plugin marketplace add kleros/kleros-skills</code>
+        <div class="code-copy-wrap">
+          <code>/plugin marketplace add kleros/kleros-skills</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
         <span class="setup-howto">2. Install kleros-skills (active in every project)</span>
-        <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
+        <div class="code-copy-wrap">
+          <code>/plugin install kleros-ipfs-upload@kleros-skills</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
       </div>
       <span class="setup-note">Install (user-wide)
         <br />Plugin reads from disk, granular skill loading</span>
@@ -715,7 +770,10 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       <span class="setup-tool">OpenClaw</span>
       <div class="setup-artifact">
         <span class="setup-howto">Run in your terminal</span>
-        <code>clawhub install kleros-skills</code>
+        <div class="code-copy-wrap">
+          <code>clawhub install kleros-skills</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
       </div>
       <span class="setup-note">Install (per project), cloned into ./skills/</span>
     </div>
@@ -723,7 +781,10 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       <span class="setup-tool">Scripts</span>
       <div class="setup-artifact">
         <span class="setup-howto">Run in your shell</span>
-        <code>curl -s https://skills.kleros.io/SKILL.md</code>
+        <div class="code-copy-wrap">
+          <code>curl -s https://skills.kleros.io/SKILL.md</code>
+          <button class="code-copy-btn" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        </div>
       </div>
       <span class="setup-note">Fetch + bake (per script)
         <br />Embed in pipelines or system prompts</span>
@@ -867,6 +928,22 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
         const orig = btn.innerHTML;
         btn.classList.add('copied');
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+
+    // Copy code block text in persistent setup section
+    document.querySelectorAll('.code-copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.parentElement.querySelector('code');
+        if (!code) return;
+        const text = code.textContent;
+        try { await navigator.clipboard.writeText(text); } catch {
+          const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+        }
+        btn.classList.add('copied');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
         setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
       });
     });
