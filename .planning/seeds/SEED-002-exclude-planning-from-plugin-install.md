@@ -4,7 +4,7 @@ status: dormant
 planted: 2026-05-28
 planted_during: v1.0 milestone complete — awaiting next milestone
 trigger_when: when packaging/distribution or repo hygiene is on the agenda, or before the next marketplace publish
-scope: unknown
+scope: medium
 ---
 
 # SEED-002: Exclude `.planning/` (and other dev-only files) from plugin/marketplace installs
@@ -35,23 +35,56 @@ This seed will surface during `/gsd:new-milestone` when the milestone scope matc
 
 ## Scope Estimate
 
-**Unknown** — pending research. Likely small-to-medium. Key unknown: does the Claude Code
-plugin/marketplace install path honor any exclude manifest at all?
+**Medium** — not a config one-liner. The fix is either a repo restructure (move plugin
+files into a subdir + `git-subdir` source) or a second minimal marketplace repo. Either
+touches the multi-surface publish flow and the fact that this repo doubles as the Netlify
+landing page + agent-discovery host. Decision-heavy more than code-heavy.
 
-## Open Questions / Research
+## Research Findings (2026-05-28, sourced from code.claude.com plugin docs)
 
-- Does Claude Code's plugin/marketplace install copy the whole repo, or only declared
-  directories? Check whether `plugin.json` / `marketplace.json` schema has a `files`,
-  `include`, or `exclude` field that scopes what ships.
-- Is there an analog to `.npmignore`, `.gitattributes export-ignore`, or a manifest
-  allowlist that the installer respects?
-- If no native mechanism exists: options to evaluate —
-  1. Keep `.planning/` in a separate branch or repo (dev vs. published split).
-  2. Move planning state out of the published tree entirely.
-  3. File a feature request upstream for an install-exclude manifest.
-  4. A pre-publish step that strips dev-only files from the published artifact.
-- Confirm the exact install behavior empirically by inspecting a real
-  `~/.claude/plugins/marketplaces/kleros-skills/` after install.
+**Empirically confirmed install behavior:**
+- Marketplace install = a literal `git clone` of the WHOLE GitHub repo (origin
+  `git@github.com:kleros/kleros-skills.git`) into `~/.claude/plugins/marketplaces/kleros-skills/`.
+- `.planning/` lands in TWO places on the user's disk:
+  1. The marketplace clone: `~/.claude/plugins/marketplaces/kleros-skills/.planning`
+  2. The version-pinned plugin cache:
+     `~/.claude/plugins/cache/kleros-skills/kleros-skills/2.0.0/.planning`
+     (plus a stale `cache/kleros-skills/kleros/1.0.0/.planning` from the old `kleros` plugin name)
+- The `skills[]` paths in `plugin.json` only tell Claude where to READ components from —
+  they do NOT scope what gets copied to disk.
+
+**No native exclude mechanism exists:**
+- Neither `plugin.json` nor `marketplace.json` has a `files` / `include` / `exclude` /
+  `ignore` allowlist field.
+- No ignore file is honored — no `.claudeignore`, no `.pluginignore`, no
+  `.gitattributes export-ignore`.
+
+**What CAN scope things:**
+- `git-subdir` plugin source (`{"source":"git-subdir","url":"...","path":"plugin"}`) does a
+  SPARSE clone → scopes the *plugin install cache* to just that subdir. Fixes copy #2 only.
+- `--sparse` flag on `claude plugin marketplace add <repo> --sparse <dirs...>` scopes the
+  *marketplace clone*. BUT it's CLI-only, user-supplied, and can't be baked into settings —
+  so it can't be relied on for end users.
+- **Marketplace-add ALWAYS full-clones the repo regardless of plugin source.** So no
+  single-repo layout fully eliminates `.planning` exposure.
+
+## Recommended Solution (to confirm at planning time)
+
+**Separate minimal marketplace repo** is the only approach that guarantees zero `.planning`
+exposure at BOTH the marketplace-add and plugin-install steps, with no special flag required
+from users:
+- New tiny repo containing only `.claude-plugin/marketplace.json`.
+- Its plugin entries point at this repo's plugin dir via `git-subdir`
+  (`{url: kleros/kleros-skills, path: <plugin-subdir>}`), sparse-cloning only that subtree.
+- This repo keeps `.planning/`, `index.html`, `netlify/`, `test/`, `scripts/`, etc. for
+  the team and the landing page; none of it reaches users.
+
+Alternative (lower effort, weaker guarantee): single repo + move plugin files into a
+subdir + `git-subdir` plugin source. Fixes the install cache but NOT the marketplace clone
+unless users pass `--sparse` manually.
+
+**Side cleanup spotted:** the cache still holds a stale `kleros@1.0.0` plugin from before
+the `kleros` → `kleros-skills` rename — worth verifying the old name is fully retired.
 
 ## Breadcrumbs
 
