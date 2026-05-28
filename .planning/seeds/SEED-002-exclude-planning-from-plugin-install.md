@@ -68,20 +68,41 @@ landing page + agent-discovery host. Decision-heavy more than code-heavy.
 - **Marketplace-add ALWAYS full-clones the repo regardless of plugin source.** So no
   single-repo layout fully eliminates `.planning` exposure.
 
-## Recommended Solution (to confirm at planning time)
+## Recommended Solution — Branch-based (PREFERRED, confirmed viable 2026-05-28)
 
-**Separate minimal marketplace repo** is the only approach that guarantees zero `.planning`
-exposure at BOTH the marketplace-add and plugin-install steps, with no special flag required
-from users:
-- New tiny repo containing only `.claude-plugin/marketplace.json`.
-- Its plugin entries point at this repo's plugin dir via `git-subdir`
-  (`{url: kleros/kleros-skills, path: <plugin-subdir>}`), sparse-cloning only that subtree.
-- This repo keeps `.planning/`, `index.html`, `netlify/`, `test/`, `scripts/`, etc. for
-  the team and the landing page; none of it reaches users.
+Pin the marketplace + plugin to a clean branch. **No repo restructuring** — skills stay at
+repo root, repo stays Claude-agnostic. This is jaybuidl's preferred direction.
 
-Alternative (lower effort, weaker guarantee): single repo + move plugin files into a
-subdir + `git-subdir` plugin source. Fixes the install cache but NOT the marketplace clone
-unless users pass `--sparse` manually.
+- **`ref` is supported at BOTH levels** (per code.claude.com docs):
+  - Plugin source in `marketplace.json`: `github` type accepts `ref` (branch/tag) and `sha`
+    (commit). e.g. `{"source":"github","repo":"kleros/kleros-skills","ref":"production"}`.
+  - Marketplace add itself: `claude plugin marketplace add kleros/kleros-skills@production`,
+    or a `ref` field under `extraKnownMarketplaces` in `settings.json`.
+- **Branch layout:** dev branch (everything — `.planning/`, landing page, tests) + a clean
+  `production` branch containing only `.claude-plugin/{marketplace.json,plugin.json}` + skill
+  dirs (+ LICENSE/README/CHANGELOG). Marketplace-add and plugin-install both check out
+  `production`'s tree → no `.planning` on disk. (`.git` history caveat is negligible — the
+  user sees a clean working tree, not loose dev files.)
+- **`production` is DERIVED, not hand-maintained:** a CI job on push to the dev branch
+  regenerates `production` (mirror minus dev-only paths). Avoids drift/fragility.
+- **Netlify stays on the dev branch** (landing page + agent-discovery host unaffected).
+
+**OPEN DECISION — which branch is the GitHub default?** `ref` only helps when the consumer
+supplies it; a bare `kleros/kleros-skills` install resolves to the repo's DEFAULT branch.
+  - (a) Keep `master` (dev) as default → public install instructions MUST say
+    `@production`; bare installs still leak dev files (functional, just messy).
+  - (b) Make `production` the default branch, dev on `develop`, point Netlify at `develop`
+    → bare installs are clean by default, but this inverts GitHub conventions (PR base,
+    clones, default checkout all land on the derived branch).
+
+## Alternative Solutions (rejected/fallback)
+
+- **Separate minimal marketplace repo** + `git-subdir` plugin source — also guarantees zero
+  exposure at both steps with no user flag, but adds a second repo to maintain. Fallback if
+  the branch model proves awkward.
+- **Single repo + move plugin files into a `plugin/` subdir + `git-subdir`** — rejected:
+  forces a Claude-specific subfolder restructure jaybuidl dislikes, and fixes only the
+  install cache, not the marketplace clone (unless users pass `--sparse` manually).
 
 **Side cleanup spotted:** the cache still holds a stale `kleros@1.0.0` plugin from before
 the `kleros` → `kleros-skills` rename — worth verifying the old name is fully retired.
