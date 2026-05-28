@@ -68,41 +68,77 @@ landing page + agent-discovery host. Decision-heavy more than code-heavy.
 - **Marketplace-add ALWAYS full-clones the repo regardless of plugin source.** So no
   single-repo layout fully eliminates `.planning` exposure.
 
-## Recommended Solution — Branch-based (PREFERRED, confirmed viable 2026-05-28)
+## LOCKED Solution — Branch-based, minimal-strip (decided 2026-05-28)
 
-Pin the marketplace + plugin to a clean branch. **No repo restructuring** — skills stay at
-repo root, repo stays Claude-agnostic. This is jaybuidl's preferred direction.
+**No repo restructuring** — skills stay at repo root, repo stays Claude-agnostic. `master`
+remains the GitHub default branch AND is the clean consumer-facing artifact ("master =
+production, by convention"). Development moves to a `dev` branch.
 
-- **`ref` is supported at BOTH levels** (per code.claude.com docs):
-  - Plugin source in `marketplace.json`: `github` type accepts `ref` (branch/tag) and `sha`
-    (commit). e.g. `{"source":"github","repo":"kleros/kleros-skills","ref":"production"}`.
-  - Marketplace add itself: `claude plugin marketplace add kleros/kleros-skills@production`,
-    or a `ref` field under `extraKnownMarketplaces` in `settings.json`.
-- **Branch layout:** dev branch (everything — `.planning/`, landing page, tests) + a clean
-  `production` branch containing only `.claude-plugin/{marketplace.json,plugin.json}` + skill
-  dirs (+ LICENSE/README/CHANGELOG). Marketplace-add and plugin-install both check out
-  `production`'s tree → no `.planning` on disk. (`.git` history caveat is negligible — the
-  user sees a clean working tree, not loose dev files.)
-- **`production` is DERIVED, not hand-maintained:** a CI job on push to the dev branch
-  regenerates `production` (mirror minus dev-only paths). Avoids drift/fragility.
-- **Netlify stays on the dev branch** (landing page + agent-discovery host unaffected).
+### Branch model
 
-**OPEN DECISION — which branch is the GitHub default?** `ref` only helps when the consumer
-supplies it; a bare `kleros/kleros-skills` install resolves to the repo's DEFAULT branch.
-  - (a) Keep `master` (dev) as default → public install instructions MUST say
-    `@production`; bare installs still leak dev files (functional, just messy).
-  - (b) Make `production` the default branch, dev on `develop`, point Netlify at `develop`
-    → bare installs are clean by default, but this inverts GitHub conventions (PR base,
-    clones, default checkout all land on the derived branch).
+| Branch | Contains | Role |
+|--------|----------|------|
+| `dev` (or `develop`) | EVERYTHING — `.planning/`, website, tests, tooling, skills | Team works here; all human PRs target it |
+| `master` (default) | `dev` MINUS dev-only cruft (minimal-strip); KEEPS website + skills | Consumer-facing: marketplace-add + plugin-install + Netlify all use it |
+
+- **Default branch stays `master`** → a bare `claude plugin marketplace add kleros/kleros-skills`
+  resolves to it and is automatically clean. No `@ref` required from users (which we can't
+  enforce anyway). `ref`/`sha` pinning support exists at both levels if ever needed, but the
+  default-branch-is-clean approach means we don't depend on it.
+- **`master` is DERIVED, not hand-maintained** — a GitHub Action regenerates it from `dev`
+  (see sync sketch). Don't treat `master` as a normal git ancestor of `dev`.
+
+### Why minimal-strip (not pure-plugin / two derived branches)
+
+Rejected the "pure-plugin `master` + separate `landing` branch" idea. The website must track
+the *released* plugin version; keeping website + plugin on the SAME branch makes that lockstep
+**structural** (same commit) instead of something a second derived branch has to maintain.
+The only thing pure-plugin would buy is removing ~60–100KB of `index.html`/favicons/`netlify.toml`
+from the plugin cache — invisible, harmless files, not the confusing dev-doc tree `.planning`
+is. jaybuidl agreed: tolerate the 2 webpage files to avoid maintaining 2 derived branches in
+lockstep. Reserve pure-plugin as a trivial future tightening (extend strip-list + move Netlify)
+only if that cosmetic bloat ever matters.
+
+### Strip-list (minimal-strip — remove from `master`)
+
+Definitely dev-only → strip: `.planning/`, `test/`, dev `scripts/`, root
+`*_FEEDBACK*.md` / `HANDOVER*.md`, build tooling (`package.json`, `yarn.lock`, `.yarnrc.yml`).
+**Keep on `master`:** `.claude-plugin/`, skill dirs, root `SKILL.md`, `index.html`, `netlify/`,
+`.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`.
+(Confirm the exact list at planning time — e.g. whether anything on `master` needs `package.json`;
+the Netlify edge function under `netlify/` must stay.)
+
+### Sync Action sketch (details deferred to research/planning)
+
+On merge to `dev`: Action checks out `dev`, removes the strip-list paths, and updates `master`
+with the result. Open mechanics for the research phase:
+- Writing to a protected `master`: default `GITHUB_TOKEN` is itself subject to branch
+  protection, so likely need a GitHub App / PAT, or an Action-opened auto-merged PR.
+- Branch protection: block direct human pushes to `master`; allow only the Action.
+- GH Actions reference docs (jaybuidl-provided, use these at research time):
+  - https://docs.github.com/en/actions.md
+  - https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax.md
+
+### Bonus CI gates (on the `dev` PR, required status checks)
+
+- Reuse existing `npm test` and `npm run update-digests` (the latter validates
+  `.well-known/agent-skills/index.json` digests).
+- Add: assert `plugin.json` `version` bumped + matching `CHANGELOG.md` entry exists
+  (aligns with the single-source-of-truth versioning convention in CLAUDE.md).
+
+**Tradeoff accepted:** this introduces CI as load-bearing infra to a repo that currently has
+"no build step." Worth it for the payoff.
 
 ## Alternative Solutions (rejected/fallback)
 
-- **Separate minimal marketplace repo** + `git-subdir` plugin source — also guarantees zero
-  exposure at both steps with no user flag, but adds a second repo to maintain. Fallback if
-  the branch model proves awkward.
+- **Separate minimal marketplace repo** + `git-subdir` plugin source — guarantees zero
+  exposure with no user flag, but adds a second repo to maintain. Fallback if the branch
+  model proves awkward.
 - **Single repo + move plugin files into a `plugin/` subdir + `git-subdir`** — rejected:
-  forces a Claude-specific subfolder restructure jaybuidl dislikes, and fixes only the
-  install cache, not the marketplace clone (unless users pass `--sparse` manually).
+  forces a Claude-specific subfolder restructure (disliked), and fixes only the install
+  cache, not the marketplace clone (unless users pass `--sparse` manually).
+- **Pure-plugin `master` + `landing` branch** — rejected: two derived branches in lockstep
+  is more machinery than the cosmetic-file savings justify (see "Why minimal-strip" above).
 
 **Side cleanup spotted:** the cache still holds a stale `kleros@1.0.0` plugin from before
 the `kleros` → `kleros-skills` rename — worth verifying the old name is fully retired.
