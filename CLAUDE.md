@@ -121,6 +121,16 @@ Static files serving agent discovery standards:
 7. Update `CHANGELOG.md`
 8. Commit and tag: `skillname@vX.Y.Z`
 
+## Gotcha: plugin install ships the WHOLE repo
+
+Marketplace add + plugin install = full `git clone`. Entire repo copied to user machine, **twice**: `~/.claude/plugins/marketplaces/<name>/` and version-pinned `~/.claude/plugins/cache/<mkt>/<plugin>/<version>/`. No native exclude — no `files`/`include`/`exclude`/`ignore` manifest field, no `.claudeignore`/`.gitattributes export-ignore` honored. `skills[]` paths only say where to READ, not what to copy. So **anything committed ships to users**, incl `.planning/`. Confirmed empirically + code.claude.com docs (2026-05).
+
+Bare `marketplace add kleros/kleros-skills` resolves to the repo DEFAULT branch.
+
+Knobs: `ref`/`sha` pin branch/tag/commit (marketplace `@ref` + plugin `source.ref`; `extraKnownMarketplaces` in settings.json); `git-subdir` source sparse-clones one subdir (install only, NOT marketplace-add); `--sparse` flag scopes marketplace-add (CLI-only, user-supplied → unreliable for end users).
+
+Planned fix: branch-based minimal-strip — `master` stays default+clean, derived from `dev` via GH Action. Plan as `/gsd:quick`, not a milestone. Full design: `.planning/seeds/SEED-002-exclude-planning-from-plugin-install.md`.
+
 ## Gotcha: IPFS CID URLs
 
 `cids[]` from the gateway already includes the `/ipfs/` prefix (e.g. `/ipfs/QmXXX...`). Building URLs as `"https://cdn.kleros.link/ipfs/" + cid` produces a double-slash. Use `"https://cdn.kleros.link" + cid` or just use the `urls[]` field from the response.
