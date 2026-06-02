@@ -68,7 +68,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 | 260527-a01 | Add top-level SKILL.md entry point + llms.txt symlink | 2026-05-27 | f3a1803 | -- |
 | 260527-a02 | Add prompt box + persistent setup section to landing page | 2026-05-27 | 7fe40b3 | -- |
 | 260527-a03 | Add OpenClaw skill support | 2026-05-27 | ea2268f | -- |
-| 260602-c1n | Add coming-soon placeholder cards for 8 upcoming skills | 2026-06-02 | pending | [260602-c1n-coming-soon-skill-placeholders](./quick/260602-c1n-coming-soon-skill-placeholders/) |
+| 260602-c1n | Add coming-soon placeholder cards for 8 upcoming skills | 2026-06-02 | 1260b59 | [260602-c1n-coming-soon-skill-placeholders](./quick/260602-c1n-coming-soon-skill-placeholders/) |
 
 ## Session Continuity
 
