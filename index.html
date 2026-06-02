@@ -636,6 +636,15 @@
       display: none;
     }
 
+    .skill.coming-soon::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(31, 21, 48, 0.04);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
     .skill.coming-soon:hover {
       border-color: var(--border);
       transform: none;
@@ -646,6 +655,7 @@
       position: absolute;
       top: 18px;
       right: 18px;
+      z-index: 1;
       font-family: var(--mono);
       font-size: 10.5px;
       letter-spacing: 1px;
