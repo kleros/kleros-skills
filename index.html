@@ -626,6 +626,41 @@
       color: var(--ink-dim);
     }
 
+    /* ---------- Coming-soon placeholder skills ---------- */
+
+    .skill.coming-soon {
+      cursor: default;
+    }
+
+    .skill.coming-soon::before {
+      display: none;
+    }
+
+    .skill.coming-soon:hover {
+      border-color: var(--border);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .skill-status {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      background: var(--border-soft);
+      padding: 3px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .skill.coming-soon .skill-foot {
+      justify-content: flex-start;
+    }
+
     /* ---------- Setup tabs ---------- */
 
     .setup {
@@ -1159,7 +1194,7 @@
     <section class="block" id="skills">
       <div class="section-head">
         <h2>Skills</h2>
-        <span class="meta">2 live · each at /&lt;name&gt;/SKILL.md</span>
+        <span class="meta">2 live · 8 coming soon · each at /&lt;name&gt;/SKILL.md</span>
       </div>
       <p class="section-intro">Each skill is a self-contained knowledge pack at <code>/&lt;name&gt;/SKILL.md</code>. Your agent fetches one on demand. Click a card to preview.</p>
 
@@ -1202,6 +1237,140 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
               <span class="label">Copy path</span>
             </button>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">CLI</span>
+            <span class="skill-tag">MCP</span>
+            <span class="skill-tag">Agents</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros CLI</h3>
+            <p class="skill-short">Token-efficient toolkit for the Kleros protocol</p>
+          </div>
+          <p class="skill-desc">Query courts, disputes, evidence, jurors, stakes, and policy from the command line, MCP, or HTTP. TOON output by default, JSON/YAML/Markdown on demand. Composes with peer MCPs for binary evidence extraction.</p>
+          <div class="skill-foot">
+            <code>kleros-cli/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Escrow</span>
+            <span class="skill-tag">Arbitration</span>
+            <span class="skill-tag">v1</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros Escrow v1</h3>
+            <p class="skill-short">Conditional payments with on-chain arbitration</p>
+          </div>
+          <p class="skill-desc">Create, fund, and resolve Kleros Escrow v1 transactions. Trigger arbitration when counterparties disagree and follow rulings back into payment release.</p>
+          <div class="skill-foot">
+            <code>kleros-escrow-v1/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Escrow</span>
+            <span class="skill-tag">Arbitration</span>
+            <span class="skill-tag">v2</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros Escrow v2</h3>
+            <p class="skill-short">Next-gen conditional payments with arbitration</p>
+          </div>
+          <p class="skill-desc">Create, fund, and resolve Kleros Escrow v2 transactions on the latest protocol version. Trigger arbitration on dispute and follow rulings back into payment release.</p>
+          <div class="skill-foot">
+            <code>kleros-escrow-v2/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">ERC-8004</span>
+            <span class="skill-tag">Agents</span>
+            <span class="skill-tag">Reputation</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Agent Verification</h3>
+            <p class="skill-short">Verify ERC-8004 agents, boost reputation</p>
+          </div>
+          <p class="skill-desc">Verify an ERC-8004-identified agent through Kleros arbitration and accrue on-chain reputation signals other systems can trust.</p>
+          <div class="skill-foot">
+            <code>agent-verification/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Builder</span>
+            <span class="skill-tag">Integration</span>
+            <span class="skill-tag">Arbitration</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Arbitrable App Builder</h3>
+            <p class="skill-short">Entry point for every Kleros integration</p>
+          </div>
+          <p class="skill-desc">Unified entry point for building Kleros-arbitrable applications — whether disputes are enforced on-chain or off-chain. Pick the right pattern, the right contract, and the right policy for your use case.</p>
+          <div class="skill-foot">
+            <code>arbitrable-app-builder/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Overview</span>
+            <span class="skill-tag">Arbitration</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Why Kleros</h3>
+            <p class="skill-short">Credibly neutral on-chain dispute resolution</p>
+          </div>
+          <p class="skill-desc">Credibly neutral, appealable on-chain dispute resolution for Web3, the internet economy, and institutions. When and why to reach for Kleros over alternatives.</p>
+          <div class="skill-foot">
+            <code>why-kleros/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Protocol</span>
+            <span class="skill-tag">Crypto-econ</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Kleros Protocol</h3>
+            <p class="skill-short">Crypto-economics, design choices, tradeoffs</p>
+          </div>
+          <p class="skill-desc">The crypto-economic foundations behind Kleros — staking, drawing, voting, coherence, appeals. Design choices and the tradeoffs they encode.</p>
+          <div class="skill-foot">
+            <code>kleros-protocol/SKILL.md</code>
+          </div>
+        </div>
+
+        <div class="skill coming-soon" aria-disabled="true">
+          <span class="skill-status">Coming soon</span>
+          <div class="skill-tags">
+            <span class="skill-tag">Onchain</span>
+            <span class="skill-tag">Reference</span>
+            <span class="skill-tag">Addresses</span>
+          </div>
+          <div>
+            <h3 class="skill-name">Contract Addresses</h3>
+            <p class="skill-short">Grounding in on-chain truth</p>
+          </div>
+          <p class="skill-desc">Canonical Kleros contract addresses across networks — arbitrators, courts, escrow, curate. Source of truth for every on-chain interaction.</p>
+          <div class="skill-foot">
+            <code>contract-addresses/SKILL.md</code>
           </div>
         </div>
 
@@ -1600,7 +1769,7 @@ Before interacting with Kleros protocol, uploading evidence, or working with Cur
       modal.setAttribute('aria-hidden', 'true');
     }
 
-    document.querySelectorAll('.skill').forEach(card => {
+    document.querySelectorAll('.skill:not(.coming-soon)').forEach(card => {
       const open = () => openModal(card.dataset.skillName, card.dataset.skillPath);
       card.addEventListener('click', (e) => {
         if (e.target.closest('.btn')) return;
