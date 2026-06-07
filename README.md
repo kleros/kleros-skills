@@ -54,6 +54,15 @@ npm test
 
 Landing page: `npx serve .` then open `http://localhost:3000`.
 
+## Contributing
+
+Development happens on the `dev` branch. `master` is a derived, consumer-facing branch regenerated automatically by a GitHub Action on release tag pushes — do not push to it directly.
+
+1. Fork or branch from `dev`
+2. Make changes, run `npm test`
+3. PR against `dev`
+4. On release tag push, the sync Action strips dev-only files and updates `master`
+
 ## Links
 
 - [skills.kleros.io](https://skills.kleros.io) — Landing page

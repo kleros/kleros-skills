@@ -37,6 +37,21 @@ Commits require GPG passphrase (interactive — will hang). Always use `git -c c
 
 Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.0`).
 
+## Branch model
+
+| Branch | Role | Who pushes |
+|--------|------|-----------|
+| `dev` | Full repo — all human work, PRs, planning | Contributors |
+| `master` | Derived clean tree — plugin/marketplace consumers see this | GitHub Action only |
+
+**Rules:**
+- All PRs target `dev`.
+- Never commit or push directly to `master` — it is regenerated automatically.
+- `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
+- Sync fires on tag push matching `*@v*.*.*` or `v*`, and on `workflow_dispatch`.
+- Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*_FEEDBACK*.md` / `HANDOVER*.md`.
+- Phase 2 (deferred): add branch ruleset on master restricting direct human pushes. Precondition: GitHub App registered in kleros org + secrets set (see SEED-002 SUMMARY).
+
 ## Plugin structure
 
 ```
@@ -129,7 +144,7 @@ Bare `marketplace add kleros/kleros-skills` resolves to the repo DEFAULT branch.
 
 Knobs: `ref`/`sha` pin branch/tag/commit (marketplace `@ref` + plugin `source.ref`; `extraKnownMarketplaces` in settings.json); `git-subdir` source sparse-clones one subdir (install only, NOT marketplace-add); `--sparse` flag scopes marketplace-add (CLI-only, user-supplied → unreliable for end users).
 
-Planned fix: branch-based minimal-strip — `master` stays default+clean, derived from `dev` via GH Action. Plan as `/gsd:quick`, not a milestone. Full design: `.planning/seeds/SEED-002-exclude-planning-from-plugin-install.md`.
+Fix implemented: branch-based minimal-strip — `dev` holds full repo; `master` is derived via GitHub Action (`.github/workflows/sync-master.yml`) triggered on release tags. Dev-only dirs/files are stripped before master push. Contributors: PR against `dev`. Full design: `.planning/seeds/SEED-002-exclude-planning-from-plugin-install.md`.
 
 ## Gotcha: IPFS CID URLs
 
