@@ -1,0 +1,131 @@
+name: Sync master from dev
+
+on:
+  push:
+    tags:
+      - "*@v*.*.*"   # skill release tags: kleros-curate@v1.0.0, kleros-ipfs-upload@v1.1.0
+      - "v*"         # repo-level/whole-plugin releases: v1.2.0
+  workflow_dispatch:   # manual override for hotfixes / initial dry-run
+
+# Never drop a running sync — queue the next one instead.
+concurrency:
+  group: sync-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Mint a short-lived GitHub App installation token (auto-revoked at job end).
+      #    App must be registered in the kleros org, scoped to this repo only,
+      #    with Contents: Read and write.  No other permissions needed.
+      # -----------------------------------------------------------------------
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      # -----------------------------------------------------------------------
+      # 2. Check out dev (shallow — full history not needed for strip+push).
+      # -----------------------------------------------------------------------
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 1
+
+      # Fetch origin/master so --force-with-lease has a known remote-tracking ref.
+      # The "|| true" handles the edge case where master does not yet exist on origin
+      # (e.g. very first bootstrap run before any master commits).
+      - name: Fetch origin/master for force-with-lease safety
+        run: git fetch origin master:refs/remotes/origin/master || true
+
+      # -----------------------------------------------------------------------
+      # 3. Set up Node for the quality gates.
+      # -----------------------------------------------------------------------
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # -----------------------------------------------------------------------
+      # 4. Quality gate — test suite must pass before we touch master.
+      # -----------------------------------------------------------------------
+      - name: Quality gate — npm test
+        run: npm test
+
+      # -----------------------------------------------------------------------
+      # 5. Quality gate — index.json digests must be fresh.
+      #    Re-running update-digests and checking for a diff ensures no stale
+      #    SHA-256 hashes ship to user machines.
+      # -----------------------------------------------------------------------
+      - name: Quality gate — digest freshness
+        run: |
+          node scripts/update-digests.js
+          if ! git diff --quiet .well-known/agent-skills/index.json; then
+            echo "ERROR: .well-known/agent-skills/index.json digests are stale."
+            echo "Run 'npm run update-digests' locally and commit the result before tagging."
+            exit 1
+          fi
+
+      # -----------------------------------------------------------------------
+      # 6. Strip dev-only files.
+      #    Everything removed here will NOT appear on master or in plugin installs.
+      #
+      #    Strip-list:
+      #      .planning/        — GSD planning artefacts
+      #      test/             — test suite
+      #      scripts/          — dev helper scripts
+      #      package.json      — dev dependencies / npm scripts
+      #      yarn.lock         — lockfile
+      #      .yarnrc.yml       — Yarn config
+      #      *_FEEDBACK*.md    — AI session feedback scratch files (root only)
+      #      HANDOVER*.md      — Handover scratch files (root only)
+      # -----------------------------------------------------------------------
+      - name: Strip dev-only files
+        run: |
+          git rm -r --quiet --ignore-unmatch \
+            .planning \
+            test \
+            scripts \
+            package.json \
+            yarn.lock \
+            .yarnrc.yml
+          # Remove root feedback/handover md files by pattern
+          git ls-files | grep -E '^(.*_FEEDBACK.*|HANDOVER[^/]*)\.md$' | \
+            xargs --no-run-if-empty git rm --quiet
+          echo "Strip complete. Remaining tracked files:"
+          git ls-files | head -60
+
+      # -----------------------------------------------------------------------
+      # 7. Configure git identity for the bot commit on master.
+      #    NOTE: must match the actual GitHub App slug — update if you registered
+      #    a different name when creating the app.
+      # -----------------------------------------------------------------------
+      - name: Configure git identity
+        run: |
+          git config user.name "kleros-skills-bot[bot]"
+          git config user.email "kleros-skills-bot[bot]@users.noreply.github.com"
+
+      # -----------------------------------------------------------------------
+      # 8. Commit the stripped tree and push to master.
+      #    --force-with-lease rejects the push if someone manually pushed to
+      #    master between our checkout and this step (safer than --force).
+      #    The commit is created even when deletions are the only changes.
+      # -----------------------------------------------------------------------
+      - name: Commit stripped tree and push to master
+        run: |
+          # If nothing changed after strip, master is already in sync — skip.
+          STAGED=$(git diff --cached --name-only | wc -l)
+          UNSTAGED=$(git diff --name-only | wc -l)
+          if [ "$STAGED" -eq 0 ] && [ "$UNSTAGED" -eq 0 ]; then
+            echo "No changes after strip — master is already up to date."
+            exit 0
+          fi
+          git commit -m "chore(master): sync from dev (strip dev-only files)"
+          git push origin HEAD:master --force-with-lease
