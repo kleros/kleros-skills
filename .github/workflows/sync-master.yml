@@ -7,6 +7,12 @@ on:
       - "v*"         # repo-level/whole-plugin releases: v1.2.0
   workflow_dispatch:   # manual override for hotfixes / initial dry-run
 
+# Principle of least privilege for the implicit GITHUB_TOKEN.
+# The actual master push uses the GitHub App token minted below — this block
+# only restricts what the workflow's auto-injected GITHUB_TOKEN can do.
+permissions:
+  contents: read
+
 # Never drop a running sync — queue the next one instead.
 concurrency:
   group: sync-master
@@ -15,16 +21,21 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 15   # hard cap; default is 6h — refuse to silently burn budget
 
     steps:
       # -----------------------------------------------------------------------
       # 1. Mint a short-lived GitHub App installation token (auto-revoked at job end).
       #    App must be registered in the kleros org, scoped to this repo only,
       #    with Contents: Read and write.  No other permissions needed.
+      #
+      #    SHA-pinned (REV-02): this Action sees GH_APP_PRIVATE_KEY as input.
+      #    A mutable @v2 tag would let a compromised release exfiltrate the PEM.
+      #    Update the pin alongside any deliberate version bump.
       # -----------------------------------------------------------------------
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349  # v2.2.2
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -96,8 +107,11 @@ jobs:
             package.json \
             yarn.lock \
             .yarnrc.yml
-          # Remove root feedback/handover md files by pattern
-          git ls-files | grep -E '^(.*_FEEDBACK.*|HANDOVER[^/]*)\.md$' | \
+          # Remove root feedback/handover md files by pattern.
+          # REV-01: root-anchored with [^/]* — previous '^.*_FEEDBACK.*\.md$' over-matched
+          # paths at ANY depth (e.g. kleros-curate/MIGRATION_FEEDBACK.md), which would
+          # silently delete legitimate skill-dir docs from user installs.
+          git ls-files | grep -E '^[^/]*_FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
             xargs --no-run-if-empty git rm --quiet
           echo "Strip complete. Remaining tracked files:"
           git ls-files | head -60
