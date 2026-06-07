@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: Unified Curate Skill
 status: Awaiting next milestone
 stopped_at: Phase 5 context gathered
-last_updated: "2026-05-27T05:39:04.836Z"
-last_activity: 2026-05-27 — Milestone v1.0 completed and archived
+last_updated: "2026-06-07T22:30:00.000Z"
+last_activity: 2026-06-07 — Completed quick task 260607-w84: SEED-002 branch-based minimal-strip
 progress:
   total_phases: 13
   completed_phases: 5
@@ -69,6 +69,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 | 260527-a02 | Add prompt box + persistent setup section to landing page | 2026-05-27 | 7fe40b3 | -- |
 | 260527-a03 | Add OpenClaw skill support | 2026-05-27 | ea2268f | -- |
 | 260602-c1n | Add coming-soon placeholder cards for 8 upcoming skills | 2026-06-02 | 1260b59 | [260602-c1n-coming-soon-skill-placeholders](./quick/260602-c1n-coming-soon-skill-placeholders/) |
+| 260607-w84 | Execute SEED-002: branch-based minimal-strip (dev/master split via GH Action) | 2026-06-07 | 4a80b4e | [260607-w84-execute-seed-002-branch-based-minimal-st](./quick/260607-w84-execute-seed-002-branch-based-minimal-st/) |
 
 ## Session Continuity
 
