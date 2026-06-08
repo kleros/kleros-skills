@@ -4,8 +4,8 @@ on:
   push:
     tags:
       - "*@v*.*.*"   # skill release tags: kleros-curate@v1.0.0, kleros-ipfs-upload@v1.1.0
-      - "v*"         # repo-level/whole-plugin releases: v1.2.0
-  workflow_dispatch:   # manual override for hotfixes / initial dry-run
+      - "v[0-9]*"    # repo-level/whole-plugin releases: v1.2.0 (REV-05: digit-anchored to skip vNext, vendor-*, etc.)
+  workflow_dispatch:   # manual override for hotfixes / initial dry-run (gated by production-sync Environment)
 
 # Principle of least privilege for the implicit GITHUB_TOKEN.
 # The actual master push uses the GitHub App token minted below — this block
@@ -22,6 +22,14 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 15   # hard cap; default is 6h — refuse to silently burn budget
+
+    # REV-07: gate the job on a protected Environment.
+    # Configure `production-sync` in repo Settings → Environments with:
+    #   - Required reviewers: org owners only (or named maintainers)
+    #   - Deployment branches: restrict to `dev` (defense in depth)
+    # workflow_dispatch then requires reviewer approval before the App token
+    # is minted, closing the privilege-amplification vector for non-tag runs.
+    environment: production-sync
 
     steps:
       # -----------------------------------------------------------------------
@@ -55,6 +63,36 @@ jobs:
       # (e.g. very first bootstrap run before any master commits).
       - name: Fetch origin/master for force-with-lease safety
         run: git fetch origin master:refs/remotes/origin/master || true
+
+      # -----------------------------------------------------------------------
+      # REV-03: Tag ancestry check.
+      # Verify the triggering commit is reachable from origin/dev before any
+      # destructive operation. Closes the privilege-amplification vector where
+      # a contributor pushes a tag at an arbitrary (e.g. malicious) commit.
+      #
+      # github.sha is a 40-char hex hash from GitHub itself (not user-controllable
+      # text), so direct interpolation in `run:` is safe. The env-var pattern is
+      # used anyway as defensive coding consistent with the workflow's other steps.
+      #
+      # Skipped for workflow_dispatch — that path is gated by the Environment
+      # required-reviewers check (REV-07).
+      # -----------------------------------------------------------------------
+      - name: Verify trigger commit is on dev ancestry
+        if: github.event_name == 'push'
+        env:
+          TRIGGER_SHA: ${{ github.sha }}
+          TRIGGER_REF: ${{ github.ref_name }}
+        run: |
+          # Fetch enough dev history for the merge-base lookup.
+          # 500 commits is generous; the existing checkout was --depth=1.
+          git fetch origin dev --depth=500
+          if ! git merge-base --is-ancestor "$TRIGGER_SHA" origin/dev; then
+            echo "ERROR: tag $TRIGGER_REF (commit $TRIGGER_SHA) is not reachable"
+            echo "       from origin/dev. Refusing to sync master — release tags"
+            echo "       must point to commits on dev's history."
+            exit 1
+          fi
+          echo "OK: $TRIGGER_REF ($TRIGGER_SHA) is on dev ancestry."
 
       # -----------------------------------------------------------------------
       # 3. Set up Node for the quality gates.
@@ -117,14 +155,50 @@ jobs:
           git ls-files | head -60
 
       # -----------------------------------------------------------------------
+      # REV-09: Sanity check the stripped tree before committing.
+      # Catches both over-strip (keep-list path disappeared) and under-strip
+      # (strip-list path survived). Cheap insurance against future strip-list
+      # edits that go wrong.
+      # -----------------------------------------------------------------------
+      - name: Sanity check stripped tree
+        run: |
+          # strip-list assertions — must be ABSENT
+          for path in .planning test scripts package.json yarn.lock .yarnrc.yml; do
+            if [ -e "$path" ]; then
+              echo "FATAL: strip-list path '$path' still present after strip"
+              exit 1
+            fi
+          done
+          # Root feedback/handover files must be ABSENT
+          if compgen -G "*_FEEDBACK*.md" > /dev/null 2>&1 || \
+             compgen -G "HANDOVER*.md" > /dev/null 2>&1; then
+            echo "FATAL: root *_FEEDBACK*.md or HANDOVER*.md still present"
+            exit 1
+          fi
+          # keep-list assertions — must be PRESENT (catches strip overreach)
+          for path in kleros-curate kleros-ipfs-upload .well-known/agent-skills \
+                      .github/workflows SKILL.md index.html README.md LICENSE \
+                      CHANGELOG.md robots.txt sitemap.xml; do
+            if [ ! -e "$path" ]; then
+              echo "FATAL: keep-list path '$path' missing after strip — overreach"
+              exit 1
+            fi
+          done
+          echo "OK: stripped tree looks correct."
+
+      # -----------------------------------------------------------------------
       # 7. Configure git identity for the bot commit on master.
-      #    NOTE: must match the actual GitHub App slug — update if you registered
-      #    a different name when creating the app.
+      #    REV-11: identity derived dynamically from the App token output.
+      #    Whatever name the user registered the App with (e.g. kleros-skills-bot
+      #    or kleros-sync), the commit author will match the actual App slug —
+      #    no hardcoded string to drift out of sync.
       # -----------------------------------------------------------------------
       - name: Configure git identity
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
         run: |
-          git config user.name "kleros-skills-bot[bot]"
-          git config user.email "kleros-skills-bot[bot]@users.noreply.github.com"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_SLUG}[bot]@users.noreply.github.com"
 
       # -----------------------------------------------------------------------
       # 8. Commit the stripped tree and push to master.
