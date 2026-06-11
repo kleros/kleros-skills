@@ -54,14 +54,52 @@ npm test
 
 Landing page: `npx serve .` then open `http://localhost:3000`.
 
+## Branch model
+
+This repo uses a two-branch model to keep end-user plugin installs lean.
+
+**Why:** `claude plugin marketplace add` and `clawhub install` clone the entire git repository to user machines (twice — once for the marketplace mirror, once for the version-pinned cache). Everything committed ships to every user. Without this split, dozens of planning files, tests, and dev-only scripts would land in `~/.claude/plugins/...` on every install. There is no native `.claudeignore` / `files` field in the plugin spec at the time of writing, so the split is the cleanest way to scope what reaches consumers.
+
+**How:**
+
+| Branch | Role | What's on it |
+|--------|------|--------------|
+| `dev` | Source of truth — all human work, PRs, planning artefacts, tests, build tooling | Full repo |
+| `master` (default) | Consumer-facing — what plugin installs and Netlify serve | `dev` minus the strip-list |
+
+**Strip-list** (removed from `master`): `.planning/`, `test/`, `scripts/`, `package.json`, `yarn.lock`, `.yarnrc.yml`, root `*_FEEDBACK*.md`, root `HANDOVER*.md`.
+
+**Keep-list** (present on both branches): `.claude-plugin/`, skill dirs, root `SKILL.md`, `index.html`, `netlify/`, `.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`, `.github/workflows/`.
+
+`master` is regenerated automatically by [`.github/workflows/sync-master.yml`](.github/workflows/sync-master.yml) on release-tag pushes. Direct human pushes to `master` are discouraged — the workflow will overwrite them on the next sync. Tag protection rules restrict who can create release tags; the sync workflow itself runs under a dedicated `kleros-skills-sync` GitHub App identity scoped to this repo.
+
+For the full design rationale, security model, and rejected alternatives, see [SEED-002](https://github.com/kleros/kleros-skills/blob/dev/.planning/seeds/SEED-002-exclude-planning-from-plugin-install.md) on the `dev` branch.
+
 ## Contributing
 
-Development happens on the `dev` branch. `master` is a derived, consumer-facing branch regenerated automatically by a GitHub Action on release tag pushes — do not push to it directly.
+1. Branch from `dev` (or fork and branch from your fork's `dev`)
+2. Make your changes
+3. Run `npm test` locally
+4. Open a PR targeting `dev` — never `master`
 
-1. Fork or branch from `dev`
-2. Make changes, run `npm test`
-3. PR against `dev`
-4. On release tag push, the sync Action strips dev-only files and updates `master`
+## Releases (maintainers)
+
+1. Merge release-ready commits into `dev`
+2. Bump the relevant version per the [Skill release pattern](https://github.com/kleros/kleros-skills/blob/dev/CLAUDE.md) (skill tags use `skillname@vX.Y.Z`; whole-repo tags use `vX.Y.Z`)
+3. Tag and push:
+   ```bash
+   git tag -a "kleros-curate@v1.0.1" -m "release notes here"
+   git push origin "kleros-curate@v1.0.1"
+   ```
+4. The sync Action runs:
+   - `npm test` (must pass)
+   - `npm run update-digests` freshness check (must pass)
+   - Strips dev-only files
+   - Sanity-checks the stripped tree (asserts strip-list absent and keep-list present)
+   - Force-pushes the result to `master` under the `kleros-skills-sync[bot]` identity
+5. `master` redeploys to Netlify; the new release is live for plugin installs within minutes
+
+If any gate fails, `master` stays at the previous good state — the tag exists but the release does not reach users until the issue is fixed and a new tag is pushed.
 
 ## Links
 
