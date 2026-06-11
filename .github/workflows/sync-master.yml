@@ -179,32 +179,17 @@ jobs:
           # MAINTENANCE CONTRACT: every legitimate new root file or directory must
           # be added to EXPECTED_ROOT below. CI will fail-loud until it is.
           # See 260607-w84-REVIEW.md REV-16 for the engineering rationale.
-          EXPECTED_ROOT=$(sort <<'EOF'
-.claude
-.claude-plugin
-.github
-.gitignore
-.well-known
-apple-touch-icon.png
-CHANGELOG.md
-CLAUDE.md
-favicon-16x16.png
-favicon-32x32.png
-favicon.ico
-favicon.svg
-index.html
-kleros-curate
-kleros-ipfs-upload
-LICENSE
-netlify
-netlify.toml
-openclaw-skill
-README.md
-robots.txt
-sitemap.xml
-SKILL.md
-EOF
-)
+          # printf '%s\n' (not heredoc) — heredoc closing EOF must sit at
+          # column 0, which violates YAML's run-block indentation rule and
+          # makes GitHub refuse to parse the workflow. printf+continuations
+          # are valid YAML *and* valid bash.
+          EXPECTED_ROOT=$(printf '%s\n' \
+            .claude .claude-plugin .github .gitignore .well-known \
+            apple-touch-icon.png CHANGELOG.md CLAUDE.md \
+            favicon-16x16.png favicon-32x32.png favicon.ico favicon.svg \
+            index.html kleros-curate kleros-ipfs-upload LICENSE \
+            netlify netlify.toml openclaw-skill README.md robots.txt \
+            sitemap.xml SKILL.md | sort)
           ACTUAL_ROOT=$(ls -A1 | sort)
           UNEXPECTED=$(comm -23 <(echo "$ACTUAL_ROOT") <(echo "$EXPECTED_ROOT"))
           if [ -n "$UNEXPECTED" ]; then
