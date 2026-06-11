@@ -169,17 +169,50 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Sanity check stripped tree
         run: |
-          # strip-list assertions — must be ABSENT
-          for path in .planning test scripts package.json yarn.lock .yarnrc.yml; do
-            if [ -e "$path" ]; then
-              echo "FATAL: strip-list path '$path' still present after strip"
-              exit 1
-            fi
-          done
-          # Root feedback/handover files must be ABSENT
-          if compgen -G "*FEEDBACK*.md" > /dev/null 2>&1 || \
-             compgen -G "HANDOVER*.md" > /dev/null 2>&1; then
-            echo "FATAL: root *FEEDBACK*.md or HANDOVER*.md still present"
+          # REV-16 principle fix (2026-06-11): allowlist-based assertion replaces
+          # predicate-symmetric ABSENT checks. Catches under-strip AND any future
+          # scratch-pattern (BUGFIX_NOTES.md, DRAFT_v2.md, etc.) automatically,
+          # instead of requiring a workflow edit per new pattern. The check is
+          # orthogonal to the strip step's predicate — if the strip's pattern is
+          # wrong, this allowlist still fails-loud.
+          #
+          # MAINTENANCE CONTRACT: every legitimate new root file or directory must
+          # be added to EXPECTED_ROOT below. CI will fail-loud until it is.
+          # See 260607-w84-REVIEW.md REV-16 for the engineering rationale.
+          EXPECTED_ROOT=$(sort <<'EOF'
+.claude
+.claude-plugin
+.github
+.gitignore
+.well-known
+apple-touch-icon.png
+CHANGELOG.md
+CLAUDE.md
+favicon-16x16.png
+favicon-32x32.png
+favicon.ico
+favicon.svg
+index.html
+kleros-curate
+kleros-ipfs-upload
+LICENSE
+netlify
+netlify.toml
+openclaw-skill
+README.md
+robots.txt
+sitemap.xml
+SKILL.md
+EOF
+)
+          ACTUAL_ROOT=$(ls -A1 | sort)
+          UNEXPECTED=$(comm -23 <(echo "$ACTUAL_ROOT") <(echo "$EXPECTED_ROOT"))
+          if [ -n "$UNEXPECTED" ]; then
+            echo "FATAL: unexpected root entries after strip:"
+            echo "$UNEXPECTED"
+            echo ""
+            echo "If intentional: add the entry to EXPECTED_ROOT in sync-master.yml and re-run."
+            echo "If accidental: extend the strip-list or fix the source on dev."
             exit 1
           fi
           # keep-list assertions — must be PRESENT (catches strip overreach)
