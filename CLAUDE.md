@@ -42,15 +42,30 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 | Branch | Role | Who pushes |
 |--------|------|-----------|
 | `dev` | Full repo — all human work, PRs, planning | Contributors |
-| `master` | Derived clean tree — plugin/marketplace consumers see this | GitHub Action only |
+| `master` | Derived clean tree — plugin/marketplace consumers see this | GitHub Action (also: admins until Phase 2 ships) |
 
 **Rules:**
 - All PRs target `dev`.
 - Never commit or push directly to `master` — it is regenerated automatically.
 - `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
-- Sync fires on tag push matching `*@v*.*.*` or `v*`, and on `workflow_dispatch`.
+- Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
 - Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
-- Phase 2 (deferred): add branch ruleset on master restricting direct human pushes. Precondition: GitHub App registered in kleros org + secrets set (see SEED-002 SUMMARY).
+- Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
+
+**Live infrastructure (SHIPPED 2026-06-11 via quick task 260607-w84):**
+- Workflow: `.github/workflows/sync-master.yml`
+- Identity: GitHub App `kleros-skills-sync` in `kleros` org, scoped to this repo, Contents R/W only
+- Environment: `production-sync` — required reviewer (jaybuidl); deployment-allowlist: `dev` branch + `*@v*` + `v[0-9]*` tag patterns. **Keep tag-pattern allowlist in sync with workflow's `on.push.tags`.**
+- Tag protection: ruleset `release tags` restricts creation/update/deletion of release tags to bypass list
+
+**Phase 2 still deferred:** master branch ruleset (rulesets, NOT classic — classic bypass doesn't cover required status checks). Bundle with REV-17 in a single `/gsd:quick`.
+
+**⏰ Maintenance: REV-17 Node 20 deprecation, deadline 2026-06-16.** `actions/checkout`, `actions/setup-node`, `actions/create-github-app-token` need bumping to Node-24-compatible versions before that date or the workflow may break. Concrete SHAs + pre-bump check (verify `app-slug` output still exists at create-github-app-token v3.2.0) in `.planning/quick/260607-w84-execute-seed-002-branch-based-minimal-st/260607-w84-REVIEW.md`.
+
+**Operational gotchas worth knowing:**
+- `workflow_dispatch` needs the workflow on the default branch — tag-push doesn't. If the workflow ever vanishes from master, bootstrap via a sentinel tag pushed on dev.
+- Forgetting `git push origin dev` before re-dispatching is a common foot-gun — the workflow runs against `origin/dev`, not local.
+- Recovery if master ships bad state: `git push --force-with-lease origin <good-sha>:master` from local (admin bypass), then disable workflow, fix on dev, re-enable.
 
 ## Plugin structure
 
