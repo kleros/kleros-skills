@@ -48,6 +48,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - All PRs target `dev`.
 - Never commit or push directly to `master` — it is regenerated automatically.
 - `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
+- Release tags reference dev commits, not master — `git tag --contains HEAD` on a master checkout finds nothing.
 - Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
 - Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.

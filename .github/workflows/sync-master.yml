@@ -43,7 +43,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349  # v2.2.2
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -52,7 +52,7 @@ jobs:
       # 2. Check out dev (shallow — full history not needed for strip+push).
       # -----------------------------------------------------------------------
       - name: Checkout dev
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v6.0.3
         with:
           ref: dev
           token: ${{ steps.app-token.outputs.token }}
@@ -97,10 +97,10 @@ jobs:
       # -----------------------------------------------------------------------
       # 3. Set up Node for the quality gates.
       # -----------------------------------------------------------------------
-      - name: Set up Node 20
-        uses: actions/setup-node@v4
+      - name: Set up Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444  # v6.4.0
         with:
-          node-version: "20"
+          node-version: "24"
 
       # -----------------------------------------------------------------------
       # 4. Quality gate — test suite must pass before we touch master.
@@ -152,8 +152,9 @@ jobs:
           # 2026-06-11 fix: dropped the leading underscore requirement — earlier
           # '_FEEDBACK' pattern missed files like FEEDBACK_FROM_CLAUDE_MARKETPLACE.md
           # where FEEDBACK is at position 0. Sanity check below was also broadened.
-          git ls-files | grep -E '^[^/]*FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
-            xargs --no-run-if-empty git rm --quiet
+          git ls-files -z | \
+            grep -zE '^[^/]*FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
+            xargs -0 --no-run-if-empty git rm --quiet
           echo "Strip complete. Remaining tracked files:"
           git ls-files | head -60
 
@@ -211,12 +212,5 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Commit stripped tree and push to master
         run: |
-          # If nothing changed after strip, master is already in sync — skip.
-          STAGED=$(git diff --cached --name-only | wc -l)
-          UNSTAGED=$(git diff --name-only | wc -l)
-          if [ "$STAGED" -eq 0 ] && [ "$UNSTAGED" -eq 0 ]; then
-            echo "No changes after strip — master is already up to date."
-            exit 0
-          fi
           git commit -m "chore(master): sync from dev (strip dev-only files)"
           git push origin HEAD:master --force-with-lease
