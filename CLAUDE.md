@@ -49,7 +49,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Never commit or push directly to `master` — it is regenerated automatically.
 - `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
 - Sync fires on tag push matching `*@v*.*.*` or `v*`, and on `workflow_dispatch`.
-- Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*_FEEDBACK*.md` / `HANDOVER*.md`.
+- Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Phase 2 (deferred): add branch ruleset on master restricting direct human pushes. Precondition: GitHub App registered in kleros org + secrets set (see SEED-002 SUMMARY).
 
 ## Plugin structure

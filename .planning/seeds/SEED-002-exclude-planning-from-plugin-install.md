@@ -102,7 +102,9 @@ only if that cosmetic bloat ever matters.
 ### Strip-list (minimal-strip — remove from `master`)
 
 Definitely dev-only → strip: `.planning/`, `test/`, dev `scripts/`, root
-`*_FEEDBACK*.md` / `HANDOVER*.md`, build tooling (`package.json`, `yarn.lock`, `.yarnrc.yml`).
+`*FEEDBACK*.md` / `HANDOVER*.md`, build tooling (`package.json`, `yarn.lock`, `.yarnrc.yml`).
+(2026-06-11: pattern broadened from `*_FEEDBACK*.md` to `*FEEDBACK*.md` —
+files starting with `FEEDBACK_…` were not matched by the underscore-prefixed form.)
 **Keep on `master`:** `.claude-plugin/`, skill dirs, root `SKILL.md`, `index.html`, `netlify/`,
 `.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`.
 (Confirm the exact list at planning time — e.g. whether anything on `master` needs `package.json`;

@@ -133,7 +133,7 @@ jobs:
       #      package.json      — dev dependencies / npm scripts
       #      yarn.lock         — lockfile
       #      .yarnrc.yml       — Yarn config
-      #      *_FEEDBACK*.md    — AI session feedback scratch files (root only)
+      #      *FEEDBACK*.md     — AI session feedback scratch files (root only)
       #      HANDOVER*.md      — Handover scratch files (root only)
       # -----------------------------------------------------------------------
       - name: Strip dev-only files
@@ -149,7 +149,10 @@ jobs:
           # REV-01: root-anchored with [^/]* — previous '^.*_FEEDBACK.*\.md$' over-matched
           # paths at ANY depth (e.g. kleros-curate/MIGRATION_FEEDBACK.md), which would
           # silently delete legitimate skill-dir docs from user installs.
-          git ls-files | grep -E '^[^/]*_FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
+          # 2026-06-11 fix: dropped the leading underscore requirement — earlier
+          # '_FEEDBACK' pattern missed files like FEEDBACK_FROM_CLAUDE_MARKETPLACE.md
+          # where FEEDBACK is at position 0. Sanity check below was also broadened.
+          git ls-files | grep -E '^[^/]*FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
             xargs --no-run-if-empty git rm --quiet
           echo "Strip complete. Remaining tracked files:"
           git ls-files | head -60
@@ -170,9 +173,9 @@ jobs:
             fi
           done
           # Root feedback/handover files must be ABSENT
-          if compgen -G "*_FEEDBACK*.md" > /dev/null 2>&1 || \
+          if compgen -G "*FEEDBACK*.md" > /dev/null 2>&1 || \
              compgen -G "HANDOVER*.md" > /dev/null 2>&1; then
-            echo "FATAL: root *_FEEDBACK*.md or HANDOVER*.md still present"
+            echo "FATAL: root *FEEDBACK*.md or HANDOVER*.md still present"
             exit 1
           fi
           # keep-list assertions — must be PRESENT (catches strip overreach)

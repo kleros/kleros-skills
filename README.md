@@ -67,7 +67,7 @@ This repo uses a two-branch model to keep end-user plugin installs lean.
 | `dev` | Source of truth — all human work, PRs, planning artefacts, tests, build tooling | Full repo |
 | `master` (default) | Consumer-facing — what plugin installs and Netlify serve | `dev` minus the strip-list |
 
-**Strip-list** (removed from `master`): `.planning/`, `test/`, `scripts/`, `package.json`, `yarn.lock`, `.yarnrc.yml`, root `*_FEEDBACK*.md`, root `HANDOVER*.md`.
+**Strip-list** (removed from `master`): `.planning/`, `test/`, `scripts/`, `package.json`, `yarn.lock`, `.yarnrc.yml`, root `*FEEDBACK*.md`, root `HANDOVER*.md`.
 
 **Keep-list** (present on both branches): `.claude-plugin/`, skill dirs, root `SKILL.md`, `index.html`, `netlify/`, `.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`, `.github/workflows/`.
 
