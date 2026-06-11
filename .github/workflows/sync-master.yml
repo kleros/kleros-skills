@@ -184,7 +184,7 @@ jobs:
           # makes GitHub refuse to parse the workflow. printf+continuations
           # are valid YAML *and* valid bash.
           EXPECTED_ROOT=$(printf '%s\n' \
-            .claude .claude-plugin .github .gitignore .well-known \
+            .git .claude .claude-plugin .github .gitignore .well-known \
             apple-touch-icon.png CHANGELOG.md CLAUDE.md \
             favicon-16x16.png favicon-32x32.png favicon.ico favicon.svg \
             index.html kleros-curate kleros-ipfs-upload LICENSE \
