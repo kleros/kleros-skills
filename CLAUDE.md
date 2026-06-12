@@ -53,13 +53,12 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
 
-**Live infrastructure (SHIPPED 2026-06-11; first real tag-fire 2026-06-12 with v2.1.0 — 152→50 files, end-to-end validated):**
+**Live infrastructure:**
 - Workflow: `.github/workflows/sync-master.yml`
 - Identity: GitHub App `kleros-skills-sync` in `kleros` org, scoped to this repo, Contents R/W only
 - Environment: `production-sync` — required reviewer (jaybuidl); deployment-allowlist: `dev` branch + `*@v*` + `v[0-9]*` tag patterns. **Keep tag-pattern allowlist in sync with workflow's `on.push.tags`.**
 - Tag protection: ruleset `release tags` restricts creation/update/deletion of release tags to bypass list
-- Master branch ruleset (`master`): active — restricts direct push to bypass list (sync App + admins). Phase 2 APPLIED.
-- Node 24 bumps (REV-17): applied 2026-06-11. SHA-pinned `actions/checkout`, `actions/setup-node`, `actions/create-github-app-token`.
+- Master branch ruleset (`master`): restricts direct push to bypass list (sync App + admins)
 
 **Operational gotchas worth knowing:**
 - `workflow_dispatch` needs the workflow on the default branch — tag-push doesn't. If the workflow ever vanishes from master, bootstrap via a sentinel tag pushed on dev.
@@ -92,7 +91,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 
 Each published skill lives in `skillname/SKILL.md` with YAML frontmatter (`name`, `description`). The `description` field is what Claude Code uses to decide when to trigger the skill — it must include both positive triggers and negative triggers (when NOT to use).
 
-**YAML quoting rule:** Always wrap `description` values in double quotes. Unquoted colons and em dashes break GitHub's YAML parser even though Claude Code handles them fine. Discovered when `kleros-curate` description (1,413 chars with colons in "Light Curate (LGTCR, optimistic challenge window)") rendered as an error on GitHub.
+**YAML quoting rule:** Always wrap `description` values in double quotes. Unquoted colons and em dashes break GitHub's YAML parser even though Claude Code handles them fine.
 
 ## Multi-surface update rule
 
@@ -177,9 +176,7 @@ Marketplace add + plugin install = full `git clone`. Entire repo copied to user 
 
 Bare `marketplace add kleros/kleros-skills` resolves to the repo DEFAULT branch.
 
-Knobs: `ref`/`sha` pin branch/tag/commit (marketplace `@ref` + plugin `source.ref`; `extraKnownMarketplaces` in settings.json); `git-subdir` source sparse-clones one subdir (install only, NOT marketplace-add); `--sparse` flag scopes marketplace-add (CLI-only, user-supplied → unreliable for end users).
-
-Fix implemented: branch-based minimal-strip — `dev` holds full repo; `master` is derived via GitHub Action (`.github/workflows/sync-master.yml`) triggered on release tags. Dev-only dirs/files are stripped before master push. Contributors: PR against `dev`. Full design: `.planning/seeds/SEED-002-exclude-planning-from-plugin-install.md`.
+Fix implemented: branch-based minimal-strip — `dev` holds full repo; `master` is derived via GitHub Action (`.github/workflows/sync-master.yml`) triggered on release tags. Dev-only dirs/files are stripped before master push. Contributors: PR against `dev`. Full design: SEED-002.
 
 ## Gotcha: IPFS CID URLs
 
