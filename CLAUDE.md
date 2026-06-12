@@ -53,15 +53,13 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
 
-**Live infrastructure (SHIPPED 2026-06-11 via quick task 260607-w84):**
+**Live infrastructure (SHIPPED 2026-06-11; first real tag-fire 2026-06-12 with v2.1.0 — 152→50 files, end-to-end validated):**
 - Workflow: `.github/workflows/sync-master.yml`
 - Identity: GitHub App `kleros-skills-sync` in `kleros` org, scoped to this repo, Contents R/W only
 - Environment: `production-sync` — required reviewer (jaybuidl); deployment-allowlist: `dev` branch + `*@v*` + `v[0-9]*` tag patterns. **Keep tag-pattern allowlist in sync with workflow's `on.push.tags`.**
 - Tag protection: ruleset `release tags` restricts creation/update/deletion of release tags to bypass list
-
-**Phase 2 still deferred:** master branch ruleset (rulesets, NOT classic — classic bypass doesn't cover required status checks). Bundle with REV-17 in a single `/gsd:quick`.
-
-**⏰ Maintenance: REV-17 Node 20 deprecation, deadline 2026-06-16.** `actions/checkout`, `actions/setup-node`, `actions/create-github-app-token` need bumping to Node-24-compatible versions before that date or the workflow may break. Concrete SHAs + pre-bump check (verify `app-slug` output still exists at create-github-app-token v3.2.0) in `.planning/quick/260607-w84-execute-seed-002-branch-based-minimal-st/260607-w84-REVIEW.md`.
+- Master branch ruleset (`master`): active — restricts direct push to bypass list (sync App + admins). Phase 2 APPLIED.
+- Node 24 bumps (REV-17): applied 2026-06-11. SHA-pinned `actions/checkout`, `actions/setup-node`, `actions/create-github-app-token`.
 
 **Operational gotchas worth knowing:**
 - `workflow_dispatch` needs the workflow on the default branch — tag-push doesn't. If the workflow ever vanishes from master, bootstrap via a sentinel tag pushed on dev.
@@ -151,7 +149,27 @@ Static files serving agent discovery standards:
 5. Update all multi-surface files (see table above)
 6. Run `npm run update-digests`
 7. Update `CHANGELOG.md`
-8. Commit and tag: `skillname@vX.Y.Z`
+8. Commit (push dev) — then **user runs the GPG-signed tag step**: `git tag -s skillname@vX.Y.Z <sha> -m "..."` + `git push origin skillname@vX.Y.Z`. Agent cannot sign — GPG passphrase prompt hangs the session. Tag fires sync-master workflow → user approves in Actions tab.
+9. `gh release create skillname@vX.Y.Z --title "..." --notes "..."` after master sync succeeds.
+
+## Publishing a plugin-level release (digit-anchored `vX.Y.Z`)
+
+Use when shipping plugin manifest changes, distribution-mechanism changes (e.g. strip-list edits), bundled landing-page polish, or grouped docs that need to reach users — i.e. anything affecting the install but with NO skill content change.
+
+1. Bump `.claude-plugin/plugin.json` `version` (semver: patch = docs/infra fixes, minor = new packaging behavior/feature bundle, major = breaking install changes)
+2. Leave `marketplace.json` `metadata.version` UNCHANGED unless catalog shape (plugins added/removed/restructured) actually shifted
+3. Do NOT touch per-skill SKILL.md files unless their content changed (skill content change = separate `skillname@vX.Y.Z` tag instead, NOT bundled here)
+4. Add `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` with Added/Changed/Fixed grouping
+5. Add CHANGELOG link line. **First-of-its-kind plugin tag** (e.g. v2.1.0 was first because v2.0.0 was never tagged) → `releases/tag/vX.Y.Z`. Subsequent → `compare/vPREV...vX.Y.Z`.
+6. `npm run update-digests` (idempotent if no SKILL.md changed) + `npm test` — both must be green pre-commit
+7. Commit on `dev` (push) — then **user runs**: `git tag -s vX.Y.Z <sha> -m "..."` + `git push origin vX.Y.Z`. User approves the sync workflow in Actions.
+8. `gh release create vX.Y.Z --title "..." --notes "..."` referencing the CHANGELOG entry.
+
+**Versioning quick reference:**
+- Skill content changed → `skillname@vX.Y.Z` tag; no `plugin.json` bump
+- Plugin manifest OR distribution behavior changed → `plugin.json` bump + `vX.Y.Z` tag
+- Catalog shape changed (plugins added/removed/restructured) → ALSO bump `marketplace.json` `metadata.version`
+- Pure infra-only change with no user-visible bundling → don't tag just to validate; let it ride to the next real release
 
 ## Gotcha: plugin install ships the WHOLE repo
 

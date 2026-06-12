@@ -85,11 +85,16 @@ For the full design rationale, security model, and rejected alternatives, see [S
 ## Releases (maintainers)
 
 1. Merge release-ready commits into `dev`
-2. Bump the relevant version per the [Skill release pattern](https://github.com/kleros/kleros-skills/blob/dev/CLAUDE.md) (skill tags use `skillname@vX.Y.Z`; whole-repo tags use `vX.Y.Z`)
-3. Tag and push:
+2. Bump the relevant version per the [Skill release pattern](https://github.com/kleros/kleros-skills/blob/dev/CLAUDE.md) — skill content change → `skillname@vX.Y.Z`; plugin manifest or distribution change → `.claude-plugin/plugin.json` bump + `vX.Y.Z`
+3. Tag (GPG-signed) and push:
    ```bash
-   git tag -a "kleros-curate@v1.0.1" -m "release notes here"
+   # Skill release
+   git tag -s "kleros-curate@v1.0.1" -m "release notes here"
    git push origin "kleros-curate@v1.0.1"
+
+   # Plugin-level release (digit-anchored)
+   git tag -s "v2.1.0" -m "release notes here"
+   git push origin "v2.1.0"
    ```
 4. The sync Action runs:
    - `npm test` (must pass)
