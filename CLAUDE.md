@@ -67,6 +67,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - `workflow_dispatch` needs the workflow on the default branch — tag-push doesn't. If the workflow ever vanishes from master, bootstrap via a sentinel tag pushed on dev.
 - Forgetting `git push origin dev` before re-dispatching is a common foot-gun — the workflow runs against `origin/dev`, not local.
 - Recovery if master ships bad state: `git push --force-with-lease origin <good-sha>:master` from local (admin bypass), then disable workflow, fix on dev, re-enable.
+- **AI worktree-isolated executors: always pre-merge diff-stat before merging back to dev.** Claude Code's `isolation="worktree"` can branch off origin/master instead of the spawning HEAD (CC #2015) — and because master is a strip-derived view of dev (not a fast-forward), a naive merge silently deletes `.planning/`, `test/`, `scripts/`, and `package.json`. Always `git diff --stat HEAD..."$WT_BRANCH"` first; if the file count exceeds what the plan declared, cherry-pick the intended commit by SHA and discard the branch. Incident 2026-06-11 (quick-260611-vy1) would have deleted ~14k lines.
 
 ## Plugin structure
 
