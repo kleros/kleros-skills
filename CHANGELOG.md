@@ -7,11 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Landing page: visually-hidden `<h1>` (the page previously had no top-level heading), improving SEO and screen-reader structure.
+- Landing page: social/discovery meta — `canonical`, `og:url`, `og:site_name`, `og:locale`, `og:image`, `twitter:image`, and `theme-color`.
+- Landing page: sticky translucent top nav and subtle hero glow for depth.
+- Landing page: `prefers-reduced-motion` support and a consistent `:focus-visible` ring for keyboard users.
+
 ### Changed
 - Hardened the `kleros-curate` skill with stricter MetaEvidence retrieval, item.json construction, field type validation, deployment guardrails, and list-of-lists visibility guidance.
 - Clarified `kleros-curate` Scout visibility, reward, challenge, and custom-registry value propositions.
 - Restricted Curate IPFS upload guidance to the Kleros x402 gateway path and strengthened PDF policy recommendations.
 - Added a narrow `verify-your-list` reference for Classic Curate list-of-lists visibility submissions.
+
+### Fixed
+- Landing page accessibility: modal now manages focus (focus-on-open, focus trap, restore-on-close) and is labelled by its title.
+- Landing page accessibility: setup tablist exposes `tabpanel` semantics with arrow/Home/End keyboard navigation and roving tabindex.
+- Landing page accessibility: ASCII-art hero marked `aria-hidden` so screen readers skip it.
 
 ## [2.1.0] - 2026-06-12
 
