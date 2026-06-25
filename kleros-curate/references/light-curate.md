@@ -31,11 +31,14 @@ Forbidden: declaring "it's an EOA" without chain-scoped `eth_getCode`; guessing 
 
 ## MetaEvidence retrieval
 
-Fetch per the shared procedure — LGTCR emits two separate MetaEvidence streams:
-- `_metaEvidenceID = 0` → registration MetaEvidence (governs `addItem`)
-- `_metaEvidenceID = 1` → clearing MetaEvidence (governs `removeItem`)
+Fetch per the shared procedure. LGTCR has separate registration and clearing MetaEvidence:
+- registration MetaEvidence governs `addItem`
+- clearing MetaEvidence governs `removeItem`
 
-Use stream 0 for addItem flows; stream 1 for removeItem flows. Do not apply the wrong stream — it gives the wrong schema and violates the policy.
+Do not assume only `_metaEvidenceID = 0` and `_metaEvidenceID = 1` remain current after governor updates.
+Use `eth_getLogs` with the MetaEvidence topic, fetch recent `_evidence` JSON files, and classify the latest
+applicable MetaEvidence by title/description/ruling options. Do not apply the wrong stream - it gives the
+wrong policy and can give the wrong schema.
 
 For full retrieval procedure (log retrieval, sort-and-take-latest, JSON parsing): `shared-metaevidence.md § LGTCR specifics`
 
@@ -64,9 +67,9 @@ For arbitrationCost read sequence and the never-guess rule: `shared-deposits.md 
 
 ## Submit item
 
-1. **Fetch MetaEvidence** — use stream ID 0 (registration). Extract `fileURI` and `metadata.columns`. → `shared-metaevidence.md § LGTCR specifics`
-2. **Read policy** — fetch the `fileURI` document before building item.json. The policy defines what constitutes a compliant item.
-3. **Build item.json** — derive schema from `metadata.columns`; run the schema confirmation check (NewItem event sample) if type encoding is ambiguous. → `shared-item-json.md`
+1. **Fetch MetaEvidence** - use the latest registration-like MetaEvidence. Extract `fileURI` and `metadata.columns`. See `shared-metaevidence.md § LGTCR specifics`.
+2. **Read policy** - fetch the `fileURI` document before building item.json. The policy defines what constitutes a compliant item.
+3. **Build item.json** - derive schema from `metadata.columns`; validate exact columns, field types, values, and placeholders. Run the schema confirmation check (NewItem event sample) if type encoding is ambiguous. See `shared-item-json.md`.
 4. **Upload to IPFS** — upload item.json → obtain `/ipfs/<CID>`. → `shared-ipfs-upload.md`
 5. **Compute deposit live** — `submissionBaseDeposit() + arbitrationCost`. → `shared-deposits.md § LGTCR specifics`
 6. **Simulate** — dry-run with identical calldata and `msg.value`; confirm no revert
@@ -78,8 +81,8 @@ ABI: `function addItem(string _item) external payable` — full fragment in `sha
 
 ### Remove item
 
-1. **Fetch MetaEvidence** — use stream ID 1 (clearing). → `shared-metaevidence.md § LGTCR specifics`
-2. **Read removal policy** — fetch `fileURI` document from clearing MetaEvidence
+1. **Fetch MetaEvidence** - use the latest clearing-like MetaEvidence. See `shared-metaevidence.md § LGTCR specifics`.
+2. **Read removal policy** - fetch `fileURI` document from clearing MetaEvidence
 3. **Draft removal evidence JSON** — upload to IPFS → `/ipfs/<CID>`. → `shared-ipfs-upload.md`
 4. **Compute removal deposit** — `removalBaseDeposit() + arbitrationCost`. → `shared-deposits.md § LGTCR specifics`
 5. **Simulate** — dry-run with same calldata + `msg.value`
@@ -90,7 +93,7 @@ ABI: `function removeItem(bytes32 _itemID, string _evidence) external payable`
 ### Challenge item
 
 1. **Determine request type** — check whether the active request is a registration request (submission) or a removal request. This determines which deposit formula to use: registration requests use `submissionChallengeBaseDeposit()`; removal requests use `removalChallengeBaseDeposit()`.
-2. **Read the applicable policy** — registration policy (stream ID 0) if challenging a registration; clearing policy (stream ID 1) if challenging a removal
+2. **Read the applicable policy** - latest registration policy if challenging a registration; latest clearing policy if challenging a removal
 3. **Draft challenge evidence JSON** — upload to IPFS → `/ipfs/<CID>`. → `shared-ipfs-upload.md`
 4. **Compute challenge deposit**:
    - Registration request: `submissionChallengeBaseDeposit() + arbitrationCost`
@@ -142,10 +145,31 @@ ABI: `function executeRequest(bytes32 _itemID) external` and `function withdrawF
 ## Deploy a new registry (factory)
 
 1. **Identify factory address** — obtain from Kleros GitHub (`kleros/gtcr` repo) or by inspecting a known registry deployment tx on the target chain's explorer. Do NOT hardcode a factory address without verifying it on the target chain — factory addresses vary by chain and version.
-2. **Prepare registration MetaEvidence JSON** — include `title`, `description`, `fileURI` (policy PDF on IPFS), and `metadata.columns` schema. Upload to IPFS → `/ipfs/<CID>`. → `shared-metaevidence.md` for JSON structure, `shared-ipfs-upload.md` for upload
-3. **Prepare clearing MetaEvidence JSON** — separate policy and schema for removal flow. Upload to IPFS → `/ipfs/<CID>`.
-4. **Determine all constructor params**: `arbitrator`, `arbitratorExtraData`, `registrationMetaEvidence` URI, `clearingMetaEvidence` URI, `challengePeriodDuration`, `submissionBaseDeposit`, `removalBaseDeposit`, `submissionChallengeBaseDeposit`, `removalChallengeBaseDeposit`, `winnerStakeMultiplier`, `loserStakeMultiplier`, `sharedStakeMultiplier`
-5. **Confirm params with user** before proceeding — deposit amounts and multipliers are governance parameters the user must set intentionally
+2. **Prepare registration MetaEvidence JSON** - include `title`, `description`, `fileURI`, `metadata.logoURI`, and valid `metadata.columns` schema. Prefer a PDF policy for `fileURI`. Upload to IPFS as `/ipfs/<CID>`. See `shared-metaevidence.md` for JSON structure, field type allowlist, and upload stop rules.
+3. **Prepare clearing MetaEvidence JSON** - separate policy and schema for removal flow. Use the same strict validation rules. Upload to IPFS as `/ipfs/<CID>`.
+4. **Determine all constructor params**: chain, factory address, governor, `arbitrator`, `arbitratorExtraData` / exact court, `registrationMetaEvidence` URI, `clearingMetaEvidence` URI, `challengePeriodDuration`, `submissionBaseDeposit`, `removalBaseDeposit`, `submissionChallengeBaseDeposit`, `removalChallengeBaseDeposit`, `winnerStakeMultiplier`, `loserStakeMultiplier`, `sharedStakeMultiplier`
+5. **Confirm params with user** before proceeding - do not silently choose court, chain, challenge period, deposits, or multipliers
 6. **Simulate** — dry-run the factory call with all params
 7. **Send** — call the factory's deploy function (check factory ABI — function name is `addList(...)` or `createRegistry(...)` depending on factory version; do not assume the name)
 8. **Listen for `NewGTCR(address _address)` event** — the emitted address is the new registry. Immediately run MetaEvidence retrieval on the new registry to confirm both streams are correct.
+
+## Frontend visibility
+
+Deployment alone does not make a list visible on the Curate frontend. List-of-lists submission is not
+mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is
+intentionally stealth/private.
+
+Submit the new registry address to the network's list-of-lists using the normal item submission flow:
+
+1. Fetch the list-of-lists MetaEvidence.
+2. Build item.json from its `metadata.columns`.
+3. Upload item.json.
+4. Compute the deposit live.
+5. Submit the item.
+
+Known list-of-lists:
+- Mainnet: `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15`
+- Gnosis: `0xe456c79446c4De1A0bA4d06F294Db42bA2fD4F7F`
+- Sepolia: `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF`
+
+Do not assume the list-of-lists schema; fetch its MetaEvidence like any other registry.

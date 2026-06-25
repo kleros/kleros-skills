@@ -48,6 +48,10 @@ These rules apply across all Curate flavors. They are always in context; referen
 - **Onchain state + onchain logs are the source of truth** for deposits, arbitration cost, challenge deposits, appeal status, and MetaEvidence URI.
 - **Never assume a "standard token schema"** — only the current MetaEvidence for that registry is authoritative.
 - **Never rewrite the schema**: `item.json.columns` must be copied verbatim from MetaEvidence; only `values` is dynamic.
+- **Never upload or submit half-baked artifacts**: no malformed JSON, broken MetaEvidence, placeholder values, unsupported field types, or unreachable policy files.
+- **Never author unsupported MetaEvidence field types**: for URL fields use `type: "link"`, not `url`; validate every `metadata.columns[].type` before upload.
+- **Production registries need a logo**: do not deploy a production list with missing `metadata.logoURI`.
+- **Prefer PDF policy documents** for registry policies so jurors and users can review the rules reliably.
 - **Never include "typical ranges" or estimates** for deposits or fees — only report live-read values.
 - **`eth_getCode` before declaring any address is or isn't a contract.**
 
@@ -98,6 +102,8 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 
 **Build item.json** → `references/shared-item-json.md`
 
+**Make a deployed list visible on the Curate frontend** -> submit the registry address to the network's list-of-lists using the normal item submission flow.
+
 **Upload to IPFS** → `references/shared-ipfs-upload.md`
 
 **ABI / function signatures** → `references/shared-abi-fragments.md`
@@ -122,9 +128,20 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 4. Flavor reference — send the challenge or removeItem transaction
 
 **Deploy a new registry:**
-1. `references/shared-metaevidence.md` — prepare MetaEvidence JSON (policy URI + column schema)
+1. `references/shared-metaevidence.md` - prepare valid MetaEvidence JSON (policy URI + column schema + logoURI)
 2. `references/shared-ipfs-upload.md` — upload MetaEvidence JSON to IPFS
 3. Flavor reference — call the factory deploy function
+4. Submit the new registry to the network's list-of-lists if frontend visibility is required
+
+**Frontend visibility after deployment:**
+- Deploying a registry does not automatically make it visible on the Curate frontend.
+- List-of-lists submission is not mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is intentionally stealth/private.
+- Submit the new registry as an item to the relevant network list-of-lists, using the same MetaEvidence/item.json/deposit workflow as any other submission.
+- Known list-of-lists:
+  - Mainnet: `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15`
+  - Gnosis: `0xe456c79446c4De1A0bA4d06F294Db42bA2fD4F7F`
+  - Sepolia: `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF`
+  Fetch the list-of-lists MetaEvidence before composing its item.json; do not assume its schema.
 
 ## Reference files
 
@@ -153,8 +170,9 @@ contract layer; this file adds Scout-only context on top.
 
 **`references/shared-metaevidence.md`**
 Shared MetaEvidence retrieval applicable to all Curate flavors: `eth_getLogs` method with the correct
-topic0, sort-and-take-latest rule, two-stream MetaEvidence classification for LGTCR (registration events
-vs clearing events), Goldsky subgraph path for PGTCR, MetaEvidence JSON structure, policy URI extraction.
+topic0, latest applicable MetaEvidence selection, LGTCR registration-vs-clearing classification, Goldsky
+subgraph path for PGTCR, MetaEvidence JSON structure, policy URI extraction, and MetaEvidence authoring
+guardrails.
 Read this file before fetching MetaEvidence for any registry, regardless of flavor.
 
 **`references/shared-deposits.md`**
@@ -164,10 +182,10 @@ the native-token arbitration cost), `arbitrationCost()` read pattern, `msg.value
 Read this file before computing any deposit or constructing any transaction value.
 
 **`references/shared-item-json.md`**
-Shared item.json construction rules: the `columns + values` schema format, verbatim-copy rule for columns
-(copy from MetaEvidence without modification — values is the only dynamic part), values population from
-user-supplied input, schema confirmation via `NewItem` event sampling to verify field order before
-submitting. Read this file before building any item payload for any Curate registry.
+Strict item.json construction rules: the `columns + values` schema format, verbatim-copy rule for columns
+(copy from MetaEvidence without modification - values is the only dynamic part), GTCR field type allowlist,
+forbidden aliases, placeholder rejection, pre-upload validation, and `NewItem` event sampling to verify
+field order before submitting. Read this file before building any item payload for any Curate registry.
 
 **`references/shared-abi-fragments.md`**
 Shared ABI fragments for all Curate contracts: `LightGeneralizedTCR` read and write function signatures,

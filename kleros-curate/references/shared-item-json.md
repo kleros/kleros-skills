@@ -1,139 +1,287 @@
-# Shared: item.json Construction
+# Shared: Strict item.json Construction
 <!-- Sources: curate-v1/curate-light-skill.md §3, curate-v1/pgtcr-stake-curate-skill.md §5C, curate-v1-scout/scout-skills.md §8 -->
 
-Fetch MetaEvidence before starting. Do not ask users for schema fields until you have `metadata.columns`
-from the current MetaEvidence. (Fetch MetaEvidence: `shared-metaevidence.md`)
+Curate item submissions are high risk. Do not produce, upload, or submit an item.json until the active
+MetaEvidence has been fetched and validated. Fetch MetaEvidence first: `shared-metaevidence.md`.
 
 ---
 
-## Output shape
+## Required output shape
 
-Every item.json submitted to any Curate registry must contain both parts:
+Every item.json submitted to any Curate registry must contain exactly these top-level parts:
 
 ```json
 {
-  "columns": [ /* full column objects, verbatim from MetaEvidence.metadata.columns */ ],
-  "values":  { "<col.label>": "<user value>", ... }
+  "columns": [
+    {
+      "label": "Exact Label",
+      "description": "Exact description from MetaEvidence.",
+      "type": "text",
+      "isIdentifier": true
+    }
+  ],
+  "values": {
+    "Exact Label": "user-provided value"
+  }
 }
 ```
 
-**WHY:** The Curate UI and subgraph indexers parse this exact envelope. Submitting only a `values`
-object, or omitting `columns`, causes display errors and indexing failures.
+Rules:
 
----
+- `columns` must be a verbatim deep copy of `MetaEvidence.metadata.columns`.
+- `values` is the only dynamic part.
+- `Object.keys(values)` must exactly equal `columns.map(c => c.label)` in the same order.
+- The order that matters is `MetaEvidence.metadata.columns`, `item.json.columns`, and `item.json.values`
+  keys. Do not rely on unrelated top-level JSON key order.
+- No missing keys, extra keys, renamed labels, reordered labels, or placeholder values.
+- Do not submit only a `values` object.
+- Do not reconstruct schema from UI text, screenshots, policy text, examples, or memory.
 
-## columns deep-copy rule
-
-Set `item.columns = MetaEvidence.metadata.columns` by **deep copy** — same objects, same key/value
-pairs (`label`, `description`, `type`, `isIdentifier`), same order. Do not edit any field.
-
-**WHY:** The `columns` array is the schema contract. Any edit — even correcting a typo in a
-`description` — means the submitted columns no longer match the on-chain schema that jurors use to
-evaluate compliance. The columns you submit are what gets stored; jurors read them directly.
+If MetaEvidence was not fetched in the current task, do not output a final item.json. Ask for the registry
+URL or `(chainId, registryAddress)` and fetch MetaEvidence first.
 
 ---
 
 ## Output protocol
 
-When producing an item.json, follow this sequence:
+When producing an item.json for the user:
 
-1. Print **`Fetched columns (verbatim):`** and display the columns array exactly as obtained from
-   MetaEvidence (verbatim JSON).
-2. Then print the final `item.json` where `columns` is a copy/paste of step 1 and only `values`
-   is filled dynamically.
+1. Print `Fetched columns (verbatim):`.
+2. Display the exact `MetaEvidence.metadata.columns` array.
+3. Print the final item.json with those exact columns and only `values` filled dynamically.
 
-If you did not fetch MetaEvidence, do **not** output an item.json — ask for the registry address,
-chain, and MetaEvidence URI first.
-
-**WHY:** LLMs tend to paraphrase field names and descriptions. The explicit print step creates an
-auditable record that makes the verbatim requirement enforceable and gives the user a chance to catch
-any rewriting before submission.
+This makes schema drift auditable. Do not paraphrase labels, descriptions, types, or `isIdentifier`.
 
 ---
 
-## values construction
+## Values construction
 
-For each `col` in `columns` **in order**:
+For each column in order:
 
-- Key = `col.label`, **exact string match** — including spaces, punctuation, and case.
-- Value = user input for that field, typed per `col.type` (see field-value types below).
+- Key = `column.label`, exact string match.
+- Value = user-provided value encoded for `column.type`.
+- Empty values are forbidden unless the registry policy explicitly allows omission.
 
-No extra keys. No renamed labels. No reordering. No empty required fields unless the registry policy
-explicitly permits omission.
+If the user has not provided enough information for every required value, create only a draft and mark it
+not submission-ready. Never upload or submit a draft.
 
 ---
 
-## Field-value types
+## GTCR field-value types
+
+Use the live MetaEvidence type exactly when copying columns. For new schemas, use GTCR-compatible type
+strings only.
+
+Current scope: this skill covers Light Curate / GTCR and Stake Curate / PGTCR. Do not author Curate V2-only
+type spellings such as `longText`, `richAddress`, or `chain` for GTCR/PGTCR schemas unless the target
+interface or live MetaEvidence proves that exact spelling is expected. For item submissions, always copy
+the live MetaEvidence type verbatim even if it differs from the authoring allowlist below.
 
 | Type | Value format |
-|------|-------------|
+|------|--------------|
 | `text` | Plain string |
-| `longText` | Plain string (multi-line allowed) |
+| `long text` | Plain string, multi-line allowed |
 | `link` | URL string |
-| `address` | `0x`-prefixed Ethereum address |
-| `richAddress` | CAIP-10 format: `eip155:<chainId>:0xAddress` |
-| `image` | `/ipfs/<CID>` path — never a gateway URL |
-| `number` | String or number — observe from NewItem sampling (see below) |
+| `address` | `0x`-prefixed EVM address |
+| `rich address` | CAIP-like value such as `eip155:<chainId>:0xAddress` |
+| `image` | `/ipfs/<CID>` path, not a gateway URL |
+| `file` | `/ipfs/<CID>` path; file type must satisfy `allowedFileTypes` |
+| `number` | Match existing submissions for the same MetaEvidence; strings are common |
+| `boolean` | Match existing submissions; strings `"true"` / `"false"` are common |
+| `GTCR address` | GTCR list address, only for list-of-lists style schemas |
 
-**CAIP-10 (richAddress) — WHY:** CAIP-10 makes the chain explicit. A bare address on the wrong chain
-resolves to a different account and will fail compliance checks. Ask the user for the chain when a
-`richAddress` field is required; do not guess from context.
+### Column object validation
 
-**Image path — WHY:** Gateway URLs are mutable and host-specific. On-chain storage must be
-content-addressed. Use `/ipfs/<CID>` so the reference is permanent and chain-independent.
+Every column object must be treated as part of the schema contract:
+
+- `label` must be unique and non-empty.
+- `label` is the exact key used in `item.json.values`.
+- `description` must be copied verbatim from MetaEvidence.
+- `type` must be copied verbatim from MetaEvidence for item submissions.
+- `isIdentifier` must not be changed.
+
+When authoring new GTCR MetaEvidence:
+
+- At least one identifier column is required for normal item lists.
+- At most five identifier columns are allowed in legacy GTCR factory flows.
+- `image`, `file`, and `long text` fields must not be identifiers.
+- Choose stable searchable identifiers; do not mark unstable display fields as identifiers.
+- `file` columns require `allowedFileTypes`, using space-separated extensions without dots, for example
+  `pdf`, `json`, or `pdf json`.
+
+### Rich address values
+
+For `rich address`, use the format:
+
+```text
+<namespaceId>:<referenceId>:<address>
+```
+
+For EVM addresses:
+
+```text
+eip155:<chainId>:0x1234567890123456789012345678901234567890
+```
+
+Known GTCR rich-address namespaces include:
+
+| Namespace | Meaning |
+|-----------|---------|
+| `eip155` | EVM chains |
+| `bip122` | Bitcoin-like chains |
+| `solana` | Solana |
+| `tvm` | TON |
+| `stacks` | Stacks |
+
+Confirmed EIP-155 reference IDs in GTCR include:
+
+| Chain | Reference ID |
+|-------|--------------|
+| Ethereum Mainnet | `1` |
+| Sepolia | `11155111` |
+| BNB Smart Chain | `56` |
+| Gnosis | `100` |
+| Polygon | `137` |
+| Base | `8453` |
+| Arbitrum One | `42161` |
+| Moonbeam | `1284` |
+| Linea | `59144` |
+| Optimism | `10` |
+| MegaETH | `4326` |
+| PulseChain | `369` |
+| Fantom | `250` |
+| Moonriver | `1285` |
+| Avalanche | `43114` |
+| Cronos | `25` |
+| BitTorrent | `199` |
+| Polygon zkEVM | `1101` |
+| WEMIX | `1111` |
+| Scroll | `534352` |
+| Celo | `42220` |
+| zkSync | `324` |
+| Sonic | `146` |
+| Blast | `81457` |
+| Plasma | `9745` |
+| Hyperliquid | `999` |
+| Katana | `747474` |
+| Unichain | `130` |
+| Berachain | `80094` |
+| World Chain | `480` |
+
+Forbidden aliases in authored MetaEvidence or item schema:
+
+| Bad alias | Use instead |
+|-----------|-------------|
+| `url` | `link` |
+| `uri` | `link` or `file`, depending on meaning |
+| `string` | `text` |
+| `markdown` | `long text` |
+| `bool` | `boolean` |
+| `integer` | `number` |
+| `int` | `number` |
+| `float` | `number` |
+| `decimal` | `number` |
+
+Using an unsupported type can break Curate interfaces with errors like `Unhandled input type url`.
 
 ---
 
-## Placeholder rule
+## Schema confirmation via NewItem sampling
 
-While drafting with the user, you may use these placeholders (then replace before submitting):
+Perform this check once per MetaEvidence version before the first submission to a registry:
 
-- `PLACE_VALUE_HERE`
-- `PLACE_IPFS_URI_HERE` (must become `/ipfs/<CID>`)
+1. Find the block of the latest applicable MetaEvidence update (`B_meta`).
+2. Find a `NewItem(bytes32 _itemID, string _data, bool _addedDirectly)` event after `B_meta`.
+3. Fetch `_data` from IPFS.
+4. Parse the prior item.json.
+5. Confirm `item.columns` matches `MetaEvidence.metadata.columns` by labels, order, types, and flags.
+6. Observe value encoding for `number`, `boolean`, `file`, `image`, and address-like fields.
 
-Never submit a transaction with placeholder values.
-
----
-
-## Schema confirmation via NewItem event sampling
-
-Perform this check once per MetaEvidence version, before the first submission:
-
-1. Find the block of the latest MetaEvidence update (`B_meta`).
-2. Find any `NewItem` event emitted **after** `B_meta` for this registry.
-3. Fetch the `_data` field from that event (typically an `/ipfs/<CID>` URI pointing to a prior item.json).
-4. Fetch that item JSON from IPFS.
-5. Confirm `item.columns` matches `MetaEvidence.metadata.columns` (same labels, same order, same types).
-6. Observe how `item.values` encodes each type — particularly `number` fields (strings vs numbers).
-
-If the sample uses strings for `number` fields (very common in Curate), you must match that.
-If there is any mismatch between the sample and MetaEvidence, stop and ask — do not improvise.
-
-**WHY:** MetaEvidence describes column types in human terms (`"address"`, `"number"`) but not
-serialization details. Past submissions reveal the actual encoding the contract expects — this
-information is only observable onchain, not derivable from the schema alone.
+If a sample exists and conflicts with MetaEvidence or the proposed item.json, stop and ask. If no sample
+exists and value encoding is ambiguous, stop and warn the user instead of improvising.
 
 ---
 
-## Programmatic checklist
+## Pre-upload validation
 
-Before uploading item.json to IPFS, verify all five conditions:
+Before uploading item.json to IPFS, all checks must pass:
 
-1. `item.columns` deep-equals `MetaEvidence.metadata.columns` — same objects, same order, same strings
-2. `Object.keys(item.values)` equals exactly `columns.map(c => c.label)` — no missing keys, no extras
-3. Every value is non-empty unless the registry policy explicitly permits omission
-4. Any `image`-type value is an `/ipfs/<CID>` path, not a gateway URL
-5. Any `richAddress`-type value is in CAIP-10 format (`eip155:<chainId>:0xAddress`)
+1. JSON parses.
+2. `columns` deep-equals active `MetaEvidence.metadata.columns`.
+3. `Object.keys(values)` exactly equals `columns.map(c => c.label)`.
+4. No value is empty unless policy explicitly permits omission.
+5. No placeholder remains.
+6. No unsupported `type` appears.
+7. `image` and `file` values use durable IPFS paths where applicable.
+8. `file` values satisfy the column's `allowedFileTypes`.
+9. The policy has been read for compliance.
+10. The user has confirmed the final values if the agent is going to upload or submit.
 
-If any item fails, fix the construction before uploading. Do not submit a broken item.json.
+After upload, fetch the uploaded JSON back from IPFS and parse it before using the URI onchain.
+
+---
+
+## Four validation passes
+
+Run these checks before any upload or transaction.
+
+### Pass 1: JSON structure
+
+- Parse every JSON file.
+- Confirm required top-level keys exist.
+- Confirm no placeholder remains.
+- Confirm `metadata.columns` is a non-empty array when validating MetaEvidence.
+- Confirm `item.json.columns` is an array and `item.json.values` is an object.
+
+### Pass 2: Curate type safety
+
+- Reject unknown field types.
+- Reject forbidden aliases.
+- Validate identifier constraints.
+- Validate `allowedFileTypes` for file columns.
+- Validate rich-address values when the schema uses `rich address`.
+
+### Pass 3: IPFS round trip
+
+- Upload the file only after user approval.
+- Fetch the file back from the exact URI that will be used onchain.
+- Parse the fetched content.
+- Compare fetched JSON to local JSON.
+
+### Pass 4: Onchain/UI compatibility
+
+- Simulate the contract call before sending.
+- For first item submissions, inspect a `NewItem` sample after the active MetaEvidence when available.
+- If sample encoding and MetaEvidence disagree, stop and ask.
+
+---
+
+## Hard stop conditions
+
+Stop. Do not upload, submit, or continue automatically if:
+
+- MetaEvidence cannot be fetched or parsed.
+- `metadata.columns` is missing.
+- item.json columns do not exactly match MetaEvidence columns.
+- a value is missing or still a placeholder.
+- a field type is unsupported or uses a forbidden alias.
+- the JSON is malformed.
+- the policy document cannot be reached.
+- the user has not explicitly approved upload or onchain submission.
+
+Broken JSON, broken MetaEvidence, and half-baked item drafts must never be submitted.
+
+---
 
 ## Common failure modes
 
 Avoid these construction mistakes:
 
-- **Renaming labels** — `"Name"` → `"Token Name"` breaks the schema contract; values won't map
-- **Reordering columns** — contracts may parse positionally; order must match MetaEvidence exactly
-- **Rewriting descriptions** — even correcting grammar invalidates the verbatim copy requirement
-- **Changing `isIdentifier` flags** — alters which fields the subgraph uses as identity keys
-- **Building schema from UI or policy text** — only valid source is `MetaEvidence.metadata.columns`
-  fetched from the contract; never reconstruct from screenshots, memory, or policy PDFs
+- **Renaming labels** - `"Name"` to `"Token Name"` breaks the schema contract.
+- **Reordering columns** - order must match MetaEvidence exactly.
+- **Rewriting descriptions** - even grammar fixes violate the verbatim-copy rule.
+- **Changing `isIdentifier` flags** - alters identity/display behavior.
+- **Using `type: "url"`** - use `type: "link"` instead.
+- **Using `richAddress` for GTCR schemas** - use `rich address` unless fetched live MetaEvidence says otherwise.
+- **Using `longText` for GTCR schemas** - use `long text` unless fetched live MetaEvidence says otherwise.
+- **Submitting drafts** - placeholders and incomplete values are not valid submissions.
