@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Hardened the `kleros-curate` skill with stricter MetaEvidence retrieval, item.json construction, field type validation, deployment guardrails, and list-of-lists visibility guidance.
+- Clarified `kleros-curate` Scout visibility, reward, challenge, and custom-registry value propositions.
 
 ## [2.1.0] - 2026-06-12
 

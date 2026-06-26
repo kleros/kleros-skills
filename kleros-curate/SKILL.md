@@ -22,6 +22,14 @@ consult it if a dispute arises.
 5. The winner captures the loser's deposit as a bounty. The two-sided stake mechanism rewards accuracy and
    discourages frivolous challenges in both directions.
 
+**Why use Curate:**
+
+- **Earn by curating**: users can profit by finding non-compliant entries in challengeable registries. In
+  Stake Curate especially, successful challengers can recover their challenge deposit and win the item's stake.
+- **Launch your own verification market**: projects can create a Curate list for almost any verifiable
+  standard, define their own policy, deposits, challenge windows, arbitrator/court, and governance. The result
+  is a fast, low-overhead registry that can power a public Curate view or a custom frontend.
+
 **Why onchain-first matters:**
 
 Deposit amounts, arbitration costs, MetaEvidence URIs, and challenge windows are all live onchain state —
