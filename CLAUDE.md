@@ -157,7 +157,7 @@ Use when shipping plugin manifest changes, distribution-mechanism changes (e.g. 
 
 1. Bump `.claude-plugin/plugin.json` `version` (semver: patch = docs/infra fixes, minor = new packaging behavior/feature bundle, major = breaking install changes)
 2. Leave `marketplace.json` `metadata.version` UNCHANGED unless catalog shape (plugins added/removed/restructured) actually shifted
-3. Do NOT touch per-skill SKILL.md files unless their content changed (skill content change = separate `skillname@vX.Y.Z` tag instead, NOT bundled here)
+3. Do NOT touch per-skill SKILL.md files unless their content changed (skill content change = separate `skillname@vX.Y.Z` tag instead — or a *deliberate* combined release, see Versioning quick reference; just don't bundle skill edits into a plugin release by accident)
 4. Add `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` with Added/Changed/Fixed grouping
 5. Add CHANGELOG link line. **First-of-its-kind plugin tag** (e.g. v2.1.0 was first because v2.0.0 was never tagged) → `releases/tag/vX.Y.Z`. Subsequent → `compare/vPREV...vX.Y.Z`.
 6. `npm run update-digests` (idempotent if no SKILL.md changed) + `npm test` — both must be green pre-commit
@@ -169,6 +169,7 @@ Use when shipping plugin manifest changes, distribution-mechanism changes (e.g. 
 - Plugin manifest OR distribution behavior changed → `plugin.json` bump + `vX.Y.Z` tag
 - Catalog shape changed (plugins added/removed/restructured) → ALSO bump `marketplace.json` `metadata.version`
 - Pure infra-only change with no user-visible bundling → don't tag just to validate; let it ride to the next real release
+- **Skill content + landing/manifest in one batch** → either two tags, or one combined plugin-level `vX.Y.Z` that bundles both (precedent: `v2.2.0`, 2026-06-29 — kleros-curate hardening + landing polish under one tag). Key mechanic: **a tag push syncs the WHOLE dev tree to master regardless of tag _name_** — so the choice is about labeling + which version counter advances, NOT what reaches master. Prefer the combined `plugin.json` bump when skill content must reach _existing_ installs: bumping the version advances the pinned install-cache dir (`cache/<mkt>/<plugin>/<version>/`), which is what should make installed plugins pull the new content (inferred from the cache layout — not yet empirically confirmed). A bare `skillname@vX.Y.Z` tag with no `plugin.json` bump still ships to master, but leaves the version pin unchanged.
 
 ## Gotcha: plugin install ships the WHOLE repo
 
