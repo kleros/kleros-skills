@@ -111,6 +111,10 @@ When authoring new GTCR MetaEvidence:
 
 ### Rich address values
 
+Ask the user which chain a `rich address` value targets; never infer it from earlier
+context. A bare address under the wrong `referenceId` resolves to a different account on a
+different chain and fails registry compliance.
+
 For `rich address`, use the format:
 
 ```text
