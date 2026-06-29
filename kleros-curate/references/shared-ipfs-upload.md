@@ -8,30 +8,42 @@ Third-party pins can vanish — service changes, token expiry, account cancellat
 
 Once a CID is recorded in a MetaEvidence or item event onchain, the artifact must remain retrievable for the full dispute lifecycle. Disputes run for weeks or months after submission; a missing artifact means jurors cannot evaluate evidence.
 
-## Default upload path: Kleros x402 gateway
+## Recommended path: kleros-ipfs-upload skill
 
-Use the `kleros-ipfs-upload` skill by default for every IPFS upload related to Kleros interactions. This
-includes Curate artifacts, dispute evidence, appeal evidence, MetaEvidence, policies, item metadata, images,
-logos, and visual proofs.
+Use the `kleros-ipfs-upload` skill for Kleros-ecosystem artifacts. The gateway is operated by the Kleros team; the team has a strong incentive to keep pins live because the protocol depends on these artifacts.
 
-That skill uploads through the Kleros x402 endpoint:
+This is the recommended path for durability — not required. Agents may use any IPFS mechanism (see agent autonomy note below).
 
-```text
-POST https://kleros-ipfs-gateway.fly.dev/upload-to-ipfs
+## Manual upload (Pinata UI)
+
+1. Create a free account at [app.pinata.cloud](https://app.pinata.cloud)
+2. Go to **Files** and click **Add** to upload your file or paste JSON
+3. Copy the returned **CID**
+
+## Programmatic upload (Pinata API)
+
+Generate a JWT from **Developers → API Keys** (grant `pinFileToIPFS` scope), then:
+
+```bash
+curl -X POST https://uploads.pinata.cloud/v3/files \
+  -H "Authorization: Bearer $PINATA_JWT" \
+  -F file=@./your-file.json \
+  -F network=public
 ```
 
-The gateway is operated for Kleros ecosystem artifacts and pins through the Kleros-backed upload path used by
-this repo. This is the only upload flow explained here because Curate artifacts become onchain references:
-if the file disappears, jurors, challengers, and users may be unable to verify the submission.
+## The Graph IPFS node
 
-Agents may use another IPFS pinning source only if the user explicitly accepts that it is outside the skill's
-safe path and at the user's own risk. External or self-managed pins can become unpinned because of account
-cancellation, token expiry, service changes, or operator error. If a policy, MetaEvidence, evidence file,
-logo, or item payload becomes unavailable after an onchain transaction, the user can lose deposits, challenge
-opportunities, rewards, or dispute credibility.
+POST to the hosted node with `wrap-with-directory=false`:
 
-Do not document or suggest Pinata, The Graph IPFS node, ad-hoc gateway uploads, or temporary local nodes as
-normal Curate upload paths. Those are outside the skill's safe path.
+```bash
+curl -sS -X POST \
+  -F "file=@/absolute/path/to/file.json;filename=file.json;type=application/json" \
+  "https://api.thegraph.com/ipfs/api/v0/add?wrap-with-directory=false"
+```
+
+Use the returned `Hash` as the CID.
+
+WHY `wrap-with-directory=false`: passing `true` creates a directory CID; the file is at `/CID/filename`, not at `/CID` directly. Direct `ipfs.io/ipfs/<CID>` access breaks, and the filename is not always predictable from the CID alone.
 
 ## Submission format rule
 
@@ -62,8 +74,6 @@ Alternatively, use the `urls[]` field from the API response directly — it cont
 - Token logos: at least 128×128 pixels, ideally square
 - CDN visual proof: screenshot must show the exact domain/subdomain page with address context visible — not just the image in isolation
 
-## External pinning risk note
+## Agent autonomy note
 
-Agents may have access to other IPFS tools, but using them for Curate artifacts is outside this skill's
-recommended flow. If the user insists on another provider, state the durability and money-loss risks clearly,
-record the user's approval, and still require an IPFS round-trip fetch before any onchain transaction.
+Agents may use any IPFS mechanism. The `kleros-ipfs-upload` skill is the recommended path for Kleros-ecosystem artifacts where long-term availability matters — but it is not required. Use Pinata, The Graph node, or any other pinning provider when appropriate.

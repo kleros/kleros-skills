@@ -22,14 +22,6 @@ consult it if a dispute arises.
 5. The winner captures the loser's deposit as a bounty. The two-sided stake mechanism rewards accuracy and
    discourages frivolous challenges in both directions.
 
-**Why use Curate:**
-
-- **Earn by curating**: users can profit by finding non-compliant entries in challengeable registries. In
-  Stake Curate especially, successful challengers can recover their challenge deposit and win the item's stake.
-- **Launch your own verification market**: projects can create a Curate list for almost any verifiable
-  standard, define their own policy, deposits, challenge windows, arbitrator/court, and governance. The result
-  is a fast, low-overhead registry that can power a public Curate view or a custom frontend.
-
 **Why onchain-first matters:**
 
 Deposit amounts, arbitration costs, MetaEvidence URIs, and challenge windows are all live onchain state —
@@ -56,11 +48,6 @@ These rules apply across all Curate flavors. They are always in context; referen
 - **Onchain state + onchain logs are the source of truth** for deposits, arbitration cost, challenge deposits, appeal status, and MetaEvidence URI.
 - **Never assume a "standard token schema"** — only the current MetaEvidence for that registry is authoritative.
 - **Never rewrite the schema**: `item.json.columns` must be copied verbatim from MetaEvidence; only `values` is dynamic.
-- **Never upload or submit half-baked artifacts**: no malformed JSON, broken MetaEvidence, placeholder values, unsupported field types, or unreachable policy files.
-- **Never author unsupported MetaEvidence field types**: for URL fields use `type: "link"`, not `url`; validate every `metadata.columns[].type` before upload.
-- **Production registries need a logo**: do not deploy a production list with missing `metadata.logoURI`.
-- **Strongly prefer PDF policy documents** for registry policies. Use a non-PDF policy only after the user
-  explicitly accepts the review and compatibility risk.
 - **Never include "typical ranges" or estimates** for deposits or fees — only report live-read values.
 - **`eth_getCode` before declaring any address is or isn't a contract.**
 
@@ -111,8 +98,6 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 
 **Build item.json** → `references/shared-item-json.md`
 
-**Verify / make a deployed list visible on the Curate frontend** -> `references/verify-your-list.md`
-
 **Upload to IPFS** → `references/shared-ipfs-upload.md`
 
 **ABI / function signatures** → `references/shared-abi-fragments.md`
@@ -137,23 +122,13 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 4. Flavor reference — send the challenge or removeItem transaction
 
 **Deploy a new registry:**
-1. `references/shared-metaevidence.md` - prepare valid MetaEvidence JSON (policy URI + column schema + logoURI)
+1. `references/shared-metaevidence.md` — prepare MetaEvidence JSON (policy URI + column schema)
 2. `references/shared-ipfs-upload.md` — upload MetaEvidence JSON to IPFS
 3. Flavor reference — call the factory deploy function
-4. `references/verify-your-list.md` - submit the new registry to the network's list-of-lists if frontend visibility is required
-
-**Frontend visibility after deployment:**
-- Deploying a registry does not automatically make it visible on the Curate frontend.
-- Verifying a list gives it more visibility, makes it findable in the frontend, and marks it as a listed
-  registry for users.
-- List-of-lists submission is not mandatory, but it is highly recommended for public registries. Skip it only
-  when the list is intentionally stealth/private.
-- The known list-of-lists are Curate Classic / `GeneralizedTCR`, not Light Curate. Use
-  `references/verify-your-list.md`.
 
 ## Reference files
 
-These 9 files are loaded on demand — only when needed for the current task. The action index above points
+These 8 files are loaded on demand — only when needed for the current task. The action index above points
 to the right file for each operation. Loading an unnecessary reference file wastes context.
 
 **`references/light-curate.md`**
@@ -176,17 +151,10 @@ pattern (fill from existing seed template, then submit), item.json templates per
 incentives information. Always read alongside `references/light-curate.md` — Scout IS LGTCR at the
 contract layer; this file adds Scout-only context on top.
 
-**`references/verify-your-list.md`**
-Narrow workflow for making a deployed registry visible and verified in the Curate frontend. Contains the
-known list-of-lists addresses, explains why verification matters, and documents the simple Classic Curate /
-`GeneralizedTCR.addItem(bytes)` path. Read this file for frontend visibility submissions; do not use Light
-Curate `addItem(string)` mechanics for the known list-of-lists.
-
 **`references/shared-metaevidence.md`**
 Shared MetaEvidence retrieval applicable to all Curate flavors: `eth_getLogs` method with the correct
-topic0, latest applicable MetaEvidence selection, LGTCR registration-vs-clearing classification, Goldsky
-subgraph path for PGTCR, MetaEvidence JSON structure, policy URI extraction, and MetaEvidence authoring
-guardrails.
+topic0, sort-and-take-latest rule, two-stream MetaEvidence classification for LGTCR (registration events
+vs clearing events), Goldsky subgraph path for PGTCR, MetaEvidence JSON structure, policy URI extraction.
 Read this file before fetching MetaEvidence for any registry, regardless of flavor.
 
 **`references/shared-deposits.md`**
@@ -196,10 +164,10 @@ the native-token arbitration cost), `arbitrationCost()` read pattern, `msg.value
 Read this file before computing any deposit or constructing any transaction value.
 
 **`references/shared-item-json.md`**
-Strict item.json construction rules: the `columns + values` schema format, verbatim-copy rule for columns
-(copy from MetaEvidence without modification - values is the only dynamic part), GTCR field type allowlist,
-forbidden aliases, placeholder rejection, pre-upload validation, and `NewItem` event sampling to verify
-field order before submitting. Read this file before building any item payload for any Curate registry.
+Shared item.json construction rules: the `columns + values` schema format, verbatim-copy rule for columns
+(copy from MetaEvidence without modification — values is the only dynamic part), values population from
+user-supplied input, schema confirmation via `NewItem` event sampling to verify field order before
+submitting. Read this file before building any item payload for any Curate registry.
 
 **`references/shared-abi-fragments.md`**
 Shared ABI fragments for all Curate contracts: `LightGeneralizedTCR` read and write function signatures,
@@ -208,8 +176,8 @@ Shared ABI fragments for all Curate contracts: `LightGeneralizedTCR` read and wr
 navigate this file. Read when you need function selectors, calldata encoding, or event topic hashes.
 
 **`references/shared-ipfs-upload.md`**
-Shared IPFS upload guidance for Curate workflows: durability rationale (external pins can disappear after
-onchain anchoring), required recommended path via the `kleros-ipfs-upload` skill and Kleros x402 endpoint,
-`/ipfs/<CID>` format rule (avoid double-slash when building URLs), and explicit risk warning for any
-user-approved external pinning source.
+Shared IPFS upload guidance for Curate workflows: durability rationale (third-party pins can disappear
+after on-chain anchoring), recommended path via the `kleros-ipfs-upload` skill (Kleros-operated pins
+have strong availability incentives), `/ipfs/<CID>` format rule (avoid double-slash when building URLs),
+agent autonomy note (the skill is recommended, not required — agents may use any IPFS mechanism).
 Read before any IPFS upload step inside a Curate workflow.
