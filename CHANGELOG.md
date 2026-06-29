@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0] - 2026-06-29
 
 ### Added
 - Landing page: visually-hidden `<h1>` (the page previously had no top-level heading), improving SEO and screen-reader structure.
@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundled `pay-and-upload-cdp.ts` script for Coinbase CDP server accounts.
 - Claude Marketplace plugin configuration (`.claude-plugin/`).
 
+[2.2.0]: https://github.com/kleros/kleros-skills/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/kleros/kleros-skills/releases/tag/v2.1.0
 [2.0.0]: https://github.com/kleros/kleros-skills/compare/v1.1.0...v2.0.0
 [kleros-curate@v1.0.0]: https://github.com/kleros/kleros-skills/releases/tag/kleros-curate@v1.0.0
