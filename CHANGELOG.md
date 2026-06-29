@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Hardened the `kleros-curate` skill with stricter MetaEvidence retrieval, item.json construction, field type validation, deployment guardrails, and list-of-lists visibility guidance.
+- Clarified `kleros-curate` Scout visibility, reward, challenge, and custom-registry value propositions.
+- Restricted Curate IPFS upload guidance to the Kleros x402 gateway path and strengthened PDF policy recommendations.
+- Added a narrow `verify-your-list` reference for Classic Curate list-of-lists visibility submissions.
+
 ## [2.1.0] - 2026-06-12
 
 ### Added

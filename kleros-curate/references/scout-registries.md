@@ -6,7 +6,15 @@
 
 ## Overview
 
-Scout is a curated data layer built on top of LightGeneralizedTCR contracts deployed on Gnosis Chain. It covers 4 registries with 700k+ entries consumed by Etherscan-style explorers, Blockscout, Ledger Live, and other ecosystem infrastructure. Verified entries surface in address labeling, token display, and domain-to-contract resolution across these platforms.
+Submitting data to Scout boosts a project's visibility across explorers, wallets, and infrastructure surfaces
+where users actually search for contracts and tokens. Accepted Scout entries are consumed by major Kleros
+partners and ecosystem tools, including the Etherscan family, Blockscout, MetaMask, Ledger, Otterscan,
+Routescan, Openscan, and more; users see recognizable tags, token metadata, and domain-to-contract links
+instead of raw addresses and numbers.
+
+Scout can also be profitable: contributors may earn campaign rewards for eligible submissions, and challengers
+can make money by spotting non-compliant entries and winning challenges. Check Kleros social media and blog
+posts for the latest reward campaigns before submitting.
 
 Scout IS LightGeneralizedTCR. Not a separate contract type — the same LGTCR contracts running under a specific overlay of fixed addresses and seed templates. All contract operations (submit, challenge, evidence, appeal, factory deploy) live in `references/light-curate.md`. This file adds the Scout-specific context: registry addresses, seed templates, view helper, scout-api, image requirements, and incentive framing.
 

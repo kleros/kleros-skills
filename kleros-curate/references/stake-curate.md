@@ -97,7 +97,8 @@ model does not apply.
 ## item.json construction
 
 Build `item.json` from the `metadata.columns` array in the MetaEvidence JSON.
-For construction rules (deep-copy rule, output protocol, field-value types): `shared-item-json.md`.
+For construction rules (deep-copy rule, output protocol, GTCR-compatible field types, placeholder rejection,
+and pre-upload validation): `shared-item-json.md`.
 
 Note: PGTCR does not require the schema confirmation check — that is an LGTCR-specific step.
 
@@ -370,6 +371,7 @@ This two-step flow differs fundamentally from LGTCR which uses only native token
 
 3. **Build item.json and upload to IPFS** → get `/ipfs/<CID>`.
    See `shared-item-json.md` for construction rules and `shared-ipfs-upload.md` for upload options.
+   Do not upload if the JSON is malformed, uses placeholders, or fails exact column validation.
 
 4. **Decide stake amount**: `depositStake >= submissionMinDeposit()` (read live).
    Submitters may stake more than the minimum — a higher stake signals confidence and makes spam
@@ -563,21 +565,32 @@ deploy(
 Steps:
 1. **Confirm factory address** for the target chain — do not guess; accept an explorer link.
 
-2. **Prepare MetaEvidence JSON** (policy document + `metadata.columns` schema).
-   Upload to IPFS → `/ipfs/<CID>`. See `shared-ipfs-upload.md` and `shared-metaevidence.md`.
+2. **Prepare MetaEvidence JSON** (policy document + `metadata.logoURI` + valid `metadata.columns` schema).
+   Strongly prefer a PDF policy; use a non-PDF policy only after explicit user acceptance of the review and
+   compatibility risk. Upload through the Kleros x402 IPFS endpoint as `/ipfs/<CID>`. See `shared-ipfs-upload.md` and
+   `shared-metaevidence.md`. Do not upload broken JSON, placeholder metadata, unsupported field types, or a
+   production MetaEvidence without `logoURI`.
 
 3. **Confirm all params with the user:**
-   - `_token` — ERC20 stake token address
-   - `_submissionMinDeposit` — minimum ERC20 stake per submission
-   - `_periods[4]` — `[submissionPeriod, reinclusionPeriod, withdrawingPeriod, arbitrationParamsCooldown]`
-   - `_stakeMultipliers[4]` — `[challengeStakeMultiplier, winnerStakeMultiplier, loserStakeMultiplier, sharedStakeMultiplier]`
-   - `_arbitrator`, `_arbitratorExtraData`, `_governor`
+   - target chain
+   - factory address
+   - `_arbitrator` and `_arbitratorExtraData` - exact court / court path
+   - `_governor`
+   - `_token` - ERC20 stake token address
+   - `_submissionMinDeposit` - minimum ERC20 stake per submission
+   - `_periods[4]` - `[submissionPeriod, reinclusionPeriod, withdrawingPeriod, arbitrationParamsCooldown]`
+   - `_stakeMultipliers[4]` - `[challengeStakeMultiplier, winnerStakeMultiplier, loserStakeMultiplier, sharedStakeMultiplier]`
 
 4. **Simulate** the `deploy` call with the confirmed params.
 
 5. **Send transaction** — capture the emitted `NewGTCR(address instance)` event to get the registry address.
 
 6. **Verify** — query the new registry via GraphQL (once indexed) and cross-check with onchain reads.
+
+7. **Frontend visibility** - list-of-lists submission is not mandatory, but it is highly recommended if users
+   should find the list in the UI. Skip it only when the list is intentionally stealth/private. If visibility
+   is wanted, use `verify-your-list.md`. The known list-of-lists are Curate Classic / `GeneralizedTCR`, not
+   Stake Curate or Light Curate; do not use the PGTCR `addItem(string,uint256)` path for frontend visibility.
 
 ---
 
@@ -592,7 +605,7 @@ Call `eth_getLogs` with the registry address and topic0:
 topic0 = keccak256("MetaEvidence(uint256,string)")
        = 0x61606860eb6c87306811e2695215385101daab53bd6ab4e9f9049aead9363c7d
 ```
-Take the latest log by `blockNumber` descending, then `logIndex` descending.
+Take the latest valid log by `blockNumber`, `transactionIndex`, then `logIndex`.
 For the full retrieval procedure: `shared-metaevidence.md § PGTCR specifics`.
 
 ### Fallback B: arbitrationParamsChanges index logic
