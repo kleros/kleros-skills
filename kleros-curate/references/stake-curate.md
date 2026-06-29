@@ -566,7 +566,8 @@ Steps:
 1. **Confirm factory address** for the target chain — do not guess; accept an explorer link.
 
 2. **Prepare MetaEvidence JSON** (policy document + `metadata.logoURI` + valid `metadata.columns` schema).
-   Prefer a PDF policy. Upload to IPFS as `/ipfs/<CID>`. See `shared-ipfs-upload.md` and
+   Strongly prefer a PDF policy; use a non-PDF policy only after explicit user acceptance of the review and
+   compatibility risk. Upload through the Kleros x402 IPFS endpoint as `/ipfs/<CID>`. See `shared-ipfs-upload.md` and
    `shared-metaevidence.md`. Do not upload broken JSON, placeholder metadata, unsupported field types, or a
    production MetaEvidence without `logoURI`.
 

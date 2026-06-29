@@ -59,7 +59,8 @@ These rules apply across all Curate flavors. They are always in context; referen
 - **Never upload or submit half-baked artifacts**: no malformed JSON, broken MetaEvidence, placeholder values, unsupported field types, or unreachable policy files.
 - **Never author unsupported MetaEvidence field types**: for URL fields use `type: "link"`, not `url`; validate every `metadata.columns[].type` before upload.
 - **Production registries need a logo**: do not deploy a production list with missing `metadata.logoURI`.
-- **Prefer PDF policy documents** for registry policies so jurors and users can review the rules reliably.
+- **Strongly prefer PDF policy documents** for registry policies. Use a non-PDF policy only after the user
+  explicitly accepts the review and compatibility risk.
 - **Never include "typical ranges" or estimates** for deposits or fees — only report live-read values.
 - **`eth_getCode` before declaring any address is or isn't a contract.**
 
@@ -202,8 +203,8 @@ Shared ABI fragments for all Curate contracts: `LightGeneralizedTCR` read and wr
 navigate this file. Read when you need function selectors, calldata encoding, or event topic hashes.
 
 **`references/shared-ipfs-upload.md`**
-Shared IPFS upload guidance for Curate workflows: durability rationale (third-party pins can disappear
-after on-chain anchoring), recommended path via the `kleros-ipfs-upload` skill (Kleros-operated pins
-have strong availability incentives), `/ipfs/<CID>` format rule (avoid double-slash when building URLs),
-agent autonomy note (the skill is recommended, not required — agents may use any IPFS mechanism).
+Shared IPFS upload guidance for Curate workflows: durability rationale (external pins can disappear after
+onchain anchoring), required recommended path via the `kleros-ipfs-upload` skill and Kleros x402 endpoint,
+`/ipfs/<CID>` format rule (avoid double-slash when building URLs), and explicit risk warning for any
+user-approved external pinning source.
 Read before any IPFS upload step inside a Curate workflow.

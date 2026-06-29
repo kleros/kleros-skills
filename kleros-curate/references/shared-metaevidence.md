@@ -140,7 +140,8 @@ Required production metadata:
 
 - top-level `title`, `description`, `question`, `category`, `fileURI`, and `metadata`.
 - `fileURI` must point to the human-readable policy.
-- Prefer a PDF policy document for human and juror review.
+- Strongly prefer a PDF policy document for human and juror review. Use a non-PDF policy only if the user
+  explicitly accepts the review and compatibility risk.
 - `metadata.logoURI` is required for production lists.
 - `metadata.tcrTitle`, `metadata.tcrDescription`, `metadata.itemName`, and `metadata.itemNamePlural`
   must match the list.
@@ -252,4 +253,5 @@ Stop before upload or deployment if:
 - any placeholder remains.
 - `fileURI` is missing.
 - production `metadata.logoURI` is missing.
+- the policy is not a PDF and the user has not explicitly accepted the review and compatibility risk.
 - the user has not confirmed schema, policy, logo, chain, arbitrator/court, and deploy parameters.
