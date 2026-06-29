@@ -589,13 +589,8 @@ Steps:
 
 7. **Frontend visibility** - list-of-lists submission is not mandatory, but it is highly recommended if users
    should find the list in the UI. Skip it only when the list is intentionally stealth/private. If visibility
-   is wanted, submit the new registry address to the network's list-of-lists using the normal item submission
-   flow. Fetch that list-of-lists MetaEvidence first; do not assume its schema.
-
-Known list-of-lists:
-- Mainnet: `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15`
-- Gnosis: `0xe456c79446c4De1A0bA4d06F294Db42bA2fD4F7F`
-- Sepolia: `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF`
+   is wanted, use `verify-your-list.md`. The known list-of-lists are Curate Classic / `GeneralizedTCR`, not
+   Stake Curate or Light Curate; do not use the PGTCR `addItem(string,uint256)` path for frontend visibility.
 
 ---
 

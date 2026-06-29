@@ -111,7 +111,7 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 
 **Build item.json** → `references/shared-item-json.md`
 
-**Make a deployed list visible on the Curate frontend** -> submit the registry address to the network's list-of-lists using the normal item submission flow.
+**Verify / make a deployed list visible on the Curate frontend** -> `references/verify-your-list.md`
 
 **Upload to IPFS** → `references/shared-ipfs-upload.md`
 
@@ -140,21 +140,20 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 1. `references/shared-metaevidence.md` - prepare valid MetaEvidence JSON (policy URI + column schema + logoURI)
 2. `references/shared-ipfs-upload.md` — upload MetaEvidence JSON to IPFS
 3. Flavor reference — call the factory deploy function
-4. Submit the new registry to the network's list-of-lists if frontend visibility is required
+4. `references/verify-your-list.md` - submit the new registry to the network's list-of-lists if frontend visibility is required
 
 **Frontend visibility after deployment:**
 - Deploying a registry does not automatically make it visible on the Curate frontend.
-- List-of-lists submission is not mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is intentionally stealth/private.
-- Submit the new registry as an item to the relevant network list-of-lists, using the same MetaEvidence/item.json/deposit workflow as any other submission.
-- Known list-of-lists:
-  - Mainnet: `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15`
-  - Gnosis: `0xe456c79446c4De1A0bA4d06F294Db42bA2fD4F7F`
-  - Sepolia: `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF`
-  Fetch the list-of-lists MetaEvidence before composing its item.json; do not assume its schema.
+- Verifying a list gives it more visibility, makes it findable in the frontend, and marks it as a listed
+  registry for users.
+- List-of-lists submission is not mandatory, but it is highly recommended for public registries. Skip it only
+  when the list is intentionally stealth/private.
+- The known list-of-lists are Curate Classic / `GeneralizedTCR`, not Light Curate. Use
+  `references/verify-your-list.md`.
 
 ## Reference files
 
-These 8 files are loaded on demand — only when needed for the current task. The action index above points
+These 9 files are loaded on demand — only when needed for the current task. The action index above points
 to the right file for each operation. Loading an unnecessary reference file wastes context.
 
 **`references/light-curate.md`**
@@ -176,6 +175,12 @@ CDN). Contains: the 4 registry contract addresses used for address-based routing
 pattern (fill from existing seed template, then submit), item.json templates per registry, image guidance,
 incentives information. Always read alongside `references/light-curate.md` — Scout IS LGTCR at the
 contract layer; this file adds Scout-only context on top.
+
+**`references/verify-your-list.md`**
+Narrow workflow for making a deployed registry visible and verified in the Curate frontend. Contains the
+known list-of-lists addresses, explains why verification matters, and documents the simple Classic Curate /
+`GeneralizedTCR.addItem(bytes)` path. Read this file for frontend visibility submissions; do not use Light
+Curate `addItem(string)` mechanics for the known list-of-lists.
 
 **`references/shared-metaevidence.md`**
 Shared MetaEvidence retrieval applicable to all Curate flavors: `eth_getLogs` method with the correct

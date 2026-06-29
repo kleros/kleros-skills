@@ -159,17 +159,6 @@ Deployment alone does not make a list visible on the Curate frontend. List-of-li
 mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is
 intentionally stealth/private.
 
-Submit the new registry address to the network's list-of-lists using the normal item submission flow:
-
-1. Fetch the list-of-lists MetaEvidence.
-2. Build item.json from its `metadata.columns`.
-3. Upload item.json.
-4. Compute the deposit live.
-5. Submit the item.
-
-Known list-of-lists:
-- Mainnet: `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15`
-- Gnosis: `0xe456c79446c4De1A0bA4d06F294Db42bA2fD4F7F`
-- Sepolia: `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF`
-
-Do not assume the list-of-lists schema; fetch its MetaEvidence like any other registry.
+Use `verify-your-list.md` for the list-of-lists workflow. The known list-of-lists are Curate Classic /
+`GeneralizedTCR`, not Light Curate. Do not use this Light Curate `addItem("/ipfs/<CID>")` transaction path
+for frontend visibility submissions.
