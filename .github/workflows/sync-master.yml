@@ -147,7 +147,8 @@ jobs:
             scripts \
             package.json \
             yarn.lock \
-            .yarnrc.yml
+            .yarnrc.yml \
+            RELEASING.md
           # Remove root feedback/handover md files by pattern.
           # REV-01: root-anchored with [^/]* — previous '^.*_FEEDBACK.*\.md$' over-matched
           # paths at ANY depth (e.g. kleros-curate/MIGRATION_FEEDBACK.md), which would
