@@ -213,3 +213,7 @@ onchain anchoring), required recommended path via the `kleros-ipfs-upload` skill
 `/ipfs/<CID>` format rule (avoid double-slash when building URLs), and explicit risk warning for any
 user-approved external pinning source.
 Read before any IPFS upload step inside a Curate workflow.
+
+## Feedback
+
+**Something broken or confusing in this skill?** Report it: fetch [feedback/SKILL.md](../feedback/SKILL.md) — helps maintainers fix what agents silently trip over.

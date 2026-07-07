@@ -188,7 +188,7 @@ jobs:
             .git .claude .claude-plugin .github .gitignore .well-known \
             apple-touch-icon.png CHANGELOG.md CLAUDE.md \
             favicon-16x16.png favicon-32x32.png favicon.ico favicon.svg \
-            index.html kleros-curate kleros-ipfs-upload LICENSE \
+            feedback index.html kleros-curate kleros-ipfs-upload LICENSE \
             netlify netlify.toml openclaw-skill README.md robots.txt \
             sitemap.xml SKILL.md | sort)
           ACTUAL_ROOT=$(ls -A1 | sort)
@@ -202,7 +202,7 @@ jobs:
             exit 1
           fi
           # keep-list assertions — must be PRESENT (catches strip overreach)
-          for path in kleros-curate kleros-ipfs-upload .well-known/agent-skills \
+          for path in kleros-curate kleros-ipfs-upload feedback .well-known/agent-skills \
                       .github/workflows SKILL.md index.html README.md LICENSE \
                       CHANGELOG.md robots.txt sitemap.xml; do
             if [ ! -e "$path" ]; then

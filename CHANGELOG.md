@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Tier 1 agent-to-maintainer feedback channel: `.github/ISSUE_TEMPLATE/agent-feedback.yml` (structured GitHub issue form, auto-applies the `agent-feedback` label) and a new `kleros-feedback` skill (`feedback/SKILL.md`) teaching agents how to file a report via Kleros MCP, `gh` CLI, or a prefilled GitHub URL fallback, in priority order.
+- Feedback footers linking to `feedback/SKILL.md` added to every published/routing skill: root `SKILL.md`, `kleros-ipfs-upload`, `kleros-curate`, `openclaw-skill`.
+- `feedback/SKILL.md` registered in `.well-known/agent-skills/index.json` and `sitemap.xml` for discovery parity with other published skills.
+
 ## [2.2.0] - 2026-06-29
 
 ### Added

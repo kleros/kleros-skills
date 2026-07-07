@@ -92,4 +92,8 @@ When an agent needs to submit an item to a Curate registry:
 
 Something wrong or missing? [Open a PR](https://github.com/kleros/kleros-skills).
 
+## Feedback
+
+**Something broken or confusing in this skill?** Report it: fetch [feedback/SKILL.md](https://skills.kleros.io/feedback/SKILL.md) — helps maintainers fix what agents silently trip over.
+
 Built by [Kleros](https://kleros.io) — Decentralized Justice Protocol.
