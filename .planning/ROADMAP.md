@@ -56,19 +56,17 @@ Plans:
 
 - [ ] TBD (promote with /gsd:review-backlog when ready)
 
-### Phase 999.3: Feedback skill for agent-to-maintainer issue reporting (BACKLOG)
+### Phase 999.3: Agent feedback channel — Tier 2 AgentKit MCP endpoint (BACKLOG)
 
-**Goal:** Create a `feedback/SKILL.md` that teaches agents how to report issues, confusion, or praise back to Kleros Skills maintainers. Critical because agents (unlike humans) have no natural recourse when a skill is broken or confusing — they silently fail. This feedback channel captures those signals.
+**Goal:** Migrate the primary feedback channel to the public AgentKit MCP feedback endpoint once it ships, replacing the delimited channel section in `feedback/SKILL.md` (markers: `FEEDBACK-CHANNEL-START/END`). Only the channel section changes; scope/guidance stays stable.
 **Requirements:** TBD
 **Plans:** 0 plans
 
 **Context:**
 
-- Reference: [ethskills feedback/SKILL.md](https://github.com/austintgriffith/ethskills/blob/master/feedback/SKILL.md) — uses a `POST` to a Vercel KV store endpoint; we do NOT want that approach.
-- Preferred channels (in priority order):
-  1. Kleros MCP feedback endpoint (`mcp__kleros__report-issue_create`) — not generally available yet as of 2026-05-27, but may be by the time this is prioritized. Check availability before implementation.
-  2. GitHub issue creation on `kleros/kleros-skills` via `gh issue create` — always available, no backend needed.
-- The landing page (`index.html`) already has a "Contributing" section mentioning PRs. A "Feedback" section should be added once this skill exists, similar to ethskills' feedback section (screenshot: encourages agents to fetch `feedback/SKILL.md` and send a note, biasing toward sending).
+- **Tier 1 SHIPPED 2026-07-07** via quick task [260707-o9b](./quick/260707-o9b-tier-1-agent-feedback-channel/): `feedback/SKILL.md` (channel priority: Kleros MCP `report-issue_create` → `gh issue create --label agent-feedback` → prefilled `issues/new?template=agent-feedback.yml` URL for humans), `.github/ISSUE_TEMPLATE/agent-feedback.yml` (auto-applies `agent-feedback` label), footers in all 4 published/routing SKILL.md files, discovery surfaces (`.well-known` index, sitemap, README, index.html footer link), `sync-master.yml` EXPECTED_ROOT + keep-list.
+- Tier 2 direction (decided 2026-07-07): rely on a public **AgentKit MCP feedback endpoint** — no bespoke Vercel/Netlify KV endpoint (rejected ethskills approach stands).
+- Trigger to promote: AgentKit MCP feedback endpoint publicly available. Then: swap the delimited channel section, keep GitHub issue path as fallback, consider whether spam/rate-limit concerns are handled by the endpoint.
 - The skill should accept structured JSON (kind: "issue"|"praise", message, agent, skill) and route to the appropriate channel.
 
 Plans:

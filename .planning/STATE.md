@@ -5,7 +5,7 @@ milestone_name: Unified Curate Skill
 status: Awaiting next milestone
 stopped_at: Phase 5 context gathered
 last_updated: "2026-06-11T22:15:00.000Z"
-last_activity: 2026-06-11 — Completed quick task 260611-vy1: REV-16 principle fix (root allowlist in sanity check)
+last_activity: 2026-07-07 — Completed quick task 260707-o9b: Tier 1 agent feedback channel (feedback/SKILL.md + issue form + footers)
 progress:
   total_phases: 13
   completed_phases: 5
@@ -19,7 +19,7 @@ progress:
 Phase: Milestone v1.0 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-05-27 — Milestone v1.0 completed and archived
+Last activity: 2026-07-07 — Completed quick task 260707-o9b: Tier 1 agent feedback channel
 
 ## Project Reference
 
@@ -72,6 +72,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 | 260607-w84 | Execute SEED-002: branch-based minimal-strip (dev/master split via GH Action) | 2026-06-07 | 4a80b4e | [260607-w84-execute-seed-002-branch-based-minimal-st](./quick/260607-w84-execute-seed-002-branch-based-minimal-st/) |
 | 260611-v0x | Apply REV-17 Node 24 bumps + REV-08/10/13 + Phase 2 ruleset prep | 2026-06-11 | 068d0db | [260611-v0x-apply-rev-17-node-24-bumps-rev-08-xargs-](./quick/260611-v0x-apply-rev-17-node-24-bumps-rev-08-xargs-/) |
 | 260611-vy1 | REV-16 principle fix: root allowlist in sanity check (predicate-orthogonal) | 2026-06-11 | b7f74d9 | [260611-vy1-rev-16-principle-fix-root-allowlist-for-](./quick/260611-vy1-rev-16-principle-fix-root-allowlist-for-/) |
+| 260707-o9b | Tier 1 agent feedback channel: feedback/SKILL.md + issue form + footers (backlog 999.3 Tier 1) | 2026-07-07 | f338416 | [260707-o9b-tier-1-agent-feedback-channel](./quick/260707-o9b-tier-1-agent-feedback-channel/) |
 
 ## Session Continuity
 
