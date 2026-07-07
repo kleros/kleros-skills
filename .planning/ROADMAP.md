@@ -35,9 +35,10 @@ Three draft curate skills (2,366 lines across LGTCR, PGTCR, Scout) restructured 
 
 ## Backlog
 
-### Phase 999.1: Rename kleros-curate to kleros-curate-v1 (BACKLOG)
+### Phase 999.1: Rename kleros-curate to kleros-curate-v1 (BACKLOG — DEFERRED)
 
 **Goal:** Rename the skill from `kleros-curate` to `kleros-curate-v1` and make it explicit throughout the skill content that it targets Curate applications built on Kleros protocol v1 (not a version of the Curate app itself, but the version of the underlying Kleros arbitration protocol).
+**Deferred:** 2026-07-07 — do not promote until a Kleros Curate v2 (Kleros protocol v2 arbitrator) is available; the `-v1` suffix is only meaningful once a v2 counterpart skill exists.
 **Requirements:** TBD
 **Plans:** 0 plans
 
