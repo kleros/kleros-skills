@@ -46,16 +46,6 @@ Plans:
 
 - [ ] TBD (promote with /gsd:review-backlog when ready)
 
-### Phase 999.2: Top-level routing skill as entry point for all Kleros skills (BACKLOG)
-
-**Goal:** Create a top-level SKILL.md that serves as the primary entry point for the entire kleros-skills plugin, routing agents to the correct individual skill (kleros-ipfs-upload, kleros-curate, future skills) based on user intent. Reference: [ethskills SKILL.md](https://github.com/austintgriffith/ethskills/blob/master/SKILL.md) as an example of a multi-skill routing entry point.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-
-- [ ] TBD (promote with /gsd:review-backlog when ready)
-
 ### Phase 999.3: Agent feedback channel — Tier 2 AgentKit MCP endpoint (BACKLOG)
 
 **Goal:** Migrate the primary feedback channel to the public AgentKit MCP feedback endpoint once it ships, replacing the delimited channel section in `feedback/SKILL.md` (markers: `FEEDBACK-CHANNEL-START/END`). Only the channel section changes; scope/guidance stays stable.
