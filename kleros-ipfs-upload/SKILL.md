@@ -49,6 +49,25 @@ On success the script prints each CID on its own line (so you can capture them w
 
 Defaults: `OPERATION=evidence`, `GATEWAY_URL=https://kleros-ipfs-gateway.fly.dev`. Override `OPERATION` with an env var; see the "Request shape" section for valid values.
 
+## Reuse identical files
+
+IPFS CIDs are content-addressed. If the same byte-for-byte file is needed in multiple places, upload it once
+and reuse the returned CID everywhere. Do not make a second paid upload for the same policy PDF, logo image,
+evidence display interface, or other identical file just because multiple Kleros artifacts reference it.
+
+For multi-artifact jobs, keep a small artifact map before submitting transactions:
+
+- `policy.pdf` -> `/ipfs/<CID>`
+- `logo.png` -> `/ipfs/<CID>`
+- `registrationMetaEvidence.json` -> `/ipfs/<CID>`
+- `clearingMetaEvidence.json` -> `/ipfs/<CID>`
+- `evidenceDisplayInterface` -> `/ipfs/<CID>/index.html`
+
+When a shared policy, logo, or evidence display interface is referenced by both registration and clearing
+MetaEvidence JSON, put the same CID in both JSON files. Reuse CIDs only for exact same files. If a file
+changes by even one byte, or if registration and clearing use different policy documents, upload each distinct
+file once and label each CID clearly.
+
 If you're writing your own client inside an existing Node project, the core is small enough to inline:
 
 ```ts

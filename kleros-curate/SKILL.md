@@ -139,8 +139,9 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
 **Deploy a new registry:**
 1. `references/shared-metaevidence.md` - prepare valid MetaEvidence JSON (policy URI + column schema + logoURI)
 2. `references/shared-ipfs-upload.md` — upload MetaEvidence JSON to IPFS
-3. Flavor reference — call the factory deploy function
-4. `references/verify-your-list.md` - submit the new registry to the network's list-of-lists if frontend visibility is required
+3. `references/shared-abi-fragments.md` - get known factory/arbitrator addresses and deploy ABI
+4. Flavor reference — call the factory deploy function
+5. `references/verify-your-list.md` - submit the new registry to the network's list-of-lists if frontend visibility is required
 
 **Frontend visibility after deployment:**
 - Deploying a registry does not automatically make it visible on the Curate frontend.
@@ -204,7 +205,8 @@ field order before submitting. Read this file before building any item payload f
 **`references/shared-abi-fragments.md`**
 Shared ABI fragments for all Curate contracts: `LightGeneralizedTCR` read and write function signatures,
 `PermanentGTCR` read and write function signatures, `IArbitrator` interface ABI, key event signatures
-(`MetaEvidence`, `ItemStatusChange`, `RequestSubmitted`, etc.). Use `grep -n "function\|event"` to
+(`MetaEvidence`, `ItemStatusChange`, `RequestSubmitted`, etc.), known LightGTCRFactory addresses, and known
+Kleros V1 arbitrator addresses. Use `grep -n "function\|event\|address"` to
 navigate this file. Read when you need function selectors, calldata encoding, or event topic hashes.
 
 **`references/shared-ipfs-upload.md`**

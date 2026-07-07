@@ -142,12 +142,47 @@ To withdraw crowdfunded appeal fees and rewards after a resolved dispute: call `
 
 ABI: `function executeRequest(bytes32 _itemID) external` and `function withdrawFeesAndRewards(address _beneficiary, bytes32 _itemID, uint256 _requestID, uint256 _roundID) external` — full fragments in `shared-abi-fragments.md`
 
+## Admin actions
+
+GOVERNOR-ONLY — always simulate and confirm with the governor before executing any admin action.
+These calls change registry rules that affect all submitters. Never execute without explicit governor approval.
+
+### Update stake multipliers
+
+Use individual named calls for governor updates:
+
+```text
+changeSharedStakeMultiplier(uint256)
+changeWinnerStakeMultiplier(uint256)
+changeLoserStakeMultiplier(uint256)
+```
+
+Read `sharedStakeMultiplier()`, `winnerStakeMultiplier()`, and `loserStakeMultiplier()` before and after the
+transaction. The factory `_stakeMultipliers` array order applies only to deployment calldata; governor
+updates should call the exact function for the exact field being changed.
+
 ## Deploy a new registry (factory)
 
-1. **Identify factory address** — obtain from Kleros GitHub (`kleros/gtcr` repo) or by inspecting a known registry deployment tx on the target chain's explorer. Do NOT hardcode a factory address without verifying it on the target chain — factory addresses vary by chain and version.
-2. **Prepare registration MetaEvidence JSON** - include `title`, `description`, `fileURI`, `metadata.logoURI`, and valid `metadata.columns` schema. Strongly prefer a PDF policy for `fileURI`; use a non-PDF policy only after explicit user acceptance of the review and compatibility risk. Upload through the Kleros x402 IPFS endpoint as `/ipfs/<CID>`. See `shared-metaevidence.md` for JSON structure, field type allowlist, and upload stop rules.
-3. **Prepare clearing MetaEvidence JSON** - separate policy and schema for removal flow. Use the same strict validation rules. Upload to IPFS as `/ipfs/<CID>`.
-4. **Determine all constructor params**: chain, factory address, governor, `arbitrator`, `arbitratorExtraData` / exact court, `registrationMetaEvidence` URI, `clearingMetaEvidence` URI, `challengePeriodDuration`, `submissionBaseDeposit`, `removalBaseDeposit`, `submissionChallengeBaseDeposit`, `removalChallengeBaseDeposit`, `winnerStakeMultiplier`, `loserStakeMultiplier`, `sharedStakeMultiplier`
+1. **Identify factory and arbitrator addresses** — for Ethereum Mainnet, Gnosis Chain, and Sepolia, use
+   `shared-abi-fragments.md` for the LightGTCRFactory and default Kleros V1 arbitrator addresses. Verify both
+   addresses with chain-scoped `eth_getCode` before deploying. For any other chain or factory version, obtain
+   the factory from Kleros-maintained configuration or a verified deployment transaction; do not guess.
+2. **Prepare registration MetaEvidence JSON** - this is the add-flow JSON. Use the canonical LGTCR
+   registration template, minimum requirements, and JSON key order in `shared-metaevidence.md`. Upload
+   through the Kleros x402 IPFS endpoint as `/ipfs/<CID>`.
+3. **Prepare clearing MetaEvidence JSON** - this is the remove-flow JSON. Use the canonical LGTCR clearing
+   template, minimum requirements, and the same strict validation rules in `shared-metaevidence.md`. Upload
+   to IPFS as `/ipfs/<CID>`.
+4. **Determine all constructor params**: chain, factory address, governor, `arbitrator`,
+   `arbitratorExtraData` / exact court, `registrationMetaEvidence` URI, `clearingMetaEvidence` URI,
+   `challengePeriodDuration`, `submissionBaseDeposit`, `removalBaseDeposit`,
+   `submissionChallengeBaseDeposit`, `removalChallengeBaseDeposit`, `winnerStakeMultiplier`,
+   `loserStakeMultiplier`, `sharedStakeMultiplier`
+   - `registrationMetaEvidence` must be the URI for the add-flow JSON.
+   - `clearingMetaEvidence` must be the URI for the remove-flow JSON.
+   - The factory deploy signature takes registration first and clearing second. Never swap these two URIs.
+   - `_stakeMultipliers` order is `[sharedStakeMultiplier, winnerStakeMultiplier, loserStakeMultiplier]`.
+     Never pass `[winner, loser, shared]`.
 5. **Confirm params with user** before proceeding - do not silently choose court, chain, challenge period, deposits, or multipliers
 6. **Simulate** — dry-run the factory call with all params
 7. **Send** — call the factory's deploy function (check factory ABI — function name is `addList(...)` or `createRegistry(...)` depending on factory version; do not assume the name)

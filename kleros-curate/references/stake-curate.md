@@ -527,6 +527,9 @@ changeLoserStakeMultiplier(uint256)
 changeSharedStakeMultiplier(uint256)
 ```
 
+These are individual governor calls. Do not reuse the factory `_stakeMultipliers[4]` array mentally when
+changing one field; call the exact function for the exact parameter being changed, then read the value back.
+
 ### Update period parameters (governor-only)
 ```text
 changeSubmissionPeriod(uint256)
@@ -564,8 +567,13 @@ deploy(
 
 Steps:
 1. **Confirm factory address** for the target chain — do not guess; accept an explorer link.
+   For Ethereum Mainnet, Gnosis Chain, and Sepolia Kleros V1 arbitrator addresses, use
+   `shared-abi-fragments.md`; still confirm the exact court / `arbitratorExtraData` with the user and simulate.
 
 2. **Prepare MetaEvidence JSON** (policy document + `metadata.logoURI` + valid `metadata.columns` schema).
+   PGTCR uses one MetaEvidence stream. Use the canonical PGTCR template, minimum requirements, JSON key
+   order, and `metadata` key order from `shared-metaevidence.md`, including `requireRemovalEvidence` when
+   removal evidence is expected.
    Strongly prefer a PDF policy; use a non-PDF policy only after explicit user acceptance of the review and
    compatibility risk. Upload through the Kleros x402 IPFS endpoint as `/ipfs/<CID>`. See `shared-ipfs-upload.md` and
    `shared-metaevidence.md`. Do not upload broken JSON, placeholder metadata, unsupported field types, or a
