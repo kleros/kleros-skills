@@ -281,3 +281,7 @@ Both scripts are **optional**. They exist so agents without x402 tooling can pay
 - `scripts/package.json` — declares the two deps (`x402-fetch`, `tsx`). No lockfile and no tsconfig (tsx runs TS natively).
 
 If you're integrating into an existing Node project, you can ignore the bundled `package.json` and just `npm i x402-fetch` in your own project.
+
+## Feedback
+
+**Something broken or confusing in this skill?** Report it: fetch [feedback/SKILL.md](../feedback/SKILL.md) — helps maintainers fix what agents silently trip over.

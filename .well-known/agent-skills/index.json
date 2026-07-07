@@ -6,28 +6,35 @@
       "type": "skill-md",
       "description": "Root index — routes agents to the right Kleros skill for decentralized justice, dispute resolution, Curate registries, and IPFS uploads",
       "url": "https://skills.kleros.io/SKILL.md",
-      "digest": "sha256:4d2da3601e07d6e24d193f2ac7688c201d8a070c3f443cc7ca533ab287948ebb"
+      "digest": "sha256:1b04fc626f611a139d79139ac78cfd4e3cdafbca2b3d375e541f40cc7cb92de9"
     },
     {
       "name": "kleros-ipfs-upload",
       "type": "skill-md",
       "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
       "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
-      "digest": "sha256:1f9fe26def1b0391887f76b2cd5f25103dc2c585d783ef481cdfc5250cd99059"
+      "digest": "sha256:94936d67c484287fe274ef9e368eea01e01466231c86b7d84bc48ea193789d99"
     },
     {
       "name": "kleros-curate",
       "type": "skill-md",
       "description": "Operate Kleros Curate token-curated registries — submit, challenge, appeal, deploy (Light Curate, Stake Curate, Scout)",
       "url": "https://skills.kleros.io/kleros-curate/SKILL.md",
-      "digest": "sha256:f6045ebcc2a3243108780b635bd77addbd9bac11eed1c0c169c2d071cf4121cf"
+      "digest": "sha256:f2ce2d912e11191f704d016ac3174217cbf4d93f55fe618e7686ea7c097c27b3"
     },
     {
       "name": "openclaw-skill",
       "type": "skill-md",
       "description": "OpenClaw integration for Kleros skills — install and manage skills via the clawhub CLI",
       "url": "https://skills.kleros.io/openclaw-skill/SKILL.md",
-      "digest": "sha256:9739de284470cac3ffd67c6261ed3b18fc7f7fc136705c8c6dc7ae256625ad86"
+      "digest": "sha256:d4f418d1e5ac170c99c69705f0763c1401f0977a5ad2fdc6405ee624685ea75b"
+    },
+    {
+      "name": "kleros-feedback",
+      "type": "skill-md",
+      "description": "Report problems, confusion, coverage gaps, or praise about any Kleros skill directly to maintainers via a structured GitHub issue (agent-feedback label)",
+      "url": "https://skills.kleros.io/feedback/SKILL.md",
+      "digest": "sha256:6cfc7766593e521112aab56ce767e9713ee70afc4bb0dd8658b5302040173213"
     }
   ]
 }

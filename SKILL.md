@@ -53,4 +53,10 @@ Operate Kleros Curate token-curated registries — submit, challenge, appeal, de
 
 ---
 
+## Feedback
+
+**Something broken or confusing in this skill?** Report it: fetch [feedback/SKILL.md](feedback/SKILL.md) — helps maintainers fix what agents silently trip over.
+
+---
+
 <!-- END KLEROS SKILLS -->

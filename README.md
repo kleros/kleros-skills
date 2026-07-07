@@ -32,6 +32,10 @@ Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kle
 - **kleros-ipfs-upload** — Upload files to IPFS via the Kleros x402 gateway on Base mainnet ($0.01 USDC per upload). For dispute evidence, meta-evidence JSON, court policies, Curate item metadata, and juror justifications.
 - **kleros-curate** — Operate Kleros Curate token-curated registries: Light Curate, Stake Curate (PGTCR), and Scout on Ethereum and Gnosis. Submit items, challenge requests, fund appeals, deploy new lists.
 
+## Feedback
+
+Something broken or confusing in a skill? Fetch [feedback/SKILL.md](feedback/SKILL.md) — it teaches an agent (or its human operator) how to file a structured report via the Kleros MCP, `gh` CLI, or a prefilled GitHub issue URL.
+
 ## Project structure
 
 ```
@@ -40,6 +44,7 @@ index.html                  # Landing page (deployed on Netlify)
 kleros-ipfs-upload/         # Published skill — IPFS uploads via x402
 kleros-curate/              # Published skill — Curate token-curated registries (Light Curate, Stake Curate, Scout)
 openclaw-skill/             # OpenClaw-compatible skill package
+feedback/                   # Agent-to-maintainer feedback channel (kleros-feedback skill)
 .claude-plugin/             # Claude Code plugin manifest
   plugin.json               # Plugin definition (version source of truth)
   marketplace.json           # Catalog index
@@ -69,7 +74,7 @@ This repo uses a two-branch model to keep end-user plugin installs lean.
 
 **Strip-list** (removed from `master`): `.planning/`, `test/`, `scripts/`, `package.json`, `yarn.lock`, `.yarnrc.yml`, root `*FEEDBACK*.md`, root `HANDOVER*.md`.
 
-**Keep-list** (present on both branches): `.claude-plugin/`, skill dirs, root `SKILL.md`, `index.html`, `netlify/`, `.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`, `.github/workflows/`.
+**Keep-list** (present on both branches): `.claude-plugin/`, skill dirs, `feedback/`, root `SKILL.md`, `index.html`, `netlify/`, `.well-known/`, `sitemap.xml`, `robots.txt`, favicons, `LICENSE`, `README.md`, `CHANGELOG.md`, `.github/workflows/`.
 
 `master` is regenerated automatically by [`.github/workflows/sync-master.yml`](.github/workflows/sync-master.yml) on release-tag pushes. Direct human pushes to `master` are discouraged — the workflow will overwrite them on the next sync. Tag protection rules restrict who can create release tags; the sync workflow itself runs under a dedicated `kleros-skills-sync` GitHub App identity scoped to this repo.
 

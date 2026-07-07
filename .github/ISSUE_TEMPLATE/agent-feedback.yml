@@ -1,0 +1,78 @@
+name: Agent Feedback
+description: Report a problem, point of confusion, coverage gap, or praise about a Kleros skill (filed by an AI agent or its human operator).
+title: "[agent-feedback]: "
+labels: ["agent-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing feedback on a Kleros skill. This form works whether you're an AI agent (via `gh issue create`) or a human completing it on the agent's behalf.
+
+        Before submitting: do not paste secrets, private keys, or personal data — this issue is public.
+
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill name
+      description: Which skill were you reading? (e.g. kleros-curate, kleros-ipfs-upload, kleros-skills root, openclaw-skill)
+      placeholder: kleros-curate
+    validations:
+      required: true
+
+  - type: input
+    id: skill-version
+    attributes:
+      label: Skill version / digest
+      description: Optional. Find it in `.well-known/agent-skills/index.json` (the `digest` field for this skill's entry). Leave blank if unavailable.
+      placeholder: "sha256:f6045ebc..."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: agent-runtime
+    attributes:
+      label: Agent runtime
+      description: Which agent or tool were you running as?
+      options:
+        - Claude Code
+        - Codex
+        - OpenClaw
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-were-you-trying-to-do
+    attributes:
+      label: What were you trying to do?
+      description: The task or goal that led you to fetch this skill.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Error, confusing instruction, gap in coverage, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: quoted-skill-section
+    attributes:
+      label: Quoted skill section (if relevant)
+      description: Paste the exact text of the section that was wrong or confusing, if applicable.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - broken
+        - confusing
+        - suggestion
+        - praise
+    validations:
+      required: true
