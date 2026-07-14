@@ -597,8 +597,9 @@ Steps:
 
 7. **Frontend visibility** - list-of-lists submission is not mandatory, but it is highly recommended if users
    should find the list in the UI. Skip it only when the list is intentionally stealth/private. If visibility
-   is wanted, use `verify-your-list.md`. The known list-of-lists are Curate Classic / `GeneralizedTCR`, not
-   Stake Curate or Light Curate; do not use the PGTCR `addItem(string,uint256)` path for frontend visibility.
+   is wanted for a Gnosis registry, read `verify-your-list.md` and `light-curate.md`. The fixed verification
+   target is `LightGeneralizedTCR` even when the registry being listed is PGTCR, so submit the PGTCR registry
+   address as the item value and use the standard LGTCR transaction path against the verification target.
 
 ---
 

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Improved Curate list deployment guidance with canonical MetaEvidence templates, known factory and arbitrator addresses, correct multiplier ordering, and reuse of identical IPFS artifacts.
+- Migrated Gnosis list verification to the canonical `LightGeneralizedTCR` registry and standard LGTCR item submission workflow.
+
 ## [2.3.0] - 2026-07-07
 
 ### Added
@@ -74,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundled `pay-and-upload-cdp.ts` script for Coinbase CDP server accounts.
 - Claude Marketplace plugin configuration (`.claude-plugin/`).
 
+[Unreleased]: https://github.com/kleros/kleros-skills/compare/v2.3.0...HEAD
 [2.3.0]: https://github.com/kleros/kleros-skills/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/kleros/kleros-skills/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/kleros/kleros-skills/releases/tag/v2.1.0

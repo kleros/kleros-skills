@@ -32,6 +32,17 @@ function items(bytes32 _itemID) external view returns (uint8 status, uint256 num
 function requestsDisputeData(bytes32 _itemID, uint256 _requestID) external view returns (uint256 disputeID, bool resolved)
 ```
 
+`status` in `getItemInfo(...)` and `items(...)` uses the Solidity enum order:
+
+| Value | Status |
+|------:|--------|
+| `0` | `Absent` |
+| `1` | `Registered` |
+| `2` | `RegistrationRequested` |
+| `3` | `ClearingRequested` |
+
+Verify the target is `LightGeneralizedTCR` before applying this mapping; do not reuse it for PGTCR status.
+
 ### Write functions
 
 ```solidity

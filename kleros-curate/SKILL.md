@@ -1,6 +1,6 @@
 ---
 name: kleros-curate
-description: "Interact with Kleros Curate registries — the decentralized token-curated list protocol for token lists, address tags, and policy-driven curation. Use this skill when the user mentions Curate, Light Curate, LightGeneralizedTCR, LGTCR, LightCurate, Stake Curate, PermanentGTCR, PGTCR, Scout, token-curated registry, TCR, curated list, decentralized registry, registry, token list, address tags, CDN tags, Goldsky, or Solidity functions addItem, removeItem, challengeItem, challengeRequest. Covers all three flavors — Light Curate (LGTCR, optimistic challenge window), Stake Curate (PGTCR, permanent ERC20 stake), and Scout (Gnosis registries for contract/token tagging). Also trigger when the user wants to submit an item to a registry, challenge a submission, remove an item, appeal a dispute on a registry item, deploy a new Curate registry, curate a list, browse registry entries, check whether an address is tagged, add a token to a token list, query a curated list, or fund an appeal round. Even if Curate is not mentioned, trigger when the user describes registry operations — adding entries to a list, checking item status, browsing items, querying a decentralized list — combined with Kleros context signals (Kleros, arbitrator, dispute, juror, PNK). Do NOT trigger for non-Kleros registries or generic IPFS uploads without Curate context — IPFS uploads belong to kleros-ipfs-upload. Exception: if the user explicitly names the kleros-curate skill or asks to test this skill, trigger regardless of context."
+description: "Operate Kleros Curate token-curated registries across Light Curate (LightGeneralizedTCR/LGTCR), Stake Curate (PermanentGTCR/PGTCR), and Scout on Ethereum, Gnosis, and Sepolia. Use when the user mentions Curate, LGTCR, PGTCR, Scout, Goldsky, TCR, token or address lists, address/CDN tags, MetaEvidence, or Curate contract calls. Covers registry discovery and queries; policy/schema inspection; item submission, removal, challenge, evidence, appeal, rewards, and execution; new registry deployment; and Gnosis frontend verification. Also trigger for registry/list operations paired with Kleros, arbitrator, dispute, juror, or PNK context, and whenever the user names or tests kleros-curate. Do NOT use for non-Kleros registries or generic IPFS uploads without Curate context; route standalone uploads to kleros-ipfs-upload."
 ---
 
 # Kleros Curate
@@ -149,8 +149,10 @@ See the flavor reference file for hallmark calls — SKILL.md does not embed fun
   registry for users.
 - List-of-lists submission is not mandatory, but it is highly recommended for public registries. Skip it only
   when the list is intentionally stealth/private.
-- The known list-of-lists are Curate Classic / `GeneralizedTCR`, not Light Curate. Use
-  `references/verify-your-list.md`.
+- On Gnosis, the canonical verification registry is itself Light Curate. Use
+  `references/verify-your-list.md` for its fixed address and verification-specific safeguards, then follow the
+  standard LGTCR submission workflow. The registry being listed may be another Curate flavor if the live
+  verification policy permits it.
 
 ## Reference files
 
@@ -178,10 +180,10 @@ incentives information. Always read alongside `references/light-curate.md` — S
 contract layer; this file adds Scout-only context on top.
 
 **`references/verify-your-list.md`**
-Narrow workflow for making a deployed registry visible and verified in the Curate frontend. Contains the
-known list-of-lists addresses, explains why verification matters, and documents the simple Classic Curate /
-`GeneralizedTCR.addItem(bytes)` path. Read this file for frontend visibility submissions; do not use Light
-Curate `addItem(string)` mechanics for the known list-of-lists.
+Narrow Gnosis workflow for making a deployed registry visible and verified in the Curate frontend. Contains
+the canonical Gnosis `LightGeneralizedTCR` verification address, keeps the transaction target distinct from
+the registry being listed, and delegates to the standard LGTCR MetaEvidence, item.json, IPFS, deposit,
+simulation, and request-finalization procedures. Read this file for Gnosis frontend visibility submissions.
 
 **`references/shared-metaevidence.md`**
 Shared MetaEvidence retrieval applicable to all Curate flavors: `eth_getLogs` method with the correct

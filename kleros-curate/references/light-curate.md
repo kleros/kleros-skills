@@ -185,7 +185,9 @@ updates should call the exact function for the exact field being changed.
      Never pass `[winner, loser, shared]`.
 5. **Confirm params with user** before proceeding - do not silently choose court, chain, challenge period, deposits, or multipliers
 6. **Simulate** — dry-run the factory call with all params
-7. **Send** — call the factory's deploy function (check factory ABI — function name is `addList(...)` or `createRegistry(...)` depending on factory version; do not assume the name)
+7. **Send** — use the verified factory ABI. For the known `LightGTCRFactory` deployments in
+   `shared-abi-fragments.md`, call `deploy(...)`. If the user supplies a different factory, fetch its verified
+   ABI and do not infer a function name or selector.
 8. **Listen for `NewGTCR(address _address)` event** — the emitted address is the new registry. Immediately run MetaEvidence retrieval on the new registry to confirm both streams are correct.
 
 ## Frontend visibility
@@ -194,6 +196,6 @@ Deployment alone does not make a list visible on the Curate frontend. List-of-li
 mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is
 intentionally stealth/private.
 
-Use `verify-your-list.md` for the list-of-lists workflow. The known list-of-lists are Curate Classic /
-`GeneralizedTCR`, not Light Curate. Do not use this Light Curate `addItem("/ipfs/<CID>")` transaction path
-for frontend visibility submissions.
+Use `verify-your-list.md` for the list-of-lists workflow. On Gnosis, the canonical verification registry is
+itself `LightGeneralizedTCR`. Read `verify-your-list.md` for its fixed address, address-role separation, and
+policy checks, then use the standard `Submit item` flow above against that verification registry.
