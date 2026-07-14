@@ -597,9 +597,10 @@ Steps:
 
 7. **Frontend visibility** - list-of-lists submission is not mandatory, but it is highly recommended if users
    should find the list in the UI. Skip it only when the list is intentionally stealth/private. If visibility
-   is wanted for a Gnosis registry, read `verify-your-list.md` and `light-curate.md`. The fixed verification
-   target is `LightGeneralizedTCR` even when the registry being listed is PGTCR, so submit the PGTCR registry
-   address as the item value and use the standard LGTCR transaction path against the verification target.
+   is wanted on Ethereum Mainnet, Gnosis Chain, or Sepolia, read `verify-your-list.md` and `light-curate.md`.
+   The chain-specific verification target is `LightGeneralizedTCR` even when the registry being listed is
+   PGTCR, so submit the PGTCR registry address as the item value and use the standard LGTCR transaction path
+   against the verification target.
 
 ---
 

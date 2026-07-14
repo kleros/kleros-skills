@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved Curate list deployment guidance with canonical MetaEvidence templates, known factory and arbitrator addresses, correct multiplier ordering, and reuse of identical IPFS artifacts.
-- Migrated Gnosis list verification to the canonical `LightGeneralizedTCR` registry and standard LGTCR item submission workflow.
+- Migrated Ethereum Mainnet, Gnosis Chain, and Sepolia list verification to their canonical `LightGeneralizedTCR` registries and standard LGTCR item submission workflow.
+- Clarified that each Kleros x402 request uploads exactly one file: identical bytes may reuse a CID, while different content requires separate paid uploads.
 
 ## [2.3.0] - 2026-07-07
 

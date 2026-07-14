@@ -196,6 +196,7 @@ Deployment alone does not make a list visible on the Curate frontend. List-of-li
 mandatory, but it is highly recommended if users should find the list in the UI. Skip it only when the list is
 intentionally stealth/private.
 
-Use `verify-your-list.md` for the list-of-lists workflow. On Gnosis, the canonical verification registry is
-itself `LightGeneralizedTCR`. Read `verify-your-list.md` for its fixed address, address-role separation, and
-policy checks, then use the standard `Submit item` flow above against that verification registry.
+Use `verify-your-list.md` for the list-of-lists workflow. On Ethereum Mainnet, Gnosis Chain, and Sepolia, the
+canonical verification registries are `LightGeneralizedTCR`. Read `verify-your-list.md` for the selected
+chain's fixed address, scan start block, address-role separation, and policy checks, then use the standard
+`Submit item` flow above against that verification registry.

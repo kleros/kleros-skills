@@ -106,7 +106,7 @@ event HasPaidAppealFee(bytes32 indexed _itemID, uint256 indexed _requestIndex, u
 
 ```solidity
 function token() external view returns (address)
-// ERC20 token used for permanent stake (PGTCR only — no ETH stake model)
+// ERC20 token used for permanent stake (PGTCR only — no native-token stake model)
 
 function submissionMinDeposit() external view returns (uint256)
 function submissionPeriod() external view returns (uint256)
@@ -131,7 +131,8 @@ function arbitrationParamsChanges(uint256 _index) external view returns (uint48 
 
 ```solidity
 function addItem(string _item, uint256 _deposit) external payable
-// PGTCR only: _deposit is the ERC20 token stake amount (approve token first); ETH value covers arbitration cost
+// PGTCR only: _deposit is the ERC20 token stake amount (approve token first); msg.value in the chain's native
+// token covers arbitration cost (ETH on Ethereum/Sepolia, xDAI on Gnosis)
 
 function challengeItem(bytes32 _itemID, string _evidence) external payable
 // PGTCR uses challengeItem, not challengeRequest (LGTCR uses challengeRequest — do not confuse)
