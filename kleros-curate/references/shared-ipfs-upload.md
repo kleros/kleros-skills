@@ -33,6 +33,29 @@ opportunities, rewards, or dispute credibility.
 Do not document or suggest Pinata, The Graph IPFS node, ad-hoc gateway uploads, or temporary local nodes as
 normal Curate upload paths. Those are outside the skill's safe path.
 
+## One file per paid upload; reuse identical files
+
+Each Kleros x402 request must contain exactly one multipart `file` part. Never batch two different files in
+one request. Different content requires separate paid uploads — one request and one payment per file. The
+bundled upload scripts already enforce this by accepting a single file path.
+
+If the same byte-for-byte file is needed in multiple Curate artifacts, upload it once and reuse the same
+`/ipfs/<CID>` everywhere it is referenced. Do not reupload the same policy PDF, logo image, evidence display
+interface, or other identical file just because it appears in both registration and clearing MetaEvidence.
+
+Keep a short artifact map while preparing a list:
+
+- `registrationMetaEvidence` -> `/ipfs/<CID>` for the registration MetaEvidence JSON.
+- `clearingMetaEvidence` -> `/ipfs/<CID>` for the clearing MetaEvidence JSON.
+- `policy` -> one reused `/ipfs/<CID>` if the registration and clearing policies are the same exact file.
+- `logo` -> one reused `/ipfs/<CID>` when both MetaEvidence files use the same exact logo.
+- `evidenceDisplayInterface` -> one reused `/ipfs/<CID>/index.html` when the same interface is used.
+
+When a shared policy, logo, or evidence display interface is referenced by both registration and clearing
+MetaEvidence JSON, put the same CID in both JSON files. If any file differs by even one byte, give it its own
+paid upload and label its CID clearly. Registration and clearing MetaEvidence JSON require separate uploads
+when their JSON differs, even if both reuse the same policy, logo, or evidence display interface CIDs.
+
 ## Submission format rule
 
 Use `/ipfs/<CID>` in all onchain fields — `_evidence` parameter, MetaEvidence JSON, item.json values:

@@ -13,14 +13,14 @@
       "type": "skill-md",
       "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
       "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
-      "digest": "sha256:94936d67c484287fe274ef9e368eea01e01466231c86b7d84bc48ea193789d99"
+      "digest": "sha256:c33d3d2e3a351fef9097840ba82767d56ebc4aa4feeea090dcc8bdf836ed6bf4"
     },
     {
       "name": "kleros-curate",
       "type": "skill-md",
       "description": "Operate Kleros Curate token-curated registries — submit, challenge, appeal, deploy (Light Curate, Stake Curate, Scout)",
       "url": "https://skills.kleros.io/kleros-curate/SKILL.md",
-      "digest": "sha256:f2ce2d912e11191f704d016ac3174217cbf4d93f55fe618e7686ea7c097c27b3"
+      "digest": "sha256:52ebc9f2a71267bb5493ed5b2c9ea3d58781199868ffef914c08c22ffea10dac"
     },
     {
       "name": "openclaw-skill",

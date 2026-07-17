@@ -32,6 +32,17 @@ function items(bytes32 _itemID) external view returns (uint8 status, uint256 num
 function requestsDisputeData(bytes32 _itemID, uint256 _requestID) external view returns (uint256 disputeID, bool resolved)
 ```
 
+`status` in `getItemInfo(...)` and `items(...)` uses the Solidity enum order:
+
+| Value | Status |
+|------:|--------|
+| `0` | `Absent` |
+| `1` | `Registered` |
+| `2` | `RegistrationRequested` |
+| `3` | `ClearingRequested` |
+
+Verify the target is `LightGeneralizedTCR` before applying this mapping; do not reuse it for PGTCR status.
+
 ### Write functions
 
 ```solidity
@@ -43,6 +54,17 @@ function fundAppeal(bytes32 _itemID, uint8 _side) external payable
 function executeRequest(bytes32 _itemID) external
 function withdrawFeesAndRewards(address _beneficiary, bytes32 _itemID, uint256 _requestID, uint256 _roundID) external
 ```
+
+### Governor write functions
+
+```solidity
+function changeSharedStakeMultiplier(uint256 _sharedStakeMultiplier) external
+function changeWinnerStakeMultiplier(uint256 _winnerStakeMultiplier) external
+function changeLoserStakeMultiplier(uint256 _loserStakeMultiplier) external
+```
+
+Use these named functions for governor multiplier updates. The LightGTCRFactory `_stakeMultipliers` array
+order does not apply to these calls.
 
 ### Events
 
@@ -84,7 +106,7 @@ event HasPaidAppealFee(bytes32 indexed _itemID, uint256 indexed _requestIndex, u
 
 ```solidity
 function token() external view returns (address)
-// ERC20 token used for permanent stake (PGTCR only — no ETH stake model)
+// ERC20 token used for permanent stake (PGTCR only — no native-token stake model)
 
 function submissionMinDeposit() external view returns (uint256)
 function submissionPeriod() external view returns (uint256)
@@ -109,7 +131,8 @@ function arbitrationParamsChanges(uint256 _index) external view returns (uint48 
 
 ```solidity
 function addItem(string _item, uint256 _deposit) external payable
-// PGTCR only: _deposit is the ERC20 token stake amount (approve token first); ETH value covers arbitration cost
+// PGTCR only: _deposit is the ERC20 token stake amount (approve token first); msg.value in the chain's native
+// token covers arbitration cost (ETH on Ethereum/Sepolia, xDAI on Gnosis)
 
 function challengeItem(bytes32 _itemID, string _evidence) external payable
 // PGTCR uses challengeItem, not challengeRequest (LGTCR uses challengeRequest — do not confuse)
@@ -159,11 +182,33 @@ function currentRuling(uint256 _disputeID) external view returns (uint256)
 
 Read `arbitrator()` from the registry contract to get the arbitrator address, then read `arbitratorExtraData()` to pass as `_extraData` to `arbitrationCost`.
 
+Known Kleros V1 arbitrators:
+
+| Chain | Chain ID | Arbitrator contract | Address |
+|---|---:|---|---|
+| Ethereum Mainnet | `1` | `KlerosLiquid` | `0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069` |
+| Gnosis Chain | `100` | `xKlerosLiquid` | `0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002` |
+| Sepolia | `11155111` | `KlerosLiquid` | `0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879` |
+
+The arbitrator address is only `_arbitrator`; it does not determine `_arbitratorExtraData`. Always confirm
+the exact court/path with the user, then call `arbitrationCost(arbitratorExtraData)` live.
+
 ---
 
 ## Factory contracts
 
 ### LightGTCRFactory (LGTCR only)
+
+Known LightGTCRFactory deployments:
+
+| Chain | Chain ID | LightGTCRFactory | Factory event start block |
+|---|---:|---|---:|
+| Ethereum Mainnet | `1` | `0xb9dDC813AcAF3fD7aBC4C16735A09Bc1C0EE0054` | `13810085` |
+| Gnosis Chain | `100` | `0x08e58Bc26CFB0d346bABD253A1799866F269805a` | `19592773` |
+| Sepolia | `11155111` | `0x3FB8314C628E9afE7677946D3E23443Ce748Ac17` | `4048287` |
+
+The start block is not a constructor parameter. Use it only for factory event scans, deployment provenance
+checks, or indexer/log query configuration.
 
 ```solidity
 event NewGTCR(address indexed _address)
@@ -171,6 +216,16 @@ event NewGTCR(address indexed _address)
 
 function deploy(address _arbitrator, bytes _arbitratorExtraData, address _connectedTCR, string _registrationMetaEvidence, string _clearingMetaEvidence, address _governor, uint256[4] _baseDeposits, uint256 _challengePeriodDuration, uint256[3] _stakeMultipliers, address _relayContract) external
 ```
+
+LightGTCRFactory `_stakeMultipliers` order is:
+
+```text
+[sharedStakeMultiplier, winnerStakeMultiplier, loserStakeMultiplier]
+```
+
+The implementation assigns `_stakeMultipliers[0]` to `sharedStakeMultiplier`, `[1]` to
+`winnerStakeMultiplier`, and `[2]` to `loserStakeMultiplier`. Never encode this array as
+`[winnerStakeMultiplier, loserStakeMultiplier, sharedStakeMultiplier]`.
 
 ### PermanentGTCRFactory (PGTCR only)
 

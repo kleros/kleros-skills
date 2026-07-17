@@ -134,12 +134,14 @@ registry. Fetch `_evidence`, parse JSON, and extract `metadata.columns[]`.
 
 ## MetaEvidence authoring rules
 
-Before uploading or using MetaEvidence onchain, validate it as strictly as item.json.
+Before uploading or using MetaEvidence onchain, validate it as strictly as item.json. This file is the
+canonical source for authored MetaEvidence minimum requirements, JSON key order, and LGTCR/PGTCR templates.
 
-Required production metadata:
+Minimum MetaEvidence requirements:
 
-- top-level `title`, `description`, `question`, `category`, `fileURI`, and `metadata`.
+- top-level `title`, `description`, `rulingOptions`, `category`, `question`, `fileURI`, and `metadata`.
 - `fileURI` must point to the human-readable policy.
+- `evidenceDisplayInterfaceURI` must be included when the target Curate interface/list template uses one.
 - Strongly prefer a PDF policy document for human and juror review. Use a non-PDF policy only if the user
   explicitly accepts the review and compatibility risk.
 - `metadata.logoURI` is required for production lists.
@@ -177,81 +179,151 @@ Never author unsupported aliases:
 
 For `file` columns, include `allowedFileTypes`, for example `pdf`, `json`, or `pdf json`.
 
-LGTCR registration MetaEvidence should clearly describe adding an item:
+Use this canonical key order for authored MetaEvidence JSON:
+
+1. `title`
+2. `description`
+3. `rulingOptions`
+4. `category`
+5. `question`
+6. `fileURI`
+7. `evidenceDisplayInterfaceURI` when used
+8. `metadata`
+
+Use this canonical `metadata` key order:
+
+1. `tcrTitle`
+2. `tcrDescription`
+3. `columns`
+4. `itemName`
+5. `itemNamePlural`
+6. `logoURI`
+7. `requireRemovalEvidence` when used
+8. `isTCRofTCRs` when used
+9. `relTcrDisabled` when used
+
+LGTCR registration MetaEvidence should clearly describe adding the singular item type:
 
 ```json
 {
-  "title": "Add an item to <List Name>",
-  "description": "Someone requested to add an item to <List Name>.",
-  "question": "Does the item comply with the required criteria?",
+  "title": "Add a <singular item name> to <List Name>",
+  "description": "Someone requested to add a <singular item name> to <List Name>.",
+  "rulingOptions": {
+    "titles": [
+      "Yes, Add It",
+      "No, Don't Add It"
+    ],
+    "descriptions": [
+      "Select this if you think the <singular item name> complies with the required criteria and should be added.",
+      "Select this if you think the <singular item name> does not comply with the required criteria and should not be added."
+    ]
+  },
   "category": "Curated Lists",
+  "question": "Does the <singular item name> comply with the required criteria?",
   "fileURI": "/ipfs/<POLICY_PDF_CID>",
+  "evidenceDisplayInterfaceURI": "/ipfs/<EVIDENCE_DISPLAY_INTERFACE_CID>/index.html",
   "metadata": {
     "tcrTitle": "<List Name>",
     "tcrDescription": "<List description>",
+    "columns": [],
     "itemName": "<singular item name>",
     "itemNamePlural": "<plural item name>",
     "logoURI": "/ipfs/<LOGO_CID>",
     "requireRemovalEvidence": true,
-    "columns": []
+    "isTCRofTCRs": false,
+    "relTcrDisabled": true
   }
 }
 ```
 
-LGTCR clearing MetaEvidence should clearly describe removing an item and should normally use the same
+LGTCR clearing MetaEvidence should clearly describe removing the singular item type and should normally use the same
 `metadata.columns` as registration MetaEvidence. Diverge only when the target contract/interface proves it is
 expected.
 
 ```json
 {
-  "title": "Remove an item from <List Name>",
-  "description": "Someone requested to remove an item from <List Name>.",
-  "question": "Does the item fail to comply with the required criteria?",
+  "title": "Remove a <singular item name> from <List Name>",
+  "description": "Someone requested to remove a <singular item name> from <List Name>.",
+  "rulingOptions": {
+    "titles": [
+      "Yes, Remove It",
+      "No, Don't Remove It"
+    ],
+    "descriptions": [
+      "Select this if you think the <singular item name> fails to comply with the required criteria and should be removed.",
+      "Select this if you think the <singular item name> complies with the required criteria and should not be removed."
+    ]
+  },
   "category": "Curated Lists",
+  "question": "Does the <singular item name> fail to comply with the required criteria?",
   "fileURI": "/ipfs/<POLICY_PDF_CID>",
+  "evidenceDisplayInterfaceURI": "/ipfs/<EVIDENCE_DISPLAY_INTERFACE_CID>/index.html",
   "metadata": {
     "tcrTitle": "<List Name>",
     "tcrDescription": "<List description>",
+    "columns": [],
     "itemName": "<singular item name>",
     "itemNamePlural": "<plural item name>",
     "logoURI": "/ipfs/<LOGO_CID>",
     "requireRemovalEvidence": true,
-    "columns": []
+    "isTCRofTCRs": false,
+    "relTcrDisabled": true
   }
 }
 ```
 
 PGTCR MetaEvidence is a single stream. Do not create a separate clearing MetaEvidence for PGTCR unless the
-specific contract flow explicitly requires one.
+specific contract flow explicitly requires one. A typical PGTCR MetaEvidence describes the keep/remove
+decision for an item already in the permanent-stake registry:
 
 ```json
 {
-  "title": "Submit an item to <List Name>",
-  "description": "Someone requested to submit an item to <List Name>.",
-  "question": "Does the item comply with the required criteria?",
+  "title": "Keep a <singular item name> in <List Name>",
+  "description": "Someone requested to remove a <singular item name> from <List Name>.",
+  "rulingOptions": {
+    "titles": [
+      "Yes, Keep It Included",
+      "No, Remove It"
+    ],
+    "descriptions": [
+      "Select this if you think the <singular item name> complies with the required criteria and should be kept included.",
+      "Select this if you think the <singular item name> does not comply with the required criteria and should be removed."
+    ]
+  },
   "category": "Curated Lists",
+  "question": "Does the <singular item name> comply with the required criteria?",
   "fileURI": "/ipfs/<POLICY_PDF_CID>",
+  "evidenceDisplayInterfaceURI": "/ipfs/<EVIDENCE_DISPLAY_INTERFACE_CID>/index.html",
   "metadata": {
     "tcrTitle": "<List Name>",
     "tcrDescription": "<List description>",
+    "columns": [],
     "itemName": "<singular item name>",
     "itemNamePlural": "<plural item name>",
     "logoURI": "/ipfs/<LOGO_CID>",
-    "columns": []
+    "requireRemovalEvidence": true
   }
 }
 ```
 
-When deploying LGTCR, pass MetaEvidence URIs in the factory's expected order: registration first, clearing
-second. Do not swap them.
+When deploying LGTCR, keep both kinds of order separate and explicit:
+
+- **JSON key order:** use the canonical order above for both registration and clearing MetaEvidence.
+- **Factory argument order:** pass the registration MetaEvidence URI first and the clearing MetaEvidence URI
+  second. The registration URI must point to the `Add a <singular item name>...` JSON; the clearing URI must
+  point to the `Remove a <singular item name>...` JSON. Do not swap them, even if the clearing JSON was
+  uploaded more recently.
 
 Stop before upload or deployment if:
 
 - JSON does not parse.
+- `rulingOptions` is missing or does not match the operation.
 - `metadata.columns` is missing or empty.
 - any column type is unsupported.
 - any placeholder remains.
 - `fileURI` is missing.
+- `evidenceDisplayInterfaceURI` is missing when the target Curate interface/list template uses one.
 - production `metadata.logoURI` is missing.
+- LGTCR registration and clearing MetaEvidence URIs are unlabeled or their add/remove mapping is unverified.
 - the policy is not a PDF and the user has not explicitly accepted the review and compatibility risk.
 - the user has not confirmed schema, policy, logo, chain, arbitrator/court, and deploy parameters.

@@ -29,8 +29,8 @@ Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kle
 
 ## Skills included
 
-- **kleros-ipfs-upload** — Upload files to IPFS via the Kleros x402 gateway on Base mainnet ($0.01 USDC per upload). For dispute evidence, meta-evidence JSON, court policies, Curate item metadata, and juror justifications.
-- **kleros-curate** — Operate Kleros Curate token-curated registries: Light Curate, Stake Curate (PGTCR), and Scout on Ethereum and Gnosis. Submit items, challenge requests, fund appeals, deploy new lists.
+- **kleros-ipfs-upload** — Upload one Kleros file per paid request to IPFS via the x402 gateway on Base mainnet. Reuse a CID for identical bytes; upload different contents separately.
+- **kleros-curate** — Operate Kleros Curate token-curated registries: Light Curate, Stake Curate (PGTCR), and Scout on Ethereum, Gnosis, and Sepolia. Submit items, challenge requests, fund appeals, deploy and verify lists.
 
 ## Feedback
 

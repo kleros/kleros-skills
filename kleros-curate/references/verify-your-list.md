@@ -1,103 +1,119 @@
 # Verify Your List
-<!-- Sources: Kleros Classic Curate docs, kleros/gtcr Classic submit modal, @kleros/gtcr-encoder -->
+<!-- Sources: live Ethereum Mainnet, Gnosis Chain, and Sepolia deployment state and MetaEvidence; repository LGTCR references -->
 
-Use this file when a user wants a deployed Curate registry to be visible and verified in the Curate
-frontend. This is a narrow list-of-lists workflow, not full Curate Classic support.
+Use this file when a user wants a Curate registry deployed on Ethereum Mainnet, Gnosis Chain, or Sepolia to
+become visible and verified in the Curate frontend. The verification registries on all three supported
+networks are `LightGeneralizedTCR`, so this is a narrow overlay on the standard Light Curate submission
+workflow, not a separate contract flavor.
 
-This workflow is recommended for list creators and for anyone who wants a deployed Curate registry to appear
-in the frontend.
+List verification is recommended for public registries. Skip it only when the registry is intentionally
+private or stealth.
 
-## Why verify a list
+## Canonical verification registries
 
-Deploying a registry does not automatically make it easy to find in the Curate UI. Verifying the list means
-submitting the deployed registry to the network's list-of-lists so users can discover it from the frontend,
-recognize it as a listed registry, and get more visibility.
+| Network | Chain ID | Verification registry | Event scan start block |
+|---------|---------:|-----------------------|-----------------------:|
+| Ethereum Mainnet | `1` | `0xB79B610bB8E5E26e5b93b8d45Cdb34858AfEb190` | `25531707` |
+| Gnosis Chain | `100` | `0x2418D887d0d0Fe03b793A6aF4321fa488226A0b5` | `47081664` |
+| Sepolia | `11155111` | `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF` | `4049205` |
 
-List-of-lists submission is not mandatory. It is highly recommended for public registries and unnecessary
-only when the list is intentionally private or stealth.
+Select one complete row by chain ID. Never mix an address or scan start block from another row.
 
-## Known list-of-lists
+Keep these roles distinct throughout the workflow:
 
-These registries are Curate Classic / `GeneralizedTCR`, not Light Curate / `LightGeneralizedTCR`.
+- `chainId` — the selected network.
+- `verificationRegistryAddress` — the fixed address from the selected row; this is the transaction target.
+- `verificationRegistryDeploymentBlock` — the selected row's event scan start block.
+- `registryToVerify` — the user's deployed registry on the same selected network; this is a value inside the
+  submitted item.json.
 
-| Network | Chain ID | List-of-lists |
-|---------|----------|---------------|
-| Mainnet | `1` | `0xba0304273a54dfec1fc7f4bccbf4b15519aecf15` |
-| Gnosis | `100` | `0x2442D40B0aeCad0298C2724A97F2f1BbDF2C2615` |
-| Sepolia | `11155111` | `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF` |
+The verification target is LGTCR even when `registryToVerify` is a Stake Curate or other policy-eligible
+Curate registry. Contract mechanics are determined by the transaction target, so always use the Light Curate
+submission path described below.
 
-Do not use the Light Curate `addItem("/ipfs/<CID>")` transaction path for these registries.
+## Required references
 
-## Simple Classic submission flow
+Read these files before preparing a verification submission:
 
-1. **Choose the network list-of-lists** matching the deployed registry's chain.
-2. **Confirm contract type** before building calldata:
-   - `eth_getCode(listOfListsAddress)` must be non-empty.
-   - Classic `addItem(bytes)` must be available.
-   - Do not proceed with the Light Curate `addItem(string)` assumption.
-3. **Fetch the latest MetaEvidence** from the list-of-lists contract using `shared-metaevidence.md`.
-   Classic `GeneralizedTCR` emits the same `MetaEvidence(uint256,string)` event; use the shared
-   `eth_getLogs` topic and latest-event procedure.
-4. **Read the list-of-lists policy** from `fileURI`. Confirm the deployed registry satisfies that policy
-   before encoding or submitting anything.
-5. **Extract `metadata.columns`** and build values from the live schema. Do not assume field labels.
-6. **Fill the deployed registry address** in the field indicated by the schema. If the schema uses
-   `GTCR address`, the value is the deployed registry address on that same chain.
-7. **Encode the item for Classic Curate** with `@kleros/gtcr-encoder` semantics:
+1. `light-curate.md` — LGTCR discovery, submission, simulation, and request lifecycle.
+2. `shared-metaevidence.md` — latest applicable registration MetaEvidence and policy retrieval.
+3. `shared-item-json.md` — exact-schema item.json construction and validation.
+4. `shared-ipfs-upload.md` — single-file paid uploads, CID reuse, and IPFS round-trip verification.
+5. `shared-deposits.md` — live LGTCR deposit computation.
+6. `shared-abi-fragments.md` — LGTCR read/write signatures and status enum.
 
-   ```ts
-   import { gtcrEncode } from "@kleros/gtcr-encoder";
+Do not cache a MetaEvidence ID, schema, policy, deposit, or item URI in this file. Registry governors can
+change them; the latest applicable onchain state is authoritative.
 
-   const encodedItem = gtcrEncode({
-     columns,
-     values
-   });
-   ```
+## Standard Light Curate verification flow
 
-   Classic Curate stores item data as encoded bytes. The encoder maps `GTCR address` and `address` to
-   Solidity `address`, `number` to `int256`, `boolean` to `bool`, and text/file/image/link/rich-address
-   style values to strings.
-
-8. **Compute the full native-token Classic submission value live**:
-   - `submissionBaseDeposit()`
-   - `arbitrator()`
-   - `arbitratorExtraData()`
-   - `IArbitrator(arbitrator).arbitrationCost(arbitratorExtraData)`
-   - `msg.value = submissionBaseDeposit + arbitrationCost`
-
-   Never send only `submissionBaseDeposit()`. Classic `addItem(bytes)` requires the full
-   `submissionBaseDeposit + arbitrationCost` value.
-
-9. **Simulate the exact transaction**:
+1. **Select the network and address roles**:
+   - require chain ID `1`, `100`, or `11155111`.
+   - load `verificationRegistryAddress` and `verificationRegistryDeploymentBlock` from the same table row.
+   - confirm `registryToVerify` is the deployed registry the user wants listed on that same chain, not the
+     transaction target.
+2. **Verify both addresses on the selected chain**:
+   - require non-empty `eth_getCode` for both addresses.
+   - confirm `verificationRegistryAddress` exposes the LGTCR hallmark reads from `light-curate.md` and the
+     `addItem(string)` interface from `shared-abi-fragments.md`.
+   - do not require `registryToVerify` to be LGTCR; determine its type separately and let the live
+     verification policy decide whether it is eligible.
+3. **Fetch the latest registration MetaEvidence** from `verificationRegistryAddress` using
+   `shared-metaevidence.md`. Fetch and read its `fileURI` policy, then extract `metadata.columns` verbatim.
+   Do not assume the deployment-time MetaEvidence is still current or that all three networks share a schema.
+4. **Check policy compliance and duplicates** for `registryToVerify`. Validate every requirement in the
+   selected registry's live policy. When duplicate entries are forbidden, use onchain state:
+   - scan `NewItem` logs from `verificationRegistryDeploymentBlock` through `latest` on the selected chain.
+   - decode every item ID and item URI, fetch each item JSON, and compare its schema-designated registry
+     address to `registryToVerify` after case-insensitive EVM address normalization. The item ID is derived
+     from the item URI, so one guessed item ID cannot rule out the same address under another CID.
+   - for every address match, call `getItemInfo` and the latest `getRequestInfo` as described in
+     `light-curate.md`. Decode LGTCR status using `shared-abi-fragments.md`; do not guess numeric enum values.
+     Treat a registered item or unresolved request as an existing or active submission.
+   - if an indexer or frontend search is used for convenience, cross-check it against the onchain log scan.
+   Stop if compliance or duplicate status cannot be established.
+5. **Build item.json** using `shared-item-json.md`:
+   - deep-copy the live `metadata.columns` without edits.
+   - put `registryToVerify` in the unique field designated by the live schema for the registry address.
+   - make `Object.keys(values)` exactly match the column labels and order.
+   - stop if the schema does not unambiguously identify where the registry address belongs.
+6. **Get approval before the paid upload**. Show the selected chain, both address roles, live policy summary,
+   fetched columns, compliance check, duplicate check, and complete item.json. Upload only after approval.
+7. **Upload and round-trip item.json** using `shared-ipfs-upload.md`. The upload request must contain only
+   this one file. The resulting `/ipfs/<CID>` must fetch back to the approved JSON.
+8. **Compute the LGTCR submission value live** using `shared-deposits.md`, then simulate this exact call on
+   the selected chain:
 
    ```text
-   GeneralizedTCR.addItem(encodedItem)
-   msg.value = submissionBaseDeposit + arbitrationCost
+   chain: chainId
+   to: verificationRegistryAddress
+   call: LightGeneralizedTCR.addItem("/ipfs/<CID>")
+   msg.value: live LGTCR submission value in the selected chain's native token
    ```
 
-10. **Ask for explicit user approval** with:
-   - target chain and list-of-lists address
-   - policy compliance summary
-   - fetched columns
-   - final values
-   - encoded item bytes
-   - computed `msg.value`
-11. **Submit only after approval**, then verify the request was created and the item decodes back to the
-    expected values with the same columns.
+9. **Get final onchain approval**. Show the selected chain, both named addresses, item URI, live deposit
+   inputs, final `msg.value`, and successful simulation result. Submit only after the user approves.
+10. **Verify the receipt and track the request**. Confirm the emitted item data resolves to the approved JSON
+    and record the item ID and request state. A successful submission is pending, not yet verified.
+11. **Finalize and confirm visibility**. After an unchallenged challenge period, simulate and call
+    `executeRequest(itemID)`, then confirm the item is registered onchain. Check the accepted item at
+    `https://curate.kleros.io/tcr/<chainId>/<verificationRegistryAddress>` and confirm the listed registry is
+    discoverable in the frontend. If onchain state is registered but the UI has not caught up, report frontend
+    indexing as pending and do not resubmit. If challenged, follow the LGTCR dispute workflow. Never claim
+    verification is complete from the submission receipt alone or invent an indexing ETA.
 
 ## Stop conditions
 
-Stop and ask instead of submitting if:
+Stop instead of uploading or submitting if:
 
-- the target chain is unclear.
-- the registry address to verify is not the deployed registry address.
-- MetaEvidence cannot be fetched or parsed.
-- the list-of-lists policy was not read.
-- the deployed registry does not clearly comply with the list-of-lists policy.
-- `metadata.columns` is missing.
-- the live schema does not contain a registry-address field.
-- `@kleros/gtcr-encoder` semantics are unavailable.
-- the contract ABI does not expose Classic `addItem(bytes)`.
-- the deposit cannot be computed live.
-- simulation fails.
-- the user has not approved the final submission.
+- the target chain is not Ethereum Mainnet, Gnosis Chain, or Sepolia, or the chain is unclear.
+- `verificationRegistryAddress` or its scan start block does not exactly match the selected table row.
+- either address is missing, is on a different chain, or has no code on the selected chain.
+- the fixed verification target does not behave as `LightGeneralizedTCR`.
+- the latest registration MetaEvidence or policy cannot be fetched and parsed.
+- `registryToVerify` does not clearly satisfy the live policy.
+- an accepted or active duplicate exists, or duplicate status cannot be established when the policy forbids it.
+- the live schema is missing or does not unambiguously accept `registryToVerify`.
+- item.json validation or its IPFS round trip fails.
+- the live deposit cannot be computed or the exact `addItem(string)` simulation fails.
+- the user has not approved the paid upload and the final onchain transaction.
