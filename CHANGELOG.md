@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.4.0] - 2026-07-18
 
 ### Changed
 - Improved Curate list deployment guidance with canonical MetaEvidence templates, known factory and arbitrator addresses, correct multiplier ordering, and reuse of identical IPFS artifacts.
 - Migrated Ethereum Mainnet, Gnosis Chain, and Sepolia list verification to their canonical `LightGeneralizedTCR` registries and standard LGTCR item submission workflow.
 - Clarified that each Kleros x402 request uploads exactly one file: identical bytes may reuse a CID, while different content requires separate paid uploads.
+- README and landing page: skill card descriptions synced with the updated skill content (single-file-per-upload wording, deploy-and-verify phrasing, Sepolia network tag).
 
 ## [2.3.0] - 2026-07-07
 
@@ -81,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundled `pay-and-upload-cdp.ts` script for Coinbase CDP server accounts.
 - Claude Marketplace plugin configuration (`.claude-plugin/`).
 
-[Unreleased]: https://github.com/kleros/kleros-skills/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/kleros/kleros-skills/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/kleros/kleros-skills/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/kleros/kleros-skills/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/kleros/kleros-skills/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/kleros/kleros-skills/releases/tag/v2.1.0

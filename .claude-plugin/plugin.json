@@ -1,6 +1,6 @@
 {
   "name": "kleros-skills",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Skills for interacting with the Kleros ecosystem — IPFS uploads via x402 gateway, Curate token-curated registries (Light Curate, Stake Curate, Scout).",
   "author": { "name": "Kleros", "url": "https://kleros.io" },
   "homepage": "https://kleros.io",
