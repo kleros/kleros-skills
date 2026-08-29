@@ -2,14 +2,14 @@
   "name": "kleros-skills",
   "owner": { "name": "Kleros", "url": "https://kleros.io" },
   "metadata": {
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Claude Code skills for interacting with the Kleros ecosystem."
   },
   "plugins": [
     {
       "name": "kleros-skills",
       "source": "./",
-      "description": "Kleros ecosystem skills — IPFS uploads via x402 gateway, Curate token-curated registries (Light Curate, Stake Curate, Scout).",
+      "description": "Kleros ecosystem skills — V2 dispute creation, IPFS uploads via x402, and Curate registries.",
       "author": { "name": "Kleros", "url": "https://kleros.io" }
     }
   ]

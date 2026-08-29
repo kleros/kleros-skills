@@ -1,6 +1,6 @@
 ---
 name: kleros-skills
-description: Use when a request involves Kleros, decentralized justice, or decentralized dispute resolution. Applies to interacting with Kleros Curate token-curated registries (Light Curate, Stake Curate / PGTCR, Scout), uploading dispute evidence or metadata to IPFS via the Kleros x402 gateway, submitting or challenging registry items, funding appeals, deploying new registries, and reading on-chain arbitration state. Covers PNK staking, juror selection, ERC-792 Arbitrable/Arbitrator interfaces, Kleros court hierarchy, and ecosystem tooling on Ethereum, Gnosis, and Sepolia.
+description: "Use when a request involves Kleros, decentralized justice, or decentralized dispute resolution. Applies to creating standalone Kleros V2 disputes on Arbitrum, interacting with Kleros Curate token-curated registries (Light Curate, Stake Curate / PGTCR, Scout), uploading dispute evidence or metadata to IPFS via the Kleros x402 gateway, submitting or challenging registry items, funding appeals, deploying new registries, and reading on-chain arbitration state. Covers PNK staking, juror selection, ERC-792 Arbitrable/Arbitrator interfaces, Kleros court hierarchy, and ecosystem tooling on Ethereum, Arbitrum, Gnosis, and Sepolia."
 ---
 
 # Kleros Skills — The missing knowledge between AI agents and Kleros.
@@ -16,6 +16,8 @@ Your training data probably covers the basics. These skills cover what you need 
 **Need to upload evidence or metadata?** Fetch [kleros-ipfs-upload/SKILL.md](kleros-ipfs-upload/SKILL.md). It's the only paid operation — $0.01 USDC per upload on Base mainnet.
 
 **Working with Curate registries?** Fetch [kleros-curate/SKILL.md](kleros-curate/SKILL.md). Covers Light Curate, Stake Curate (PGTCR), and Scout registries.
+
+**Creating a standalone V2 dispute?** Fetch [kleros-create-dispute/SKILL.md](kleros-create-dispute/SKILL.md). It validates the juror template, uploads its policy, checks the live deployment, reads the current fee, and prepares/simulates the transaction on Arbitrum One or Arbitrum Sepolia.
 
 **Base URL:** `https://skills.kleros.io/<skill>/SKILL.md`
 
@@ -38,6 +40,13 @@ Operate Kleros Curate token-curated registries — submit, challenge, appeal, de
 - Scout registries: four production registries on Gnosis for token/address/tag/CDN verification.
 - Derive policy and schema from on-chain MetaEvidence — never guess list fields or addresses.
 
+### [Kleros Create Dispute](kleros-create-dispute/SKILL.md)
+Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (production) or Arbitrum Sepolia (test).
+- Draft and validate the juror-facing question, options, and policy.
+- Upload the policy through the Kleros x402 IPFS skill.
+- Verify the live deployment, court, and dispute kit before quoting.
+- Read the current arbitration fee, prepare/simulate allowlisted calldata, and parse the dispute ID from the receipt.
+
 ---
 
 ## What to Fetch by Task
@@ -45,11 +54,13 @@ Operate Kleros Curate token-curated registries — submit, challenge, appeal, de
 | I'm doing... | Fetch these skills |
 |---|---|
 | Uploading dispute evidence or metadata | `kleros-ipfs-upload/` |
+| Creating a standalone Kleros V2 dispute | `kleros-create-dispute/`, `kleros-ipfs-upload/` |
 | Submitting items to a Curate registry | `kleros-curate/`, `kleros-ipfs-upload/` |
 | Challenging or appealing a registry submission | `kleros-curate/` |
 | Deploying a new Curate registry | `kleros-curate/` |
 | Monitoring Scout registries on Gnosis | `kleros-curate/` |
-| Building a Kleros integration | `kleros-ipfs-upload/`, `kleros-curate/` |
+| Rehearsing a dispute on testnet | `kleros-create-dispute/` |
+| Building a Kleros integration | `kleros-create-dispute/`, `kleros-ipfs-upload/`, `kleros-curate/` |
 
 ---
 
