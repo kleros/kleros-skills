@@ -13,7 +13,7 @@ private or stealth.
 
 | Network | Chain ID | Verification registry | Event scan start block |
 |---------|---------:|-----------------------|-----------------------:|
-| Ethereum Mainnet | `1` | `0x2acf59a420ca888f46d46974f62570f8a38cd4da` | `25531707` |
+| Ethereum Mainnet | `1` | `0x2aCF59a420cA888f46d46974f62570F8a38Cd4Da` | `25641005` |
 | Gnosis Chain | `100` | `0x2418D887d0d0Fe03b793A6aF4321fa488226A0b5` | `47081664` |
 | Sepolia | `11155111` | `0xD965Ce430afE0423Ff19A5eb08F7C5722EFabCaF` | `4049205` |
 

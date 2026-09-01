@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Updated the Ethereum Mainnet Curate list-verification registry to `0x2aCF59a420cA888f46d46974f62570F8a38Cd4Da` and its `NewItem` scan start block to that registry's deployment block (`25641005`).
+
 ## [2.4.0] - 2026-07-18
 
 ### Changed
