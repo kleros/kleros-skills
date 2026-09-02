@@ -156,7 +156,7 @@ async function checkIpfsResolves(uri: string, field: string): Promise<Check> {
 
 const evidenceSchema = z.object({
   name: z.string().trim().min(3).max(240),
-  description: z.string().trim().min(20).max(20_000),
+  description: z.string().trim().max(20_000),
   fileURI: z.string().trim().min(1).optional(),
   fileTypeExtension: z.string().trim().min(1).max(16).optional(),
 }).strict();
