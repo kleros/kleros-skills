@@ -93,6 +93,8 @@ Each published skill lives in `skillname/SKILL.md` with YAML frontmatter (`name`
 
 **YAML quoting rule:** Always wrap `description` values in double quotes. Unquoted colons and em dashes break GitHub's YAML parser even though Claude Code handles them fine.
 
+**Address-table rule:** rows pairing a contract address with a scan/deployment block (e.g. `kleros-curate/references/verify-your-list.md`) are all-or-nothing — swapping an address means re-deriving its block from the contract's *creation tx*, not its first transaction. PR #4 shipped a half-updated row.
+
 ## Multi-surface update rule
 
 When adding or changing a skill, multiple files must be updated in sync:
