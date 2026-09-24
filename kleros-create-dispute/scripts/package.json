@@ -1,0 +1,10 @@
+{
+  "name": "@kleros/create-dispute-skill-script",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "tsx": "4.20.6",
+    "viem": "2.55.19",
+    "zod": "4.4.3"
+  }
+}

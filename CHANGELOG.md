@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Published `kleros-create-dispute`, a standalone Kleros V2 DisputeResolver skill for Arbitrum One and Arbitrum Sepolia: mandatory Kleros IPFS policy upload, deterministic template validation, on-chain deployment preflight (bytecode, resolver arbitrator, court, dispute-kit support, arbitrable whitelist), live arbitration fee reads with an optional `--max-fee` cap, prepared calldata, simulation, and `DisputeCreation` receipt parsing.
+- Evidence support in the same skill: `evidence` prepares an `EvidenceModule.submitEvidence` transaction from a validated `{name, description, fileURI}` document. The evidence group it is keyed by is derived from the chain — from the `DisputeRequest` event with `--creation-tx`, otherwise from the resolver's `arbitratorDisputeIDToLocalID` mapping — because it is not the case number the Court shows, and a caller-supplied `--evidence-group` that contradicts the chain is rejected. The dispute's court and period are read back so a wrong case or a late submission surfaces before signing. `receipt` reports each case's evidence group alongside its dispute ID, decodes `Evidence` events, flags any whose payload is not a JSON object, and with `--dispute <id>` states outright whether a submission is keyed to the group that case indexes.
+- Every IPFS reference — `policyURI` and each evidence `fileURI` — is fetched through `https://cdn.kleros.link` and must resolve before any transaction is prepared. Fabricated but CID-shaped references, `ipfs://` scheme strings, and unpinned content are now hard failures rather than silently unreadable evidence.
+- The juror ballot, not just the template, is what `preflight` renders: ruling `0` ("Refuse to Arbitrate / Invalid") first, then the template answers under their ruling IDs. The Court adds that option to every case, so `validate` rejects a template that offers a refuse or invalid answer of its own — it would reach jurors twice, under two descriptions, on a case that cannot be edited.
+
 ### Changed
 - Updated the Ethereum Mainnet Curate list-verification registry to `0x2aCF59a420cA888f46d46974f62570F8a38Cd4Da` and its `NewItem` scan start block to that registry's deployment block (`25641005`).
+- `.claude-plugin/marketplace.json` `metadata.version` bumped to 2.1.0 — the catalog now publishes three skills.
+- `.github/workflows/sync-master.yml` sanity check learned the new skill directory; `CLAUDE.md` records the workflow allowlist as a multi-surface publication target so future skills cannot break the release sync.
+- `.gitignore` now ignores nested `node_modules/` so per-skill `scripts/` installs are never committed.
 
 ## [2.4.0] - 2026-07-18
 

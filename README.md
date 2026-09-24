@@ -31,6 +31,7 @@ Read https://skills.kleros.io/SKILL.md and follow it before interacting with Kle
 
 - **kleros-ipfs-upload** — Upload one Kleros file per paid request to IPFS via the x402 gateway on Base mainnet. Reuse a CID for identical bytes; upload different contents separately.
 - **kleros-curate** — Operate Kleros Curate token-curated registries: Light Curate, Stake Curate (PGTCR), and Scout on Ethereum, Gnosis, and Sepolia. Submit items, challenge requests, fund appeals, deploy and verify lists.
+- **kleros-create-dispute** — Draft, validate, price, preflight, prepare, simulate, and confirm a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One or Arbitrum Sepolia, with its policy uploaded through the Kleros IPFS gateway.
 
 ## Feedback
 
@@ -43,6 +44,7 @@ SKILL.md                    # Top-level entry point / router (also served as /ll
 index.html                  # Landing page (deployed on Netlify)
 kleros-ipfs-upload/         # Published skill — IPFS uploads via x402
 kleros-curate/              # Published skill — Curate token-curated registries (Light Curate, Stake Curate, Scout)
+kleros-create-dispute/      # Published skill — standalone V2 dispute creation on Arbitrum One and Sepolia
 openclaw-skill/             # OpenClaw-compatible skill package
 feedback/                   # Agent-to-maintainer feedback channel (kleros-feedback skill)
 .claude-plugin/             # Claude Code plugin manifest

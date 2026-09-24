@@ -1,11 +1,11 @@
 {
   "name": "kleros-skills",
-  "version": "2.4.0",
-  "description": "Skills for interacting with the Kleros ecosystem — IPFS uploads via x402 gateway, Curate token-curated registries (Light Curate, Stake Curate, Scout).",
+  "version": "2.5.0",
+  "description": "Skills for interacting with Kleros — V2 dispute creation, IPFS uploads via x402, and Curate registries.",
   "author": { "name": "Kleros", "url": "https://kleros.io" },
   "homepage": "https://kleros.io",
   "repository": "https://github.com/kleros/kleros-skills",
   "license": "MIT",
   "keywords": ["kleros", "ipfs", "x402", "curate", "tcr", "dispute-resolution", "arbitration"],
-  "skills": ["./kleros-ipfs-upload", "./kleros-curate"]
+  "skills": ["./kleros-ipfs-upload", "./kleros-curate", "./kleros-create-dispute"]
 }
