@@ -88,7 +88,8 @@ describe("kleros-create-dispute", () => {
   });
 
   it("keeps SKILL.md honest about the evidence key and about what 'submitted' means", () => {
-    assert.match(skill, /evidence key is not the case number/i, "SKILL.md must say the evidence key is not the case number");
+    assert.match(skill, /evidence group is not the dispute ID/i, "SKILL.md must say the evidence group is not the dispute ID");
+    assert.doesNotMatch(skill, /re-run with --creation-tx/, "no dead-end advice for foreign disputes");
     assert.match(skill, /allocated by different contracts and must never be assumed to match/, "SKILL.md must explain why the evidence key is derived independently");
     assert.match(skill, /Creating a dispute does not submit evidence/, "SKILL.md must separate creation from evidence");
     assert.match(skill, /indexed and visible/i, "SKILL.md must distinguish confirmed from indexed from visible");

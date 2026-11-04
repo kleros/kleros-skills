@@ -27,7 +27,7 @@
       "type": "skill-md",
       "description": "Create a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia with policy upload, validation, deployment preflight, live fee quote, prepared calldata, simulation, and receipt parsing",
       "url": "https://skills.kleros.io/kleros-create-dispute/SKILL.md",
-      "digest": "sha256:953d01368c641f82d0a8eec6385096e56f11c6c77e01d100c0d8d3c40ecfd72f"
+      "digest": "sha256:7b58e15430429adf1200c61cd55d1afbd35f369ddb0a5795b77bfab053cc176c"
     },
     {
       "name": "openclaw-skill",

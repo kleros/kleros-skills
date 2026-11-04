@@ -297,3 +297,19 @@ Independent verifier on 07a7390: batch-3 harness sound; mutation score 15/22 (mi
 - [x] **F-5** (minor) missed mutants → tests (stub gains `HttpStatus` + arbitrary JSON-RPC errors per method/selector, `ZERO_DATA` reads): `--max-fee` inclusive boundary (M08, M09); NFKC in `validate()` (M12); Sepolia whitelist `0x` / -32000 / code 3 → "not enforced" (M15, F-2 e2e); `isSupported` HTTP 503 / -32005 / header-not-found → `network` (M17); `receipt --dispute` without Evidence → exit 2 with the --dispute item (M20); gateway 4xx not retried, 5xx retried once (M22); `eth_estimateGas` / simulate `header not found` → exit 1 network, insufficient funds → exit 2 (F-3 e2e); real-viem-error classification table (code 3, -32000 ±data, -32603 both ways, -32005, -32601, -32015, header/trie, HTTP 429/503, ZeroData). — this commit
 
 Mutation score (verifier's 22-mutant set, `scratchpad/mut/m1.js`): **15/22 → 22/22**. Earlier fixer's 21 (`mutate.py`): 21/21 still caught. 6 new batch-3 mutants (ExecutionRevertedError clause dropped, old simulate/gas catch-all restored ×2, InsufficientFunds not a verdict, stderr collapse removed, -32015 as revert): 6/6 caught. `npm test` / `CI=1 npm test`: 130/131 pass, the one failure is the sandbox `yq` workflow-YAML test. Live Sepolia (`quote`, `preflight --human`, policy `/ipfs/Qma8mnp6…bio`): ok, exit 0; whitelist "not enforced" on the real code-3 revert.
+
+## Batch 4 verification (2026-11-04)
+
+Two independent reviewers on 6337174: facts/consistency (all claims vs kleros-v2 master + docs; every documented command run literally from another cwd against live Sepolia; locked tsx 4.20.6 confirmed) and skill quality (best practices). Verdicts: no blockers; push after small fixes.
+
+- [x] **G-1** (minor) `prepare` re-quotes; docs never said to compare its `value` with the approved fee. Fix: `prepare --max-fee <approved fee>` + "if `value` ≠ approved, stop and re-approve" in Flow step 6 and the Example.
+- [x] **G-2** (minor) testnet approval could read as mainnet approval. Fix: Example says mainnet needs a new preflight + separate explicit approval.
+- [x] **G-3** (minor) evidence attachment upload had no payment-approval gate. Fix: show live x402 price, approve before paying.
+- [x] **G-4** (minor) rehearsal with no existing policy CID unaddressed. Fix: still needs one approved paid upload, never a placeholder.
+- [x] **G-5** (minor) "Every RPC command first checks bytecode…" wrong for `evidence`/`receipt`. Fix: scoped to quote/preflight/prepare/simulate; evidence/receipt check the EvidenceModule implementation.
+- [x] **G-6** (minor) fee wording: excess below one `feeForJuror` buys no vote but stays with jurors (`KlerosCoreBase.sol` master L538/541). Fix: "buys extra juror votes or stays with the jurors — never refunded".
+- [x] **G-7** (nit) terminology: dispute ID / case ID / case number / evidence key / evidence group. Fix: one Terms line; "dispute ID" and "evidence group" used throughout.
+- [x] **G-8** (nit) `--evidence-group` missing from the command block; exit-2 list missing "receipt tx neither creation nor evidence"; "(JSON without it, for an agent)" ambiguous. Fixed.
+- [x] **G-9** (nit) description trimmed 941 → 848 chars (helper internals removed).
+- [x] **G-10** (nit) helper advised re-running with `--creation-tx` for a foreign arbitrable's dispute — a dead end (`decodeDisputeRequests` only accepts this resolver's logs). Fix: message now says the skill does not handle it.
+- Note: `https://skills.kleros.io/kleros-create-dispute/SKILL.md` 404s until released (expected).

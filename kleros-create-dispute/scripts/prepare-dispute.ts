@@ -1060,7 +1060,7 @@ async function prepareEvidence(
   }
   const evidenceGroupId = fromEvent?.evidenceGroupId ?? fromResolver;
   if (evidenceGroupId === undefined) {
-    throw new Error(`dispute ${disputeId} belongs to arbitrable ${getAddress(arbitrated)}, not this skill's DisputeResolver, so its evidence group cannot be derived here — re-run with --creation-tx <hash of that dispute's creation> to read it from the DisputeRequest event`);
+    throw new Error(`dispute ${disputeId} belongs to arbitrable ${getAddress(arbitrated)}, not this skill's DisputeResolver, which this skill does not handle — submit its evidence through that arbitrable's own flow, not this helper`);
   }
   if (target.claimedEvidenceGroup !== undefined && target.claimedEvidenceGroup !== evidenceGroupId) {
     throw new Error(`--evidence-group ${target.claimedEvidenceGroup} contradicts the chain, which keys dispute ${disputeId} to evidence group ${evidenceGroupId}`);

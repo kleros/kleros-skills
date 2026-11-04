@@ -681,9 +681,9 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.match(output.error, /disagree about the evidence group of dispute 57 \(12 vs 13\)/);
   });
 
-  it("evidence: a dispute of another arbitrable needs --creation-tx; an evidence file the gateway lacks is refused", async () => {
+  it("evidence: a dispute of another arbitrable is refused (not this skill's case); an evidence file the gateway lacks is refused", async () => {
     let output = expectJson(await cli(["evidence", "--evidence", evidenceFile, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { disputes: { 8: { arbitrated: OTHER_ARBITRABLE } } })), "--dispute", "8"]), 1);
-    assert.match(output.error, /dispute 8 belongs to arbitrable 0x0+Bb, not this skill's DisputeResolver.*--creation-tx/i);
+    assert.match(output.error, /dispute 8 belongs to arbitrable 0x0+Bb, not this skill's DisputeResolver.*own flow/i);
     const { overrides } = creation(SEPOLIA, 57n, 12n);
     output = expectJson(await cli(["evidence", "--evidence", evidenceFile, "--rpc-url", rpcFor(klerosChain(SEPOLIA, overrides)), "--dispute", "57"], { gateway: { [POLICY]: GATEWAY[POLICY] } }), 1);
     assert.match(output.error, /fileURI \/ipfs\/QmEvidenceFile\/report\.pdf could not be retrieved/);
