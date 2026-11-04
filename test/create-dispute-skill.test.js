@@ -396,6 +396,10 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
     const { titleKey } = helperModule;
     assert.equal(titleKey("Ｒｅｆｕｓｅ\u200b  to\tArbitrate"), "refuse to arbitrate");
     assert.equal(titleKey("INVALID"), titleKey("invalid"));
+    for (const invisible of ["\u034f", "\ufe0f", "\u3164", "\u2800"]) {
+      assert.equal(titleKey(`Yes${invisible}`), "yes", `U+${invisible.codePointAt(0).toString(16)} must fold away`);
+      assert.throws(() => helperModule.normalizeIpfsUri(`/ipfs/Qm1/a${invisible}b`, "fileURI"), /fileURI must be an IPFS reference/);
+    }
   });
 
   it("n-08 accepts fullwidth and Arabic question marks", () => {
@@ -404,6 +408,7 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
       assert.equal(result.code, 0, `${name}: ${result.out}`);
     }
     assert.ok(!helperModule.QUESTION_END.test("Did the seller deliver."));
+    assert.ok(helperModule.QUESTION_END.test("Did the seller deliver\ufe56".normalize("NFKC")), "small question mark folds to ? under NFKC");
   });
 
   it("D-6 rejects zero-width characters inside IPFS URI paths", () => {
@@ -431,10 +436,19 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
   it("m-02 tells a contract revert from a transport failure and redacts the cause", () => {
     const { readFailure, isContractRevert, isTransportError } = helperModule;
     const named = (name, message, cause) => Object.assign(new Error(message, { cause }), { name });
-    const revert = named("ContractFunctionExecutionError", "courts reverted", named("ContractFunctionRevertedError", "panic 0x32"));
+    // Shape of a real Arbitrum revert: ContractFunctionRevertedError > … > RpcRequestError(code 3).
+    const revert = named("ContractFunctionExecutionError", "courts reverted", named("ContractFunctionRevertedError", "panic 0x32", Object.assign(named("RpcRequestError", "execution reverted"), { code: 3 })));
     const transport = named("ContractFunctionExecutionError", "HTTP request failed. URL: http://127.0.0.1:9/v2/SECRETKEY", named("HttpRequestError", "fetch failed"));
     assert.ok(isContractRevert(revert) && !isTransportError(revert));
     assert.ok(isTransportError(transport) && !isContractRevert(transport));
+    // viem maps a bare JSON-RPC -32603 to ContractFunctionRevertedError (with `reason`
+    // = the node message): that is a node failure, not a revert.
+    const internal = named("ContractFunctionExecutionError", "Internal error", Object.assign(named("ContractFunctionRevertedError", "Internal error", Object.assign(named("InternalRpcError", "Internal error"), { code: -32603 })), { reason: "Internal error" }));
+    assert.ok(!isContractRevert(internal) && isTransportError(internal), "-32603 without revert evidence is a node failure");
+    const internalRevert = named("ContractFunctionExecutionError", "x", named("ContractFunctionRevertedError", "x", Object.assign(named("InternalRpcError", "execution reverted"), { code: -32603, details: "execution reverted" })));
+    assert.ok(isContractRevert(internalRevert), "-32603 saying 'execution reverted' is a revert");
+    const rateLimited = named("ContractFunctionExecutionError", "x", Object.assign(named("LimitExceededRpcError", "rate limited"), { code: -32005 }));
+    assert.ok(!isContractRevert(rateLimited) && isTransportError(rateLimited), "a rate limit is a network failure, never 'would revert'");
     const asRevert = readFailure(revert, "court 99 does not exist", "reading court 99");
     assert.equal(asRevert.kind, "input");
     assert.equal(asRevert.message, "court 99 does not exist");

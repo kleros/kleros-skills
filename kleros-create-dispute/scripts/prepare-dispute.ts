@@ -183,9 +183,9 @@ export function normalizeIpfsUri(raw: string, field: string) {
   const trimmed = raw.trim();
   const uri = trimmed.startsWith("ipfs://") ? `/ipfs/${trimmed.slice(7)}` : trimmed;
   const segments = uri.split("/");
-  // \p{Cf} (zero-width space/joiner, bidi controls, BOM…) is invisible to the
+  // Default-ignorable code points (zero-width space/joiner, bidi controls, BOM, CGJ, variation selectors, Hangul filler…) are invisible to the
   // reviewer but part of the path the gateway is asked for.
-  if (!IPFS_URI_PATTERN.test(uri) || /\p{Cf}/u.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
+  if (!IPFS_URI_PATTERN.test(uri) || /[\p{Default_Ignorable_Code_Point}\u2800]/u.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
     throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, invisible format characters, "?", "#", "%", "\\", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
   }
   return uri;
@@ -285,11 +285,11 @@ const evidenceSchema = z.object({
 }).strict();
 
 /// Comparison key for answer titles. NFKC folds fullwidth/compatibility forms
-/// ("ＹＥＳ" → "YES"), \p{Cf} drops zero-width and bidi format characters a reader
+/// ("ＹＥＳ" → "YES"), default-ignorable code points (zero-width, bidi, CGJ, variation selectors…) a reader
 /// cannot see, whitespace runs collapse, and toLowerCase() is locale-independent
 /// (toLocaleLowerCase would fold "I" differently under a Turkish locale).
 export function titleKey(title: string) {
-  return title.normalize("NFKC").replace(/\p{Cf}/gu, "").replace(/\s+/gu, " ").trim().toLowerCase();
+  return title.normalize("NFKC").replace(/[\p{Default_Ignorable_Code_Point}\u2800]/gu, "").replace(/\s+/gu, " ").trim().toLowerCase();
 }
 
 /// Question marks jurors will recognise: ASCII, fullwidth (CJK) and Arabic.
@@ -306,7 +306,7 @@ export function validate(value: unknown, network: Network) {
   input.courtId = parseDecimalId(input.courtId, "courtId", UINT96_MAX).toString();
   if (BigInt(input.courtId) === 0n) throw new Error("courtId 0 is the reserved forking court; pick a real court");
   if (input.numberOfJurors % 2 === 0) throw new Error("numberOfJurors must be odd");
-  if (!QUESTION_END.test(input.question)) throw new Error("question must end in a question mark (?, ？ or ؟)");
+  if (!QUESTION_END.test(input.question.normalize("NFKC"))) throw new Error("question must end in a question mark (?, ？ or ؟)");
   // Ruling 0 is not merely reserved: the Court renders it as the first choice on
   // every ballot, titled "Refuse to Arbitrate / Invalid". An answer of the same
   // kind is therefore a second refuse option with a different description, which
@@ -413,20 +413,35 @@ type Check = { name: string; status: "ok" | "warn" | "fail"; detail: string };
 /// Matched by error name along the cause chain so it also holds across duplicate
 /// viem copies (ESM/CJS) where instanceof would not.
 const REVERT_ERROR_NAMES = new Set(["ContractFunctionRevertedError", "ContractFunctionZeroDataError"]);
+type ErrorLike = { name?: string; cause?: unknown; code?: unknown; data?: unknown; details?: unknown; shortMessage?: unknown; message?: unknown; reason?: unknown };
+function* causeChain(error: unknown) {
+  for (let cause = error as ErrorLike | undefined, depth = 0; cause && typeof cause === "object" && depth < 16; cause = cause.cause as ErrorLike | undefined, depth += 1) yield cause;
+}
 export function isContractRevert(error: unknown) {
-  if (error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError || cause instanceof ContractFunctionZeroDataError) !== null) return true;
-  for (let cause = error as { name?: string; cause?: unknown } | undefined, depth = 0; cause && depth < 16; cause = cause.cause as typeof cause, depth += 1) {
-    if (typeof cause.name === "string" && REVERT_ERROR_NAMES.has(cause.name)) return true;
-  }
-  return false;
+  const chain = [...causeChain(error)];
+  if (chain.some((cause) => cause.name === "ContractFunctionZeroDataError")) return true; // node answered `0x`: no such function / no code
+  const reverted = chain.find((cause) => cause.name === "ContractFunctionRevertedError");
+  if (!reverted) return false;
+  // viem also maps JSON-RPC -32603 ("internal error") to ContractFunctionRevertedError,
+  // copying the node's message into `reason`, so `reason` proves nothing. Only count
+  // it as a revert with real evidence: decoded revert data, code 3, or a -32603 whose
+  // message actually says "revert". A bare internal error is a node failure.
+  if (reverted.data !== undefined) return true;
+  return chain.some((cause) => cause.code === 3
+    || (cause.code === -32603 && [cause.details, cause.shortMessage, cause.message].some((text) => typeof text === "string" && /revert/i.test(text))));
 }
 
 /// The request never got a node's answer (HTTP failure, timeout, socket), so the
 /// error says nothing about the contract or the transaction.
+/// Node-side refusals that are not about the transaction either: rate limits,
+/// unavailable resources, and internal errors that carry no revert evidence.
 const TRANSPORT_ERROR_NAMES = new Set(["HttpRequestError", "TimeoutError", "WebSocketRequestError", "SocketClosedError", "AbortError"]);
+const NODE_FAILURE_CODES = new Set([-32005, -32002, -32603, 429]);
 export function isTransportError(error: unknown) {
-  for (let cause = error as { name?: string; cause?: unknown } | undefined, depth = 0; cause && depth < 16; cause = cause.cause as typeof cause, depth += 1) {
+  if (isContractRevert(error)) return false;
+  for (const cause of causeChain(error)) {
     if (typeof cause.name === "string" && TRANSPORT_ERROR_NAMES.has(cause.name)) return true;
+    if (typeof cause.code === "number" && NODE_FAILURE_CODES.has(cause.code)) return true;
   }
   return false;
 }
@@ -480,7 +495,7 @@ function shortError(error: unknown) {
   } else {
     message = ((error as Error)?.message ?? String(error)).split("\n")[0];
   }
-  return redact(message.replace(/\.+$/, ""));
+  return redact(message.replace(/\s*\n\s*/g, " ").replace(/\.+$/, ""));
 }
 
 /// m-02: a failed contract read only means "does not exist / unsupported" when
@@ -682,7 +697,10 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
   } catch (error) {
     const detail = `${shortError(error)}`;
     checks.push({ name: "evidence-module-implementation", status: "warn", detail });
-    warnings.push(`Evidence for this case cannot be submitted through this skill until it is updated: ${detail}`);
+    const unreadable = isTransportError(error) || (error instanceof CliError && error.kind === "network");
+    warnings.push(!unreadable
+      ? `Evidence for this case cannot be submitted through this skill until it is updated: ${detail}`
+      : `Could not read the EvidenceModule implementation (${detail}); this says nothing about the module. Re-run preflight with a working RPC before relying on the evidence step.`);
   }
 
   let networkFee:

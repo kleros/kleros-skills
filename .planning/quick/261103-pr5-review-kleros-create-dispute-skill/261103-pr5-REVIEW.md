@@ -46,23 +46,23 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost) — 7f58b66
 - [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — 7f58b66
 - [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — 7f58b66 (+ encoded-dot bypass D-1 closed in follow-up commit)
-- [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — this commit
+- [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — 2fecec8
 - [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
 - [ ] **M-06** Tests never execute the script
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
 - [x] **m-01** Whitelist check fails open on any read error — 7f58b66
-- [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — this commit
+- [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — 2fecec8
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
 - [x] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high) — this commit (→ 4.6.7)
 - [x] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci` — this commit (decision 2026-11-04: lockfiles committed for both skills; only recorded prior rationale was "so dep versions stay fresh", `045c0d6`)
 - [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
-- [x] **m-08** IPFS check proves resolve, not content; body never consumed — this commit
-- [x] **m-09** Size limits in UTF-16 units, not bytes — this commit
-- [x] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late — this commit
-- [x] **m-11** `validate` silently defaults to mainnet — this commit
+- [x] **m-08** IPFS check proves resolve, not content; body never consumed — 2fecec8
+- [x] **m-09** Size limits in UTF-16 units, not bytes — 2fecec8
+- [x] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late — 2fecec8
+- [x] **m-11** `validate` silently defaults to mainnet — 2fecec8
 - [ ] **m-12** Shared evidence group across arbitrables not flagged
 - [ ] **m-13** Evidence `description` allows empty
 - [ ] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}`
@@ -72,21 +72,21 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [ ] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link
 - [ ] **m-19** `CLAUDE.md:9` "Published:" not updated
 - [ ] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG)
-- [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — this commit
+- [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — 2fecec8
 - [ ] **m-22** Description: missing trigger synonyms / "pushy" clause
 
 ### 🟢 Nits
 - [ ] **n-01** Ruling-0 wording partly wrong (SDK replaces `0x0`, doesn't duplicate)
 - [ ] **n-02** Sources links point to dev `DisputeResolver.sol`, not deployment ABIs
 - [ ] **n-03** Ruling-0 rationale repeated 3×; step-4 list duplicates `preflight --human`
-- [x] **n-04** Voodoo constants (`QUOTE_TTL_MS`, 25 s IPFS timeout) — this commit
+- [x] **n-04** Voodoo constants (`QUOTE_TTL_MS`, 25 s IPFS timeout) — 2fecec8
 - [ ] **n-05** No "When NOT to use" / "Example" sections (sibling parity)
 - [ ] **n-06** `../` cross-skill links assume full plugin install
-- [x] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping — this commit
-- [x] **n-08** `question.endsWith("?")` rejects `؟` — this commit
+- [x] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping — 2fecec8
+- [x] **n-08** `question.endsWith("?")` rejects `؟` — 2fecec8
 - [x] **n-09** `--human yes` swallows value → JSON output
-- [x] **n-10** Node shebang on non-executable `.ts` — this commit
-- [x] **n-11** Legacy `getGasPrice` vs EIP-1559 — this commit
+- [x] **n-10** Node shebang on non-executable `.ts` — 2fecec8
+- [x] **n-11** Legacy `getGasPrice` vs EIP-1559 — 2fecec8
 - [ ] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins
 - [ ] **n-13** `plugin.json` keywords lack `arbitrum`/`v2`
 - [ ] **n-14** Landing card "Testnet" tag undersells mainnet target
@@ -260,8 +260,22 @@ Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 
 - [ ] **D-3** (low) B-02 / M-02 tests weak (pin format + source grep only; no exit-2 / BLOCKED assertion). Needs stubbed `PublicClient` → batch 3.
 - [x] **D-4** (low) `receipt` accepted JSON array as evidence object. Fix: `Array.isArray` check.
 - [x] **D-5** (low) `case-format.md` silent on `{{`/`}}` ban. Fix: one paragraph added.
-- [x] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2. — this commit
+- [x] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2. — 2fecec8
 - [x] **n-15** reserved-ruling test uses real pattern — 7f58b66 (incidental).
 - [x] **n-09** `--human yes` now an error — 7f58b66 (incidental).
 
 - [ ] **L-1** (follow-up, out of PR scope) `kleros-ipfs-upload/scripts` lockfile surfaces 29 transitive advisories (18 high) via `x402-fetch@1.2.0` (latest) → wallet SDK tree (ws, viem, zod, uuid, …). Pre-existing for every unlocked install; non-breaking `npm audit fix` can't resolve. Needs upstream x402 bump / overrides review.
+
+## Batch 2 verification (2026-11-04)
+
+Independent verifier on 2fecec8: M-04, m-08, m-09, m-10, m-11, m-21, n-04, n-08, n-10, n-11 **fixed**; m-02, n-07/D-6 **partial** → E-1, E-2. Live Sepolia happy path ok (policy CID `/ipfs/Qma8mnp6xV3J2cRNf3mTth5C8nV11CAnceVinc3y8jSbio`; fixtures' `bafkqaaa` is now correctly rejected live as empty).
+
+- [x] **E-1** (minor) viem maps bare JSON-RPC -32603 to `ContractFunctionRevertedError` (copying the node message into `reason`) → "court does not exist" / "would revert"; rate limit -32005 in simulate/estimateGas → blocking "would fail"; preflight EvidenceModule read failure worded as "cannot be submitted". Fix: revert only with revert data, code 3, or -32603 whose message says "revert"; -32005/-32002/-32603/429 = network; preflight wording distinguishes unreadable vs mismatch. Verified against live Sepolia reverts (code 3 chain) + synthetic viem errors.
+- [x] **E-2** (minor) `\p{Cf}` missed U+034F, U+FE0F, U+3164, U+2800 → `"Invalid͏"` bypassed reserved-ruling check. Fix: `\p{Default_Ignorable_Code_Point}` + U+2800 in title key and IPFS path check.
+- [x] **E-3** (minor) SKILL.md said gateway failures are `network`; script reports them `input`. Fix: SKILL.md wording.
+- [x] **E-4** (nit) multi-line stderr errors → newlines collapsed in `shortError`.
+- [ ] **E-5** (nit) RPC path keys < 6 chars not registered as secrets (echoed if the RPC repeats its path). Deferred.
+- [ ] **E-6** (nit) zero-length first chunk followed by data reported EMPTY. Deferred.
+- [ ] **E-7** (nit) unclassified viem errors → `network` (could be `internal`). Deferred.
+- [x] **E-8** (nit) `﹖` (U+FE56) accepted via NFKC before question-mark check.
+- [ ] **E-9** (info) test fixtures use empty `/ipfs/bafkqaaa`; fine offline, any future live test needs a real CID.
