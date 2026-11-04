@@ -39,26 +39,26 @@ Line refs = PR head 8bbab84. Paths relative to repo root; `PD` = `kleros-create-
 Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 
 ### 🔴 Blockers
-- [x] **B-01** Mustache injection in template strings → unreadable case — this commit
-- [x] **B-02** EvidenceModule upgrade will mis-key evidence (no impl pin) — this commit
+- [x] **B-01** Mustache injection in template strings → unreadable case — 7f58b66
+- [x] **B-02** EvidenceModule upgrade will mis-key evidence (no impl pin) — 7f58b66
 
 ### 🟠 Major
-- [x] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost) — this commit
-- [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — this commit
-- [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — this commit
+- [x] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost) — 7f58b66
+- [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — 7f58b66
+- [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — 7f58b66 (+ encoded-dot bypass D-1 closed in follow-up commit)
 - [ ] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors
 - [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
 - [ ] **M-06** Tests never execute the script
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
-- [x] **m-01** Whitelist check fails open on any read error — this commit
+- [x] **m-01** Whitelist check fails open on any read error — 7f58b66
 - [ ] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist"
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
 - [ ] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high)
 - [ ] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci`
-- [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — this commit
+- [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
 - [ ] **m-08** IPFS check proves resolve, not content; body never consumed
 - [ ] **m-09** Size limits in UTF-16 units, not bytes
 - [ ] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late
@@ -84,13 +84,13 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [ ] **n-06** `../` cross-skill links assume full plugin install
 - [ ] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping
 - [ ] **n-08** `question.endsWith("?")` rejects `؟`
-- [ ] **n-09** `--human yes` swallows value → JSON output
+- [x] **n-09** `--human yes` swallows value → JSON output
 - [ ] **n-10** Node shebang on non-executable `.ts`
 - [ ] **n-11** Legacy `getGasPrice` vs EIP-1559
 - [ ] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins
 - [ ] **n-13** `plugin.json` keywords lack `arbitrum`/`v2`
 - [ ] **n-14** Landing card "Testnet" tag undersells mainnet target
-- [ ] **n-15** Reserved-ruling test redeclares regex instead of importing
+- [x] **n-15** Reserved-ruling test redeclares regex instead of importing
 - [ ] **n-16** `--max-fee` caps arbitration fee only, not gas — document
 
 ---
@@ -250,3 +250,16 @@ description: "Creates a standalone Kleros V2 dispute (case) through the deployed
 4. **Skill docs** — M-05, m-03, m-04, m-12..m-16, m-22, n-01..n-06, n-16
 5. **Evals** — M-07
 6. **Surfaces & release** — m-05, m-06, m-17..m-19, n-12..n-14 (m-18 at tag time)
+
+## Batch 1 verification (2026-11-04)
+
+Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 **fixed**; M-03 **partial** → D-1. Pins re-verified vs master `EvidenceModule_Implementation.json` + on-chain EIP-1967 slot (One `0xA502A3942abCF8e71FBD87ed442B39b798b192C8`, Sepolia `0xC4e64e6E949936a18269937FC1e18cb11E3db14D`).
+
+- [x] **D-1** (medium) `%2e%2e` / `\..\` bypass `..` rejection — WHATWG URL normalises → gateway serves other CID. Fix: `%` and `\` excluded from IPFS path segments; regression cases added.
+- [x] **D-2** (medium) behaviour suite skipped in CI (no `npm ci` in scripts) → CI coverage dropped. Fix: `sync-master.yml` installs `npm ci --prefix kleros-create-dispute/scripts` before `npm test`; test file throws when `CI` set and deps missing.
+- [ ] **D-3** (low) B-02 / M-02 tests weak (pin format + source grep only; no exit-2 / BLOCKED assertion). Needs stubbed `PublicClient` → batch 3.
+- [x] **D-4** (low) `receipt` accepted JSON array as evidence object. Fix: `Array.isArray` check.
+- [x] **D-5** (low) `case-format.md` silent on `{{`/`}}` ban. Fix: one paragraph added.
+- [ ] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2.
+- [x] **n-15** reserved-ruling test uses real pattern — 7f58b66 (incidental).
+- [x] **n-09** `--human yes` now an error — 7f58b66 (incidental).

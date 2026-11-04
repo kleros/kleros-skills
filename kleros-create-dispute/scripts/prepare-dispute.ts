@@ -148,13 +148,16 @@ const schema = z.object({
 /// `^\/(?:…|ipfs)(\/[^\s\/]+)+$`): a policyURI the SDK rejects fails the Court's
 /// zod parse and the whole case renders empty. On top of that, no `?`/`#`, no
 /// empty, `.` or `..` path segments, and no trailing slash.
-export const IPFS_URI_PATTERN = /^\/ipfs\/[A-Za-z0-9]+(\/[^\s\/?#]+)*$/;
+// `%` and `\\` are excluded too: the WHATWG URL parser (browsers, the gateway
+// fetch) decodes `%2e%2e` and treats `\\` as `/`, so `/ipfs/A/%2e%2e/B` would
+// silently serve CID B while the chain records A.
+export const IPFS_URI_PATTERN = /^\/ipfs\/[A-Za-z0-9]+(\/[^\s\/?#%\\]+)*$/;
 export function normalizeIpfsUri(raw: string, field: string) {
   const trimmed = raw.trim();
   const uri = trimmed.startsWith("ipfs://") ? `/ipfs/${trimmed.slice(7)}` : trimmed;
   const segments = uri.split("/");
   if (!IPFS_URI_PATTERN.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
-    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, "?", "#", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
+    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, "?", "#", "%", "\\", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
   }
   return uri;
 }
@@ -974,7 +977,7 @@ async function receipt(hash: Hex, rpcUrl: string, requested?: string, expectDisp
   if (expected && evidence.some((item) => !item.keyedToExpectedDispute)) {
     blocking.push(`MIS-KEYED evidence: dispute ${expected.disputeId} indexes evidence group ${expected.evidenceGroupId}, and at least one Evidence event uses a different key. It will never appear on the case; resubmit against the correct group.`);
   }
-  if (evidence.some((item) => item.parsed === null || typeof item.parsed !== "object")) {
+  if (evidence.some((item) => item.parsed === null || typeof item.parsed !== "object" || Array.isArray(item.parsed))) {
     blocking.push("An Evidence event is not a JSON object; jurors will see a raw string instead of a title and description. Resubmit as a JSON object.");
   }
 

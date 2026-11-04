@@ -40,6 +40,10 @@ serve. The helper fetches it before quoting and refuses a placeholder, a mangled
 CID, or content nobody pinned — so obtain the CID from a real upload rather than
 writing one that merely looks right.
 
+Never put `{{` or `}}` in any case text (title, description, question, category,
+answers). The Court renders the template with mustache, so double braces are
+erased or break the whole case permanently; `validate` rejects them.
+
 Write a neutral description, one question answerable by exactly one option, and
 option descriptions that state the applicable policy condition. Put deadlines,
 burden of proof, admissibility, and edge-case rules in the policy.

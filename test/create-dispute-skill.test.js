@@ -133,6 +133,11 @@ const tsxApi = path.join(scriptsDir, "node_modules", "tsx", "dist", "esm", "api"
 const fixtures = path.join(__dirname, "fixtures", "create-dispute");
 const haveDeps = fs.existsSync(tsxBin) && fs.existsSync(tsxApi);
 const skipReason = haveDeps ? false : "helper deps missing: run `npm ci` in kleros-create-dispute/scripts";
+// CI must run this suite, never skip it: a silent skip would ship untested
+// transaction-building code. sync-master.yml installs the deps before npm test.
+if (!haveDeps && process.env.CI) {
+  throw new Error("CI is set but kleros-create-dispute/scripts deps are missing: run `npm ci --prefix kleros-create-dispute/scripts` before `npm test`");
+}
 
 function run(...args) {
   const result = spawnSync(tsxBin, [script, ...args], { encoding: "utf8", timeout: 60_000 });
@@ -197,7 +202,7 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
     assert.equal(result.code, 0, result.out);
     assert.equal(JSON.parse(result.stdout).template.policyURI, "/ipfs/QmPolicy/policy.pdf");
     const { normalizeIpfsUri } = helperModule;
-    for (const bad of ["/ipfs/Qm/../x", "/ipfs/Qm/./x", "/ipfs/Qm//x", "/ipfs/Qm/x#y", "/ipfs/Qm x", "/ipfs/"]) {
+    for (const bad of ["/ipfs/Qm/../x", "/ipfs/Qm/./x", "/ipfs/Qm//x", "/ipfs/Qm/x#y", "/ipfs/Qm x", "/ipfs/", "/ipfs/QmA/%2e%2e/QmB", "/ipfs/QmA/.%2E/QmB", "/ipfs/QmA/a\\..\\..\\QmB"]) {
       assert.throws(() => normalizeIpfsUri(bad, "fileURI"), /fileURI must be an IPFS reference/, bad);
     }
   });
