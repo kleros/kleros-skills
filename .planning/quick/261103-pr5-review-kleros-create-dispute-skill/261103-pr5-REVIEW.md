@@ -56,8 +56,8 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — 2fecec8
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
-- [x] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high) — this commit (→ 4.6.7)
-- [x] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci` — this commit (decision 2026-11-04: lockfiles committed for both skills; only recorded prior rationale was "so dep versions stay fresh", `045c0d6`)
+- [x] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high) — 927a17c (→ 4.6.7)
+- [x] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci` — 927a17c (decision 2026-11-04: lockfiles committed for both skills; only recorded prior rationale was "so dep versions stay fresh", `045c0d6`)
 - [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
 - [x] **m-08** IPFS check proves resolve, not content; body never consumed — 2fecec8
 - [x] **m-09** Size limits in UTF-16 units, not bytes — 2fecec8
