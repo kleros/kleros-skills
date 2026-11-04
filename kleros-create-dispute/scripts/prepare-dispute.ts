@@ -62,7 +62,7 @@ export const NETWORKS = {
     evidenceModule: "0xA88A9a25cE7f1d8b3941dA3b322Ba91D009E1397",
     evidenceModuleImplementation: "0xC4e64e6E949936a18269937FC1e18cb11E3db14D",
     arbitrableWhitelist: "absent",
-    app: "https://kleros-v2-testnet.netlify.app",
+    app: "https://v2-testnet.kleros.builders",
     explorer: "https://sepolia.arbiscan.io",
     production: false,
   },
@@ -138,7 +138,7 @@ const PERIODS = ["evidence", "commit", "vote", "appeal", "execution"] as const;
 export const RESERVED_RULING = {
   id: "0x00",
   title: "Refuse to Arbitrate / Invalid",
-  description: "Added by the Court on every case. Jurors pick it when the dispute cannot be ruled on. It is not part of this template and cannot be edited or removed.",
+  description: "Added by the Court on every case. Jurors pick it when the dispute cannot be ruled on. It is not part of this template and cannot be removed; this case keeps the Court's default wording.",
   pattern: /refuse to arbitrate|refuse to rule|unable to rule|^\s*(refuse|invalid)\s*$|^\s*refuse\s*\/\s*invalid\s*$/i,
 } as const;
 const resolverAbi = parseAbi([
@@ -279,7 +279,7 @@ export async function checkIpfsResolves(uri: string, field: string, fetchImpl: t
 
 const evidenceSchema = z.object({
   name: z.string().trim().min(3).max(240),
-  description: z.string().trim().max(20_000),
+  description: z.string().trim().min(1).max(20_000), // short is fine (8bbab84), empty is not: the spec requires it and jurors read it
   fileURI: z.string().trim().min(1).optional(),
   fileTypeExtension: z.string().trim().min(1).max(16).optional(),
 }).strict();
@@ -485,7 +485,7 @@ export function registerSecretUrl(raw: string) {
   } catch { /* not a URL: the raw string is registered */ }
 }
 
-const SAFE_URL_HOSTS = new Set([new URL(KLEROS_IPFS_HTTP_GATEWAY).host, "arbiscan.io", "sepolia.arbiscan.io", "v2.kleros.builders", "kleros-v2-testnet.netlify.app"]);
+const SAFE_URL_HOSTS = new Set([new URL(KLEROS_IPFS_HTTP_GATEWAY).host, "arbiscan.io", "sepolia.arbiscan.io", "v2.kleros.builders", "v2-testnet.kleros.builders"]);
 /// Strip credentials, query, fragment and path from every URL except the public
 /// ones this script itself prints (IPFS gateway, explorers, Court app), then
 /// remove any registered secret that survived in another form.

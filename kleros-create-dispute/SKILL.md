@@ -1,68 +1,92 @@
 ---
 name: kleros-create-dispute
-description: "Create a standalone Kleros V2 case through the deployed DisputeResolver on Arbitrum One or Arbitrum Sepolia, and submit evidence to it afterwards. Use when the user asks to draft, validate, price, prepare, simulate, or submit a new Kleros dispute/case with juror-facing ruling options and a policy, to rehearse one on testnet, to file evidence on a case created this way, or to read the dispute ID out of a confirmed transaction. Covers the self-contained dispute template, Classic extraData, live arbitrationCost, deployment preflight, IPFS reference verification, reviewable calldata, and receipt parsing. Do NOT use for Curate registry operations, appeals, escrow disputes, juror voting, or arbitrary calls; route file uploads to kleros-ipfs-upload."
+description: "Creates a standalone Kleros V2 dispute (arbitration case) through the deployed DisputeResolver on Arbitrum One or Arbitrum Sepolia, then prepares evidence for it, using a bundled helper that validates the juror-facing dispute template, checks the deployment, quotes the live arbitrationCost, and prepares, simulates and parses the transactions the user's wallet signs. Use when the user wants to open, draft, price, rehearse on testnet, or submit a new Kleros dispute with ruling options and a policy, take a case to Kleros, file evidence on a case created this way, or recover a dispute ID from a creation transaction. Also use on DisputeResolver, createDisputeForTemplate, arbitrationCost or dispute template, even if Kleros V2 is not named. Do NOT use for appeals, juror voting, Curate registries, escrow disputes, or evidence on disputes created by other arbitrables; route file uploads to kleros-ipfs-upload and Curate to kleros-curate."
 ---
 
 # Create a Kleros V2 dispute
 
 Create one self-contained dispute through Kleros V2's `DisputeResolver`. Draft the
-juror-facing language with the user; use the bundled script for every address,
+juror-facing language with the user; use the bundled helper for every address,
 fee, ID, encoding, check, simulation, and receipt.
+
+## When NOT to use
+
+- Appeals, juror voting, rulings or evidence on disputes created by another
+  arbitrable (escrow, Curate, Reality.eth…) — the helper only handles cases it created.
+- Curate registries → `kleros-curate`. Paying for an IPFS upload → `kleros-ipfs-upload`.
+- Any call other than `createDisputeForTemplate` / `submitEvidence` on the two deployments below.
 
 ## Networks
 
 | Network | Chain | Kleros Core | DisputeResolver | EvidenceModule | App |
 |---|---|---|---|---|---|
 | Arbitrum One (production) | `42161` | `0x991d2df165670b9cac3B022f4B68D65b664222ea` | `0xb5526D022962A1fFf6eD32C93e8b714c901F4323` | `0x48e052B4A6dC4F30e90930F1CeaAFd83b3981EB3` | https://v2.kleros.builders |
-| Arbitrum Sepolia (test) | `421614` | `0xE8442307d36e9bf6aB27F1A009F95CE8E11C3479` | `0xed31bEE8b1F7cE89E93033C0d3B2ccF4cEb27652` | `0xA88A9a25cE7f1d8b3941dA3b322Ba91D009E1397` | https://kleros-v2-testnet.netlify.app |
+| Arbitrum Sepolia (test) | `421614` | `0xE8442307d36e9bf6aB27F1A009F95CE8E11C3479` | `0xed31bEE8b1F7cE89E93033C0d3B2ccF4cEb27652` | `0xA88A9a25cE7f1d8b3941dA3b322Ba91D009E1397` | https://v2-testnet.kleros.builders |
 
 The RPC's chain ID selects the network and is authoritative; `--network arbitrum`
-or `--network arbitrumSepolia` is an optional assertion the script checks against
-it. `validate` has no RPC, so it requires `--network` — there is no default. A real ruling only exists on Arbitrum One — rehearse on Arbitrum Sepolia,
-where the arbitration fee is negligible, before spending mainnet ETH.
+or `--network arbitrumSepolia` is an optional assertion the helper checks against
+it. `validate` has no RPC, so it requires `--network` — there is no default. A real
+ruling only exists on Arbitrum One — rehearse on Arbitrum Sepolia, where the
+arbitration fee is negligible, before spending mainnet ETH.
 
 ## Flow
 
-1. Read [references/case-format.md](references/case-format.md) and collect the
-   complete case. Stop if the question, policy criteria, or ruling boundaries are
-   ambiguous; do not fill factual gaps by guessing.
-2. Fetch [../kleros-ipfs-upload/SKILL.md](../kleros-ipfs-upload/SKILL.md), show
-   its live x402 price, and obtain approval immediately before uploading the
-   policy with `operation=meta-evidence`. Reuse the CID for identical bytes. That
-   upload is paid in Base USDC on **both** networks, so for a testnet rehearsal
-   reuse an existing CID instead of paying for a throwaway policy.
-3. Put the returned `/ipfs/<CID>` in `policyURI` and run `validate`, `quote`,
-   `preflight`, `prepare`, and `simulate` against the target RPC. Use
-   `preflight --human` for a person and its default JSON for an agent. Pass the
-   real wallet with `--from` when available so it can estimate gas, balance, and
-   total (gas × EIP-1559 `maxFeePerGas`, an upper bound); never invent an
-   address. Add `--max-fee <eth>` when the user gave a cap.
-4. Show the complete preflight before asking for approval: network, every check,
-   title, description, juror question, every ruling ID/title/description,
-   category, language, openable policy link, evidence timing, court, initial
-   juror draw, dispute kit, arbitration fee, gas and balance, contracts, value,
-   calldata, quote block, expiry, and warnings. Label it review-only. Obtain
-   explicit approval immediately before signing.
-5. Prefer the caller's wallet tool to send the exact prepared transaction. Re-run
-   `preflight` immediately before the signature — the quote expires in 5 minutes.
-6. After confirmation, run `receipt --tx <hash>` for the dispute ID, the case
-   URL, and the case's evidence group. Report the transaction and the case link.
-7. Creating a dispute does not submit evidence. That is a separate transaction
-   with its own approval — see below. It is due during the `evidence` period, so
-   do not leave it until the case has moved on to voting.
+Copy this checklist and tick it off as you go:
 
-Install the helper once with `npm ci` in `scripts/` (uses the committed lockfile), then run:
-
-```bash
-npx tsx prepare-dispute.ts validate  --case CASE --network NET
-npx tsx prepare-dispute.ts quote     --case CASE --rpc-url RPC [--max-fee ETH]
-npx tsx prepare-dispute.ts preflight --case CASE --rpc-url RPC [--from 0x...] [--human]
-npx tsx prepare-dispute.ts prepare   --case CASE --rpc-url RPC
-npx tsx prepare-dispute.ts simulate  --case CASE --rpc-url RPC --from 0x...
-npx tsx prepare-dispute.ts evidence  --evidence EV --rpc-url RPC (--dispute ID | --creation-tx 0x...)
-npx tsx prepare-dispute.ts receipt   --tx 0x... --rpc-url RPC [--dispute ID]
+```
+Dispute progress:
+- [ ] 1. Case JSON drafted (references/case-format.md); ambiguities resolved with the user
+- [ ] 2. Policy uploaded once (operation=meta-evidence, approved price) → /ipfs/<CID> in policyURI
+- [ ] 3. validate passes (fix → re-run until ok:true)
+- [ ] 4. preflight --human shown verbatim; user explicitly approved
+- [ ] 5. preflight re-run within the 5-minute quote TTL, fee unchanged
+- [ ] 6. Exactly the prepared to/value/data sent from the user's wallet
+- [ ] 7. receipt → dispute ID, case URL, evidence group reported
+- [ ] 8. Evidence: upload → evidence → approval → send → receipt --dispute → visible on Court
 ```
 
+1. Read [references/case-format.md](references/case-format.md). Stop if the
+   question, policy criteria or ruling boundaries are ambiguous; never guess facts.
+2. Fetch [../kleros-ipfs-upload/SKILL.md](../kleros-ipfs-upload/SKILL.md), show its
+   live x402 price, and get approval right before uploading the policy. It is paid
+   in Base USDC on **both** networks, so a testnet rehearsal reuses an existing CID.
+3. Run `validate`; on an error, fix the case file and re-run until it passes.
+4. Run `preflight --human` (JSON without it, for an agent) with the real wallet as
+   `--from` when known — never invent one — and `--max-fee <eth>` if the user gave
+   a cap (it caps the **arbitration fee only**, not gas). Show the full output
+   **verbatim** as review-only. The preflight ballot is what jurors will see.
+5. Right before signing, re-run `preflight`: the quote is valid for 5 minutes, and
+   a changed fee needs fresh approval.
+6. Send **exactly** the `to`, `value` and `data` that `prepare` printed (check with
+   `simulate --from` first). Never edit calldata, change `value`, or build the
+   transaction yourself.
+7. After confirmation, `receipt --tx <hash>` → report tx, dispute ID, case URL,
+   evidence group. Creating a dispute does not submit evidence — see below; it is
+   due during the `evidence` period.
+
+**Fee.** `value` must equal the quoted `arbitrationCost` — never pad or round it.
+Kleros Core reverts below the cost and turns any excess into extra juror votes
+(`nbVotes = value / feeForJuror`), not a refund. If the court fee rose after the
+quote, the transaction reverts: re-quote, do not top up by hand.
+
+## Helper
+
+`${CLAUDE_SKILL_DIR}` is the directory containing this SKILL.md; substitute it if
+your host does not. Install once (committed lockfile), then run commands from any
+directory (relative `--case` / `--evidence` paths resolve against yours):
+
+```bash
+npm ci --prefix "${CLAUDE_SKILL_DIR}/scripts"
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" validate  --case CASE --network NET
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" quote     --case CASE --rpc-url RPC [--max-fee ETH]
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" preflight --case CASE --rpc-url RPC [--from 0x...] [--max-fee ETH] [--human]
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" prepare   --case CASE --rpc-url RPC [--max-fee ETH]
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" simulate  --case CASE --rpc-url RPC --from 0x... [--max-fee ETH]
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" evidence  --evidence EV --rpc-url RPC (--dispute ID | --creation-tx 0x...)
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" receipt   --tx 0x... --rpc-url RPC [--dispute ID]
+```
+
+Use this exact form: a bare `npx tsx` outside `scripts/` fetches an unpinned tsx.
 Every command prints one JSON object with a top-level `ok` (`preflight --human`
 prints text, with blocking items as a `BLOCKED — DO NOT SIGN` banner). Exit codes:
 
@@ -71,11 +95,10 @@ prints text, with blocking items as a `BLOCKED — DO NOT SIGN` banner). Exit co
   would revert, balance too low, simulation failed, receipt reverted or evidence
   MIS-KEYED).
 - `1` — refused or failed: `{"ok":false,"error":"…","kind":"input|network|internal"}`.
-  `network` means the RPC did not answer, or failed for a reason that is not a
-  verdict on the call (rate limit, internal error, missing state, unsupported
-  method) — it says nothing about the case, court, dispute or transaction; retry
-  with a working RPC, never read it as "does not exist" or "would revert". An IPFS gateway failure is reported as
-  `input`: the reference could not be verified, so do not proceed with it.
+  `network` = the RPC failed without a verdict on the call (no answer, rate limit,
+  missing state, unsupported method); retry with a working RPC, never read it as
+  "does not exist" or "would revert". An IPFS gateway failure is `input`: the
+  reference is unverified, so do not proceed with it.
 - `64` — usage error (`"kind":"usage"`): unknown command, or an unknown,
   valueless, missing or malformed flag. Fix the command rather than dropping the
   flag. `--help` prints usage and exits `0`.
@@ -95,11 +118,9 @@ creation transaction has confirmed:
    the user has already approved that.
 2. Upload the attachment — and only the attachment — with
    [../kleros-ipfs-upload/SKILL.md](../kleros-ipfs-upload/SKILL.md) using
-   `operation=evidence` (the policy uses `meta-evidence`). Reuse the CID for
-   identical bytes.
-3. Reference the returned CID from a small JSON document. **Only the attachment
-   is uploaded** — this JSON travels inline in the transaction, so do not spend a
-   second paid upload on it, and do not put a bare CID on chain in its place:
+   `operation=evidence`. Reuse the CID for identical bytes.
+3. Reference the returned CID from a small JSON file. It travels inline in the
+   transaction, so do not upload it too:
 
 ```json
 {
@@ -109,8 +130,9 @@ creation transaction has confirmed:
 }
 ```
 
-4. Run `evidence`, show what it rendered, and obtain explicit approval before
-   signing. Submit during the `evidence` period; the helper warns once the case
+4. Run `evidence --creation-tx <hash>` (or `--dispute <id>`), show what it
+   rendered, obtain explicit approval, and send exactly the transaction it
+   printed. Submit during the `evidence` period; the helper warns once the case
    has moved on, and a late submission needs its own specific approval.
 5. Verify three separate outcomes and never collapse them into one:
    - the transaction **confirmed**;
@@ -118,70 +140,51 @@ creation transaction has confirmed:
      `receipt --tx <evidence hash> --dispute <case id>` says so in one line;
    - the evidence is **indexed and visible** on that case's Evidence tab.
 
-   Report "evidence submitted" only for the third. Everything before it is
-   `chain-confirmed`, which is not the same claim.
+   Report "evidence submitted" only for the third; before it, say
+   `chain-confirmed`. The Court groups evidence by `_externalDisputeID` alone, so
+   that tab may also show evidence another arbitrable submitted under the same
+   number — look for your own entry, and do not report the others as yours.
 
-`name` and `description` are required and `fileURI` is optional — evidence that is
-purely an argument needs no file. Three rules decide whether jurors can actually
-read it:
-
-- The on-chain string must be that **stringified JSON object**. A bare
-  `/ipfs/<CID>` or `ipfs://<CID>` is accepted by the contract but renders in the
-  Court as an unreadable raw string with no title and no description.
-- References are `/ipfs/<CID>`. Never emit the `ipfs://` scheme.
-- **Never write a CID you did not receive from an actual upload.** The helper
-  fetches every `policyURI` and `fileURI` through the Kleros gateway and refuses
-  to prepare a transaction for content that does not resolve — a plausible-looking
-  CID is the single easiest way to ruin a case.
+`name` and a non-empty `description` are required (short is fine); `fileURI` is
+optional — evidence that is purely an argument needs no file. The on-chain string
+must be that **stringified JSON object**: a bare `/ipfs/<CID>` or `ipfs://<CID>`
+is accepted by the contract but renders in the Court as an unreadable raw string.
+References are `/ipfs/<CID>`; never emit `ipfs://`.
+**Never write a CID you did not receive from an actual upload** — the helper
+fetches every `policyURI` and `fileURI` through the Kleros gateway and refuses
+content that does not resolve.
 
 ### The evidence key is not the case number
 
-`submitEvidence` is keyed by the dispute's **evidence group** — the arbitrable's
-own `_externalDisputeID`, emitted next to the arbitrator's dispute ID in
-`DisputeRequest` — not by the case number the Court shows. Those identifiers are
-allocated by different contracts and must never be assumed to match. Both are
-`uint256`, so a wrong key encodes, simulates, and confirms cleanly, then attaches
-the evidence to a different case or to no case at all, permanently and without a
-withdrawal mechanism.
+`submitEvidence` is keyed by the dispute's **evidence group** — the resolver's own
+`_externalDisputeID`, emitted in `DisputeRequest` — not by the Court case number.
+The two are allocated by different contracts and must never be assumed to match;
+both are `uint256`, so a wrong key confirms cleanly and attaches the evidence to
+another case, permanently. Never type, count or guess the key: `evidence` derives
+it from the chain (`DisputeRequest` with `--creation-tx`, else the resolver's
+`arbitratorDisputeIDToLocalID`), cross-checks both, and rejects a contradicting
+`--evidence-group`. Pass `--creation-tx` whenever the hash is at hand.
 
-So never type the key, never infer it from a counter, and never assume it equals
-the ID `receipt` reported. `evidence` derives it from the chain — from the
-`DisputeRequest` event when given `--creation-tx`, otherwise from the resolver's
-`arbitratorDisputeIDToLocalID` mapping — cross-checks the two whenever both are
-available, and rejects an `--evidence-group` that contradicts them. Pass
-`--creation-tx` whenever the creation hash is at hand.
-
-**Version caveat (verified 2026-11-04).** This key rule holds for the deployed
-EvidenceModule implementations only: Arbitrum One proxy `0x48e0…1EB3` →
-`0xA502A3942abCF8e71FBD87ed442B39b798b192C8`; Arbitrum Sepolia proxy
-`0xA88A…1397` → `0xC4e64e6E949936a18269937FC1e18cb11E3db14D` (kleros-v2 `master`
-deployments). kleros-v2 `dev` re-keys `submitEvidence` by the arbitrator dispute
-ID, and an upgrade keeps the proxy address. The helper reads the proxy's
-EIP-1967 implementation slot and **refuses** `evidence` (and flags `receipt`
-as blocking) if it differs. If that happens, do not work around it — the skill
-must be updated first.
+**Version caveat (verified 2026-11-04).** This holds for the deployed EvidenceModule
+implementations only (One `0x48e0…1EB3` → `0xA502A3942abCF8e71FBD87ed442B39b798b192C8`,
+Sepolia `0xA88A…1397` → `0xC4e64e6E949936a18269937FC1e18cb11E3db14D`, kleros-v2
+`master`); `dev` re-keys `submitEvidence` by arbitrator dispute ID behind the same
+proxy. The helper checks the EIP-1967 slot and **refuses** `evidence` (and blocks
+`receipt`) on any other implementation — do not work around it; update the skill.
 
 ## Non-negotiable invariants
 
 - Only the two deployments above. `validate` stamps the selected network's
   arbitrator address and chain ID into the on-chain template, so a case priced on
   one network is never encoded for the other.
-- Every RPC command first verifies bytecode, `DisputeResolver.arbitrator()`, that
-  the court exists and is enabled, that it supports the dispute kit, and — where
-  Kleros Core enforces one — that the resolver is on the arbitrable whitelist
-  (Arbitrum One must answer `true`; an RPC error there stops the run, it is never
-  read as "not enforced"). A failed check stops the run; do not work around it.
-- Juror-facing text must not contain `{{` or `}}`: the Court renders the
-  template through mustache, so they would erase text or blank the whole case,
-  permanently. `validate` rejects them; rephrase instead of escaping.
-- Ruling `0` is reserved by the protocol *and* rendered by the Court as the first
-  choice on every ballot ("Refuse to Arbitrate / Invalid"). It is not part of the
-  template, so never write a refuse or invalid answer of your own — it would show
-  up twice and split that vote. Answers are contiguous `0x01` through `0xNN`, and
-  `numberOfRulingOptions` equals the answer count, excluding ruling `0`.
-- The preflight ballot is what jurors will see: ruling `0` first, then the
-  template answers under their ruling IDs. Review it as the ballot, not as a list
-  of the answers that were written.
+- Every RPC command first checks bytecode, `DisputeResolver.arbitrator()`, court
+  enabled + dispute kit supported, and (Arbitrum One) the arbitrable whitelist. A
+  failed or unreadable check stops the run; do not work around it.
+- Juror-facing text must not contain `{{` or `}}` (the Court renders it through
+  mustache and would erase text or blank the case). Rephrase instead of escaping.
+- Ruling `0` ("Refuse to Arbitrate / Invalid") is on every ballot already, so
+  never write a refuse or invalid answer of your own (why: case-format.md). Answers
+  are contiguous `0x01` through `0xNN`; `numberOfRulingOptions` is their count.
 - Classic dispute kit `1` only. Extra data is ABI-encoded
   `(uint256 courtId, uint256 minJurors, uint256 disputeKitId)`.
 - Require an odd positive juror count. Court `0` is the reserved forking court.
@@ -192,21 +195,31 @@ must be updated first.
 - Keep `disputeTemplateDataMappings` empty for the static template.
 - Reject caller-supplied destinations or arbitrary calldata. Never store or log a
   wallet secret.
-- Every IPFS reference must resolve through `https://cdn.kleros.link` before it
-  goes on chain, for the policy and for every evidence file alike.
-- Evidence is keyed by the evidence group the chain reports for that case, never
-  by the Court case number, a counter, or a number supplied by the caller.
 
 Stop before upload, payment, or signing if a preflight check fails, the policy is
 missing, the quote expired, simulation reverts, or the cost exceeds the user's cap.
 
+## Example — Sepolia rehearsal
+
+> User: "Rehearse a 2-option delivery dispute on testnet before we file it for real."
+
+With `…` = the full Helper invocation: draft `case.json` reusing an existing policy
+CID → `… validate --case case.json --network arbitrumSepolia` → `… preflight --case
+case.json --rpc-url $SEPOLIA_RPC --from 0xWallet --human`, pasted whole, then ask
+"Approve creating this case on Arbitrum Sepolia?" and **stop**. On yes: `… prepare`,
+hand `to`/`value`/`data` to the wallet unchanged, then `… receipt --tx 0xHash
+--rpc-url $SEPOLIA_RPC` → report `https://v2-testnet.kleros.builders/#/cases/<id>`
+and offer evidence. Mainnet reuses the same `case.json` with an Arbitrum One RPC.
+
 ## Sources
 
-- Deployments: https://github.com/kleros/kleros-v2/tree/dev/contracts/deployments
-- Resolver contract: https://github.com/kleros/kleros-v2/blob/dev/contracts/src/arbitration/arbitrables/DisputeResolver.sol
-- Template specification: https://github.com/kleros/kleros-v2/blob/dev/contracts/specifications/arbitrable.md
-- Evidence specification: https://github.com/kleros/kleros-v2/blob/dev/contracts/specifications/evidence-format.md
-- Frontend compatibility flow: https://github.com/kleros/kleros-v2/tree/dev/web/src/pages/Resolver
+- ABIs and addresses (source of truth): [arbitrum/DisputeResolverNeo.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrum/DisputeResolverNeo.json), [arbitrum/EvidenceModule.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrum/EvidenceModule.json), [arbitrum/KlerosCoreNeo.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrum/KlerosCoreNeo.json); Sepolia [DisputeResolver.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrumSepolia/DisputeResolver.json), [EvidenceModule.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrumSepolia/EvidenceModule.json), [KlerosCore.json](https://github.com/kleros/kleros-v2/blob/master/contracts/deployments/arbitrumSepolia/KlerosCore.json)
+- Court URLs: https://github.com/kleros/kleros-v2/blob/master/web/README.md
+- Template specification: https://github.com/kleros/kleros-v2/blob/master/contracts/specifications/arbitrable.md
+- Evidence specification: https://github.com/kleros/kleros-v2/blob/master/contracts/specifications/evidence-format.md
+
+Relative `../` skill links assume the full plugin install; otherwise fetch
+`https://skills.kleros.io/kleros-ipfs-upload/SKILL.md` (same pattern for `feedback`).
 
 ## Feedback
 

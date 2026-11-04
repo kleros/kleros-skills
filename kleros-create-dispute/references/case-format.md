@@ -48,16 +48,23 @@ Write a neutral description, one question answerable by exactly one option, and
 option descriptions that state the applicable policy condition. Put deadlines,
 burden of proof, admissibility, and edge-case rules in the policy.
 
-Do not write a “refuse”, “invalid”, or “cannot be evaluated” answer at all. Ruling
-`0` is not just reserved in the ABI — the Court renders it as the first choice on
-every ballot, titled “Refuse to Arbitrate / Invalid”, and it is not part of your
-template. An answer of the same kind therefore appears on the ballot twice, under
-two different descriptions, splitting the refuse vote in a system that pays jurors
-for coherence. `validate` rejects one. Jurors can always refuse; you never have to
-offer it.
+Do not write a “refuse”, “invalid”, or “cannot be evaluated” answer at all —
+ruling `0` already is one. The Court prepends it to every ballot as “Refuse to
+Arbitrate / Invalid” (kleros-sdk `findAndUpdateRTA`), so jurors can always refuse
+and you never have to offer it. A refuse-type answer under a non-zero id would put
+that option on the ballot twice, splitting the refuse vote in a system that pays
+jurors for coherence, and the duplicate cannot be removed once the case exists. (An
+answer with id `0x00` would instead *replace* ruling 0's description while keeping
+its title; this skill does not use that either — ids must run `0x01`…`0xNN`.)
 
-This version deliberately excludes dynamic template mappings, batch creation,
-post-creation evidence submission, and specialist dispute-kit data.
+`validate` rejects any answer whose title, after Unicode/case folding, contains
+“refuse to arbitrate”, “refuse to rule” or “unable to rule”, or is exactly
+“refuse”, “invalid” or “refuse / invalid” (plus any id other than `0x01`…`0xNN`).
+Other refuse-type wording (“cannot be evaluated”, “abstain”, “neither is proven”)
+passes `validate` — keeping it out is your job when drafting.
+
+This version deliberately excludes dynamic template mappings, batch creation, and
+specialist dispute-kit data. Evidence is submitted after creation, as SKILL.md describes.
 
 After the policy CID is present, `preflight` produces the mandatory review
 artifact. Use `--human` for a readable report and omit it for JSON. It reports the

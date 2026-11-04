@@ -47,15 +47,15 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — 7f58b66
 - [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — 7f58b66 (+ encoded-dot bypass D-1 closed in follow-up commit)
 - [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — 2fecec8
-- [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
+- [x] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate` — this commit (claim softened, pattern unchanged: `validate` list stated exactly; "cannot be evaluated"/"abstain"/"neither" left to drafting since "neither" etc. can be legitimate answers; stale evidence exclusion dropped)
 - [x] **M-06** Tests never execute the script — this commit
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
 - [x] **m-01** Whitelist check fails open on any read error — 7f58b66
 - [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — 2fecec8
-- [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
-- [ ] **m-04** Testnet Court URL non-canonical
+- [x] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded) — this commit (Flow "Fee" paragraph)
+- [x] **m-04** Testnet Court URL non-canonical — this commit (`https://v2-testnet.kleros.builders`, HashRouter `#/cases/<id>` verified on master; script, SAFE_URL_HOSTS, tests)
 - [x] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high) — 927a17c (→ 4.6.7)
 - [x] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci` — 927a17c (decision 2026-11-04: lockfiles committed for both skills; only recorded prior rationale was "so dep versions stay fresh", `045c0d6`)
 - [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
@@ -63,25 +63,25 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **m-09** Size limits in UTF-16 units, not bytes — 2fecec8
 - [x] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late — 2fecec8
 - [x] **m-11** `validate` silently defaults to mainnet — 2fecec8
-- [ ] **m-12** Shared evidence group across arbitrables not flagged
-- [ ] **m-13** Evidence `description` allows empty
-- [ ] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}`
-- [ ] **m-15** No copyable progress checklist in Flow
-- [ ] **m-16** Missing "run exactly / don't edit calldata" low-freedom wording
+- [x] **m-12** Shared evidence group across arbitrables not flagged — this commit (verified master subgraph `EvidenceModule.ts` groups by `_externalDisputeID` only)
+- [x] **m-13** Evidence `description` allows empty — this commit (decision: `.min(1)` after trim — 8bbab84 dropped `.min(20)` to allow *short*, spec marks description required; empty/whitespace rejected, test added)
+- [x] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}` — this commit (decision: `npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx …` instead of `npx tsx …` — bare npx outside scripts/ installs unpinned tsx@latest (verified); no `allowed-tools`: Claude-Code-only, per-turn grant, bypasses workspace trust, and approvals span turns anyway)
+- [x] **m-15** No copyable progress checklist in Flow — this commit
+- [x] **m-16** Missing "run exactly / don't edit calldata" low-freedom wording — this commit
 - [ ] **m-17** Evidence submission not routable from surfaces
 - [ ] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link
 - [ ] **m-19** `CLAUDE.md:9` "Published:" not updated
 - [x] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG) — this commit
 - [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — 2fecec8
-- [ ] **m-22** Description: missing trigger synonyms / "pushy" clause
+- [x] **m-22** Description: missing trigger synonyms / "pushy" clause — this commit (941 chars)
 
 ### 🟢 Nits
-- [ ] **n-01** Ruling-0 wording partly wrong (SDK replaces `0x0`, doesn't duplicate)
-- [ ] **n-02** Sources links point to dev `DisputeResolver.sol`, not deployment ABIs
-- [ ] **n-03** Ruling-0 rationale repeated 3×; step-4 list duplicates `preflight --human`
+- [x] **n-01** Ruling-0 wording partly wrong (SDK replaces `0x0`, doesn't duplicate) — this commit (case-format.md; preflight RTA description no longer says "cannot be edited")
+- [x] **n-02** Sources links point to dev `DisputeResolver.sol`, not deployment ABIs — this commit
+- [x] **n-03** Ruling-0 rationale repeated 3×; step-4 list duplicates `preflight --human` — this commit
 - [x] **n-04** Voodoo constants (`QUOTE_TTL_MS`, 25 s IPFS timeout) — 2fecec8
-- [ ] **n-05** No "When NOT to use" / "Example" sections (sibling parity)
-- [ ] **n-06** `../` cross-skill links assume full plugin install
+- [x] **n-05** No "When NOT to use" / "Example" sections (sibling parity) — this commit
+- [x] **n-06** `../` cross-skill links assume full plugin install — this commit (`https://skills.kleros.io/<skill>/SKILL.md`, per sitemap.xml)
 - [x] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping — 2fecec8
 - [x] **n-08** `question.endsWith("?")` rejects `؟` — 2fecec8
 - [x] **n-09** `--human yes` swallows value → JSON output
@@ -91,7 +91,7 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [ ] **n-13** `plugin.json` keywords lack `arbitrum`/`v2`
 - [ ] **n-14** Landing card "Testnet" tag undersells mainnet target
 - [x] **n-15** Reserved-ruling test redeclares regex instead of importing
-- [ ] **n-16** `--max-fee` caps arbitration fee only, not gas — document
+- [x] **n-16** `--max-fee` caps arbitration fee only, not gas — document — this commit
 
 ---
 
@@ -276,7 +276,7 @@ Independent verifier on 2fecec8: M-04, m-08, m-09, m-10, m-11, m-21, n-04, n-08,
 - [x] **E-4** (nit) multi-line stderr errors → newlines collapsed in `shortError`.
 - [ ] **E-5** (nit) RPC path keys < 6 chars not registered as secrets (echoed if the RPC repeats its path). Deferred.
 - [ ] **E-6** (nit) zero-length first chunk followed by data reported EMPTY. Deferred.
-- [ ] **E-7** (nit) unclassified viem errors → `network` (could be `internal`). Deferred.
+- [x] **E-7** (nit) unclassified viem errors → `network` (could be `internal`). Deferred. → resolved with F-3 (9de9659), see below.
 - [x] **E-8** (nit) `﹖` (U+FE56) accepted via NFKC before question-mark check.
 - [ ] **E-9** (info) test fixtures use empty `/ipfs/bafkqaaa`; fine offline, any future live test needs a real CID.
 

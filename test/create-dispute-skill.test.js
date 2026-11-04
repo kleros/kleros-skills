@@ -21,6 +21,8 @@ const NETWORKS = [
   { chainId: "42161", core: "0x991d2df165670b9cac3B022f4B68D65b664222ea", resolver: "0xb5526D022962A1fFf6eD32C93e8b714c901F4323", evidenceModule: "0x48e052B4A6dC4F30e90930F1CeaAFd83b3981EB3" },
   { chainId: "421614", core: "0xE8442307d36e9bf6aB27F1A009F95CE8E11C3479", resolver: "0xed31bEE8b1F7cE89E93033C0d3B2ccF4cEb27652", evidenceModule: "0xA88A9a25cE7f1d8b3941dA3b322Ba91D009E1397" },
 ];
+// m-14: path-independent and pinned to the lockfile's tsx (a bare `npx tsx` outside scripts/ fetches tsx@latest).
+const INVOKE = 'npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts"';
 const COMMANDS = ["validate", "quote", "preflight", "prepare", "simulate", "evidence", "receipt"];
 
 // Documentation drift. Everything below is about prose (SKILL.md) or the
@@ -53,8 +55,14 @@ describe("kleros-create-dispute", () => {
 
   it("documents every command", () => {
     for (const command of COMMANDS) {
-      assert.ok(skill.includes(`prepare-dispute.ts ${command}`), `SKILL.md does not document ${command}`);
+      assert.ok(skill.includes(`${INVOKE} ${command}`), `SKILL.md does not document ${command} with the path-independent, lockfile-pinned invocation`);
     }
+  });
+
+  it("m-14 runs the helper by skill path with the locked tsx, never a bare npx from cwd", () => {
+    assert.ok(skill.includes('npm ci --prefix "${CLAUDE_SKILL_DIR}/scripts"'), "install must target the skill's scripts dir");
+    assert.match(skill, /`\$\{CLAUDE_SKILL_DIR\}` is the directory containing this SKILL\.md/);
+    assert.doesNotMatch(skill, /npx tsx\s+["$\w]/, "npx outside scripts/ installs an unpinned tsx@latest");
   });
 
   it("routes policy uploads and feedback instead of restating them", () => {
@@ -84,7 +92,7 @@ describe("kleros-create-dispute", () => {
     assert.match(skill, /allocated by different contracts and must never be assumed to match/, "SKILL.md must explain why the evidence key is derived independently");
     assert.match(skill, /Creating a dispute does not submit evidence/, "SKILL.md must separate creation from evidence");
     assert.match(skill, /indexed and visible/i, "SKILL.md must distinguish confirmed from indexed from visible");
-    assert.ok(skill.includes("prepare-dispute.ts receipt   --tx 0x... --rpc-url RPC [--dispute ID]"), "SKILL.md must document the evidence verification flag");
+    assert.ok(skill.includes(`${INVOKE} receipt   --tx 0x... --rpc-url RPC [--dispute ID]`), "SKILL.md must document the evidence verification flag");
   });
 
   it("documents ok/blocking, the stop rule and the dated evidence-key caveat", () => {
@@ -404,7 +412,10 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     const { input, evidenceJson } = helperModule.validateEvidence({ name: "  Courier report ", description: "Returned to sender.", fileURI: "ipfs://QmX/a.pdf", fileTypeExtension: "pdf" });
     assert.deepEqual(JSON.parse(evidenceJson), { name: "Courier report", description: "Returned to sender.", fileURI: "/ipfs/QmX/a.pdf", fileTypeExtension: "pdf" });
     assert.deepEqual(input, JSON.parse(evidenceJson));
-    assert.deepEqual(JSON.parse(helperModule.validateEvidence({ name: "Note", description: "" }).evidenceJson), { name: "Note", description: "" }, "fileURI is optional");
+    assert.deepEqual(JSON.parse(helperModule.validateEvidence({ name: "Note", description: "x" }).evidenceJson), { name: "Note", description: "x" }, "fileURI is optional; a short description is fine (8bbab84)");
+    for (const description of ["", "   "]) {
+      assert.match(schemaError(() => helperModule.validateEvidence({ name: "Note", description })), /^invalid input: description: /, `m-13 empty description ${JSON.stringify(description)} must be rejected`);
+    }
     assert.match(schemaError(() => helperModule.validateEvidence({ name: "Note", description: "x", evidence: "/ipfs/QmX" })), /Unrecognized key: "evidence"/);
     assert.match(schemaError(() => helperModule.validateEvidence({ name: "No", description: "x" })), /^invalid input: name: /);
     assert.match(schemaError(() => helperModule.validateEvidence(["/ipfs/QmX"])), /^invalid input: \(root\): /);
@@ -462,6 +473,7 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     registerSecretUrl("https://rpc.example/key/zzTOPSECRETzz");
     assert.equal(redact("node said zzTOPSECRETzz"), "node said <redacted>", "a registered key is scrubbed even outside a URL");
     assert.equal(redact("see https://cdn.kleros.link/ipfs/bafkqaaa"), "see https://cdn.kleros.link/ipfs/bafkqaaa", "public gateway links stay readable");
+    assert.equal(redact("case https://v2-testnet.kleros.builders/#/cases/57"), "case https://v2-testnet.kleros.builders/#/cases/57", "m-04 canonical testnet Court links stay readable");
   });
 
   it("m-11 validate requires --network instead of defaulting to mainnet", async () => {
@@ -470,7 +482,7 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     const mainnet = await run("validate", "--case", fixture("valid"), "--network", "arbitrum");
     assert.equal(mainnet.code, 0, mainnet.out);
     assert.equal(parseJson(mainnet).network.chainId, 42161);
-    assert.ok(skill.includes("prepare-dispute.ts validate  --case CASE --network NET"), "SKILL.md must show --network as required");
+    assert.ok(skill.includes(`${INVOKE} validate  --case CASE --network NET`), "SKILL.md must show --network as required");
   });
 
   it("m-21 malformed case and evidence JSON name the file", async () => {

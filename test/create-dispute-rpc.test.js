@@ -593,7 +593,7 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     let output = expectJson(await cli(["simulate", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA)), "--from", FROM]), 0);
     assert.equal(output.ok, true);
     assert.equal(output.simulation.nextDisputeId, "4242");
-    assert.equal(output.simulation.caseUrlIfCreated, "https://kleros-v2-testnet.netlify.app/#/cases/4242");
+    assert.equal(output.simulation.caseUrlIfCreated, "https://v2-testnet.kleros.builders/#/cases/4242");
     output = expectJson(await cli(["simulate", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { simulateResult: REVERT("Arbitration fees not paid.") })), "--from", FROM], { spawn: true }), 2);
     assert.equal(output.ok, false);
     assert.equal(output.simulation.reverted, true);
@@ -698,7 +698,7 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.ok, true);
     assert.equal(output.status, "success");
     assert.equal(output.sentToAllowlistedResolver, true);
-    assert.deepEqual(output.disputes, [{ disputeId: "57", evidenceGroupId: "12", arbitrable: SEPOLIA.resolver, viaAllowlistedResolver: true, caseUrl: "https://kleros-v2-testnet.netlify.app/#/cases/57" }]);
+    assert.deepEqual(output.disputes, [{ disputeId: "57", evidenceGroupId: "12", arbitrable: SEPOLIA.resolver, viaAllowlistedResolver: true, caseUrl: "https://v2-testnet.kleros.builders/#/cases/57" }]);
     assert.deepEqual(output.evidence, []);
     assert.deepEqual(output.checks, [], "no evidence relied on → no implementation read needed");
   });
@@ -741,7 +741,7 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.evidence.length, 1);
     assert.deepEqual(
       { ...output.evidence[0], parsed: undefined },
-      { evidenceGroupId: "12", disputeId: "57", keyedToExpectedDispute: true, party: PARTY, evidence: EVIDENCE_TEXT, parsed: undefined, caseUrl: "https://kleros-v2-testnet.netlify.app/#/cases/57" },
+      { evidenceGroupId: "12", disputeId: "57", keyedToExpectedDispute: true, party: PARTY, evidence: EVIDENCE_TEXT, parsed: undefined, caseUrl: "https://v2-testnet.kleros.builders/#/cases/57" },
     );
     assert.deepEqual(output.checks, [{ name: "evidence-module-implementation", status: "ok", detail: `Pinned implementation ${SEPOLIA.pin} at block 4321.` }]);
     const atBlock = calls(chain, "eth_getStorageAt").find((request) => request.params[1] === EIP1967_SLOT);
