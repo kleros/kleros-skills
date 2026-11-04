@@ -1,13 +1,17 @@
 /**
  * Pay-and-upload a file to IPFS via the Kleros x402 gateway on Base mainnet.
  *
- * The x402-fetch SDK handles the 402 → sign EIP-3009 → retry-with-X-PAYMENT
+ * The @x402/fetch SDK handles the 402 → sign EIP-3009 → retry-with-X-PAYMENT
  * loop transparently. Each successful run spends $0.01 USDC on Base mainnet.
+ *
+ * Payment guard: the client only signs for USDC on Base, at most 0.10 USDC
+ * per request (the same cap the legacy x402-fetch package applied by default).
+ * A gateway that asks for anything else is refused before any signature.
  *
  * Run standalone:
  *
  *   cd path/to/this-dir
- *   npm install
+ *   npm ci
  *   EVM_PRIVATE_KEY=0x... npx tsx pay-and-upload.ts ./somefile.txt
  *
  * Env vars:
@@ -21,7 +25,16 @@
 
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
-import { wrapFetchWithPayment, createSigner } from "x402-fetch";
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import type { PaymentRequirements } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { ExactEvmSchemeV1 } from "@x402/evm/v1";
+import { privateKeyToAccount } from "viem/accounts";
+
+// Native USDC on Base mainnet, and the per-request ceiling in atomic units
+// (6 decimals): 100000 = 0.10 USDC. The gateway currently charges 0.01 USDC.
+const BASE_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+const MAX_ATOMIC_PER_PAYMENT = 100_000n;
 
 const filePath = process.argv[2];
 if (!filePath) {
@@ -42,8 +55,26 @@ const gatewayUrl =
   process.env.GATEWAY_URL ?? "https://kleros-ipfs-gateway.fly.dev";
 const operation = process.env.OPERATION ?? "evidence";
 
-const signer = await createSigner("base", privateKey);
-const fetchWithPay = wrapFetchWithPayment(fetch, signer);
+const account = privateKeyToAccount(privateKey);
+
+// The gateway speaks x402 v1 (network "base"); v2 ("eip155:8453") is
+// registered too so a future gateway upgrade keeps working. No other network
+// is registered, so nothing else can be signed.
+const client = new x402Client()
+  .registerV1("base", new ExactEvmSchemeV1(account))
+  .register("eip155:8453", new ExactEvmScheme(account))
+  .registerPolicy((_version, reqs) =>
+    reqs.filter((r: PaymentRequirements) => {
+      // v1 requirements carry maxAmountRequired, v2 carry amount.
+      const raw = (r as { maxAmountRequired?: string }).maxAmountRequired ?? r.amount;
+      return (
+        r.asset?.toLowerCase() === BASE_USDC &&
+        raw !== undefined &&
+        BigInt(raw) <= MAX_ATOMIC_PER_PAYMENT
+      );
+    })
+  );
+const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 const form = new FormData();
 const bytes = await readFile(filePath);
