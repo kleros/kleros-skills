@@ -1,6 +1,11 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import {
+  BaseError,
+  ContractFunctionRevertedError,
+  ContractFunctionZeroDataError,
   createPublicClient,
   decodeEventLog,
   encodeAbiParameters,
@@ -8,6 +13,7 @@ import {
   formatEther,
   getAddress,
   http,
+  isAddress,
   parseAbi,
   parseEther,
   type Address,
@@ -18,9 +24,21 @@ import {
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { z } from "zod";
 
-// Deployment allowlist. Source of truth:
-// https://github.com/kleros/kleros-v2/tree/dev/contracts/deployments/{arbitrum,arbitrumSepolia}
-const NETWORKS = {
+// Deployment allowlist. Source of truth (deployed state = master branch):
+// https://github.com/kleros/kleros-v2/tree/master/contracts/deployments/{arbitrum,arbitrumSepolia}
+//
+// `evidenceModuleImplementation` pins the EIP-1967 implementation behind the
+// EvidenceModule UUPS proxy (EvidenceModule_Implementation.json on master,
+// confirmed on chain 2026-11-04). The proxy address never changes on upgrade,
+// but the meaning of submitEvidence's key can: kleros-v2 `dev` already re-keys it
+// from the arbitrable's _externalDisputeID to the arbitrator dispute ID. Evidence
+// prepared with the wrong key lands on another case, permanently, so any other
+// implementation is refused until this skill is reviewed and updated.
+//
+// `arbitrableWhitelist`: "required" means Kleros Core must positively answer
+// arbitrableWhitelist(resolver) == true; "absent" means the deployment has no
+// such function (the call reverts) and enforces nothing.
+export const NETWORKS = {
   arbitrum: {
     key: "arbitrum",
     label: "Arbitrum One",
@@ -29,6 +47,8 @@ const NETWORKS = {
     core: "0x991d2df165670b9cac3B022f4B68D65b664222ea",
     resolver: "0xb5526D022962A1fFf6eD32C93e8b714c901F4323",
     evidenceModule: "0x48e052B4A6dC4F30e90930F1CeaAFd83b3981EB3",
+    evidenceModuleImplementation: "0xA502A3942abCF8e71FBD87ed442B39b798b192C8",
+    arbitrableWhitelist: "required",
     app: "https://v2.kleros.builders",
     explorer: "https://arbiscan.io",
     production: true,
@@ -41,6 +61,8 @@ const NETWORKS = {
     core: "0xE8442307d36e9bf6aB27F1A009F95CE8E11C3479",
     resolver: "0xed31bEE8b1F7cE89E93033C0d3B2ccF4cEb27652",
     evidenceModule: "0xA88A9a25cE7f1d8b3941dA3b322Ba91D009E1397",
+    evidenceModuleImplementation: "0xC4e64e6E949936a18269937FC1e18cb11E3db14D",
+    arbitrableWhitelist: "absent",
     app: "https://kleros-v2-testnet.netlify.app",
     explorer: "https://sepolia.arbiscan.io",
     production: false,
@@ -86,7 +108,7 @@ const PERIODS = ["evidence", "commit", "vote", "appeal", "execution"] as const;
 // Ruling 0 belongs to the protocol and is rendered by the Court before the
 // template's ruling options. It must not be duplicated in the template, and each
 // review artifact includes it so the reviewer sees the complete juror ballot.
-const RESERVED_RULING = {
+export const RESERVED_RULING = {
   id: "0x00",
   title: "Refuse to Arbitrate / Invalid",
   description: "Added by the Court on every case. Jurors pick it when the dispute cannot be ruled on. It is not part of this template and cannot be edited or removed.",
@@ -113,19 +135,68 @@ const schema = z.object({
   category: z.string().trim().min(1).max(100).default("Other"),
   lang: z.string().regex(/^[a-z]{2}_[A-Z]{2}$/).default("en_US"),
   version: z.literal("1.0").default("1.0"),
-  courtId: z.string().regex(/^\d+$/).default("1"),
+  courtId: z.string().default("1"), // decimal-only, checked and normalised in validate()
   numberOfJurors: z.number().int().positive().max(10_001).default(3),
   disputeKitId: z.literal(1).default(1),
 }).strict();
 
 /// Kleros stores IPFS references as `/ipfs/<CID>`. Accept the `ipfs://` scheme as
 /// input but never emit it, and reject anything that is not CID-shaped.
-function normalizeIpfsUri(raw: string, field: string) {
-  const uri = raw.trim().startsWith("ipfs://") ? `/ipfs/${raw.trim().slice(7)}` : raw.trim();
-  if (!/^\/ipfs\/[A-Za-z0-9]+(?:\/.*)?$/.test(uri)) {
-    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID>, got ${JSON.stringify(raw)}`);
+///
+/// Must stay at least as strict as the SDK's `isMultiaddr`
+/// (kleros-sdk/src/dataMappings/utils/disputeDetailsSchema.ts, master:
+/// `^\/(?:…|ipfs)(\/[^\s\/]+)+$`): a policyURI the SDK rejects fails the Court's
+/// zod parse and the whole case renders empty. On top of that, no `?`/`#`, no
+/// empty, `.` or `..` path segments, and no trailing slash.
+export const IPFS_URI_PATTERN = /^\/ipfs\/[A-Za-z0-9]+(\/[^\s\/?#]+)*$/;
+export function normalizeIpfsUri(raw: string, field: string) {
+  const trimmed = raw.trim();
+  const uri = trimmed.startsWith("ipfs://") ? `/ipfs/${trimmed.slice(7)}` : trimmed;
+  const segments = uri.split("/");
+  if (!IPFS_URI_PATTERN.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
+    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, "?", "#", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
   }
   return uri;
+}
+
+/// The Court renders every dispute template through mustache before parsing it
+/// (kleros-sdk/src/dataMappings/utils/populateTemplate.ts, master:
+/// `mustache.render` → `JSON.parse` → zod). This skill's data mappings are
+/// always empty, so any `{{` or `}}` in juror-facing text is at best erased
+/// (`{{name}}` → "") and at worst a render error (`{{oops`, `{{#a}}x`) that the
+/// Court swallows into an empty case. The template is immutable once the dispute
+/// exists, so reject the delimiters outright rather than try to escape them.
+export function assertNoMustache(value: unknown, path: string): void {
+  if (typeof value === "string") {
+    if (value.includes("{{") || value.includes("}}")) {
+      throw new Error(`${path} contains "{{" or "}}". The Court renders the template with mustache, so this text would be erased or break the whole case permanently. Rephrase without double braces.`);
+    }
+  } else if (Array.isArray(value)) {
+    value.forEach((item, index) => assertNoMustache(item, `${path}[${index}]`));
+  } else if (value !== null && typeof value === "object") {
+    for (const [key, item] of Object.entries(value)) assertNoMustache(item, path ? `${path}.${key}` : key);
+  }
+}
+
+const UINT96_MAX = (1n << 96n) - 1n;
+const UINT256_MAX = (1n << 256n) - 1n;
+
+/// Decimal-only identifiers. `BigInt("0x10")` is 16 and `BigInt(" 1")` is 1, so
+/// BigInt alone would silently accept hex and padding; normalise "01" to "1".
+export function parseDecimalId(raw: string, field: string, max: bigint = UINT256_MAX): bigint {
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${field} must be a decimal integer (digits only, no 0x hex, sign, or spaces), got ${JSON.stringify(raw)}`);
+  }
+  const value = BigInt(raw);
+  if (value > max) throw new Error(`${field} ${raw} is out of range`);
+  return value;
+}
+
+export function parseTxHash(raw: string, field: string): Hex {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(raw)) {
+    throw new Error(`${field} must be a transaction hash: 0x followed by 64 hex characters, got ${JSON.stringify(raw)}`);
+  }
+  return raw.toLowerCase() as Hex;
 }
 
 /// A CID-shaped string proves nothing: an invented one is still CID-shaped, and
@@ -161,9 +232,11 @@ const evidenceSchema = z.object({
   fileTypeExtension: z.string().trim().min(1).max(16).optional(),
 }).strict();
 
-function validate(value: unknown, network: Network) {
+export function validate(value: unknown, network: Network) {
   const input = schema.parse(value);
+  assertNoMustache(input, "");
   input.policyURI = normalizeIpfsUri(input.policyURI, "policyURI");
+  input.courtId = parseDecimalId(input.courtId, "courtId", UINT96_MAX).toString();
   if (BigInt(input.courtId) === 0n) throw new Error("courtId 0 is the reserved forking court; pick a real court");
   if (input.numberOfJurors % 2 === 0) throw new Error("numberOfJurors must be odd");
   if (!input.question.endsWith("?")) throw new Error("question must end in ?");
@@ -197,6 +270,7 @@ function validate(value: unknown, network: Network) {
     arbitratorAddress: getAddress(network.core),
     arbitratorChainID: String(network.chainId),
   };
+  assertNoMustache(template, "");
   const warnings: string[] = [];
   if (input.courtId === "1") warnings.push("General Court (1) selected; confirm the court choice.");
   if (!network.production) warnings.push(`${network.label} is a test network: the dispute, its fee, and its ruling have no production value.`);
@@ -214,7 +288,7 @@ function validate(value: unknown, network: Network) {
   };
 }
 
-function networkByAlias(raw: string) {
+export function networkByAlias(raw: string) {
   const network = NETWORK_ALIASES[raw.trim().toLowerCase()];
   if (!network) throw new Error(`unknown --network "${raw}"; use ${Object.values(NETWORKS).map((n) => n.key).join(" or ")}`);
   return network;
@@ -239,6 +313,47 @@ function client(network: Network, rpcUrl: string) {
 }
 
 type Check = { name: string; status: "ok" | "warn" | "fail"; detail: string };
+
+/// True only when the node executed the call and the contract reverted (or had
+/// no matching function and returned nothing) — never for transport failures.
+export function isContractRevert(error: unknown) {
+  if (!(error instanceof BaseError)) return false;
+  return error.walk((cause) => cause instanceof ContractFunctionRevertedError || cause instanceof ContractFunctionZeroDataError) !== null;
+}
+
+function shortError(error: unknown) {
+  const message = error instanceof BaseError ? error.shortMessage : ((error as Error)?.message ?? String(error)).split("\n")[0];
+  return message.replace(/\.+$/, "");
+}
+
+const EIP1967_IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc" as const;
+
+/// Read the EvidenceModule proxy's EIP-1967 implementation and compare it with
+/// the pinned one. The evidence key this skill derives (_externalDisputeID) is
+/// only correct for the pinned implementation; see the NETWORKS comment.
+async function readEvidenceModuleImplementation(rpc: PublicClient, network: Network, blockNumber?: bigint) {
+  const word = await rpc.getStorageAt({
+    address: getAddress(network.evidenceModule),
+    slot: EIP1967_IMPLEMENTATION_SLOT,
+    ...(blockNumber === undefined ? {} : { blockNumber }),
+  });
+  if (!word || BigInt(word) === 0n) return null;
+  return getAddress(`0x${word.slice(-40)}`);
+}
+
+function evidenceModuleMismatch(network: Network, actual: Address | null) {
+  return `the ${network.label} EvidenceModule ${getAddress(network.evidenceModule)} now runs implementation ${actual ?? "(none)"}, not the ${network.evidenceModuleImplementation} this skill was verified against. The module was upgraded and the evidence key may have changed (kleros-v2 dev re-keys submitEvidence by the arbitrator dispute ID); evidence prepared here could land on another case permanently. Do not submit through this skill — update the skill first.`;
+}
+
+async function checkEvidenceModule(rpc: PublicClient, network: Network): Promise<Check> {
+  const actual = await readEvidenceModuleImplementation(rpc, network);
+  if (actual !== getAddress(network.evidenceModuleImplementation)) throw new Error(evidenceModuleMismatch(network, actual));
+  return {
+    name: "evidence-module-implementation",
+    status: "ok",
+    detail: `EvidenceModule proxy runs the pinned implementation ${actual}; evidence is keyed by _externalDisputeID.`,
+  };
+}
 
 /// Every read that decides whether createDisputeForTemplate can succeed at all.
 /// Blocking failures throw here so no command downstream can quote or prepare a
@@ -281,8 +396,18 @@ async function verifyDeployment(rpc: PublicClient, network: Network, courtId: st
   }
   checks.push({ name: "dispute-kit", status: "ok", detail: `Court ${courtId} supports dispute kit ${disputeKitId}.` });
 
+  // A transport error (RPC down, rate-limited, timeout) proves nothing about the
+  // whitelist, so it fails closed. "Not enforced" is only accepted where the
+  // deployment is known to lack the function and the call genuinely reverted.
   if (whitelistRead.status === "rejected") {
-    checks.push({ name: "arbitrable-whitelist", status: "ok", detail: `${network.label} does not enforce an arbitrable whitelist.` });
+    const error = whitelistRead.reason as Error;
+    if (network.arbitrableWhitelist === "absent" && isContractRevert(error)) {
+      checks.push({ name: "arbitrable-whitelist", status: "ok", detail: `${network.label} Kleros Core has no arbitrableWhitelist (call reverts); no whitelist is enforced.` });
+    } else if (network.arbitrableWhitelist === "required") {
+      throw new Error(`could not confirm that DisputeResolver ${resolver} is on the ${network.label} Kleros Core arbitrable whitelist (${shortError(error)}); a dispute from a non-whitelisted arbitrable reverts. Retry with a working RPC.`);
+    } else {
+      throw new Error(`arbitrableWhitelist read on ${network.label} failed for a reason other than a revert (${shortError(error)}); cannot tell whether a whitelist is enforced. Retry with a working RPC.`);
+    }
   } else if (whitelistRead.value !== true) {
     throw new Error(`Kleros Core on ${network.label} enforces an arbitrable whitelist and DisputeResolver ${resolver} is not on it`);
   } else {
@@ -292,7 +417,16 @@ async function verifyDeployment(rpc: PublicClient, network: Network, courtId: st
   return { checks, hiddenVotes: court[1], feeForJurorWei: court[4] };
 }
 
-type QuoteOptions = { network?: string; maxFeeEth?: string };
+type QuoteOptions = { network?: string; maxFeeWei?: bigint };
+
+/// `--max-fee` in ETH, validated before any network or IPFS call so a typo can
+/// never silently drop the user's cap.
+export function parseMaxFee(raw: string): bigint {
+  if (!/^\d+(\.\d{1,18})?$/.test(raw)) {
+    throw new Error(`--max-fee must be a decimal ETH amount such as 0.01, got ${JSON.stringify(raw)}`);
+  }
+  return parseEther(raw);
+}
 
 async function quote(value: unknown, rpcUrl: string, options: QuoteOptions = {}) {
   const network = await resolveNetwork(options.network, rpcUrl);
@@ -304,9 +438,8 @@ async function quote(value: unknown, rpcUrl: string, options: QuoteOptions = {})
     rpc.readContract({ address: getAddress(network.core), abi: coreAbi, functionName: "arbitrationCost", args: [result.extraData] }),
     rpc.getBlockNumber(),
   ]);
-  if (options.maxFeeEth !== undefined) {
-    const cap = parseEther(options.maxFeeEth);
-    if (valueWei > cap) throw new Error(`arbitration fee ${formatEther(valueWei)} ETH exceeds --max-fee ${options.maxFeeEth} ETH`);
+  if (options.maxFeeWei !== undefined && valueWei > options.maxFeeWei) {
+    throw new Error(`arbitration fee ${formatEther(valueWei)} ETH exceeds --max-fee ${formatEther(options.maxFeeWei)} ETH`);
   }
   const quotedAt = new Date();
   return {
@@ -361,6 +494,20 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
   const prepared = await prepare(value, rpcUrl, options);
   const { network, result: validated } = prepared.priced;
   const from = options.from;
+  const blocking: string[] = [];
+  const warnings = [...prepared.warnings];
+  const checks = [...prepared.priced.checks];
+
+  // Creating the case does not touch the EvidenceModule, but this skill's
+  // evidence step will refuse to run if the module has been upgraded. Surface
+  // that before money is spent, without blocking creation itself.
+  try {
+    checks.push(await checkEvidenceModule(client(network, rpcUrl), network));
+  } catch (error) {
+    const detail = `${shortError(error)}`;
+    checks.push({ name: "evidence-module-implementation", status: "warn", detail });
+    warnings.push(`Evidence for this case cannot be submitted through this skill until it is updated: ${detail}`);
+  }
 
   let networkFee:
     | {
@@ -402,8 +549,9 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
     if ("error" in gasResult) {
       networkFee = {
         available: false,
-        reason: `gas estimation from ${from} failed (balance ${formatEther(balanceWei)} ETH, fee ${formatEther(prepared.value)} ETH): ${gasResult.error.message.split("\n")[0]}`,
+        reason: `gas estimation from ${from} failed (balance ${formatEther(balanceWei)} ETH, fee ${formatEther(prepared.value)} ETH): ${shortError(gasResult.error)}`,
       };
+      blocking.push(`The transaction would fail from ${from}: ${networkFee.reason}. Do not sign; fix the cause and re-run preflight.`);
     } else {
       const estimatedFeeWei = gasResult.gas * gasPriceWei;
       const estimatedTotalWei = prepared.value + estimatedFeeWei;
@@ -421,6 +569,9 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
         from,
         warning: "Gas and total are estimates, not spending guarantees; the wallet must re-estimate before signing.",
       };
+      if (!networkFee.sufficientBalance) {
+        blocking.push(`${from} holds ${networkFee.balanceEth} ETH, less than the estimated total ${networkFee.estimatedTotalEth} ETH. Do not sign until the wallet is funded; then re-run preflight.`);
+      }
     }
   } else {
     networkFee = {
@@ -429,11 +580,14 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
     };
   }
 
+  warnings.push(...blocking);
   return {
     kind: "kleros-v2-dispute-preflight",
+    ok: blocking.length === 0,
+    blocking,
     status: "REVIEW_ONLY_NOT_SUBMITTED",
     network: networkSummary(network),
-    checks: prepared.priced.checks,
+    checks,
     case: {
       schemaVersion: validated.input.schemaVersion,
       title: validated.input.title,
@@ -490,8 +644,10 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
       calldata: prepared.data,
       decodedArguments: prepared.decoded,
     },
-    warnings: prepared.warnings,
-    nextStep: "Review every field. A separate explicit approval is required before any signature or broadcast.",
+    warnings,
+    nextStep: blocking.length === 0
+      ? "Review every field. A separate explicit approval is required before any signature or broadcast."
+      : "BLOCKED: do not ask for approval or sign. Resolve every blocking item and re-run preflight.",
   };
 }
 
@@ -502,6 +658,9 @@ function formatHumanPreflight(review: Preflight) {
     "KLEROS V2 DISPUTE PREFLIGHT — REVIEW ONLY",
     "Nothing was uploaded, signed, or submitted by this command.",
     "",
+    ...(review.blocking.length > 0
+      ? ["!!! BLOCKED — DO NOT SIGN OR BROADCAST !!!", ...review.blocking.map((item) => `!!! ${item}`), ""]
+      : []),
     "NETWORK",
     `Target: ${review.network.label} (chain ${review.network.chainId})${review.network.production ? "" : " — TEST NETWORK"}`,
     `Kleros V2 app: ${review.network.appUrl}`,
@@ -568,8 +727,10 @@ function formatHumanPreflight(review: Preflight) {
     `Native value: ${review.transaction.valueEth} ETH (${review.transaction.valueWei.toString()} wei)`,
     `Calldata: ${review.transaction.calldata}`,
   );
-  if (review.warnings.length > 0) lines.push("", "WARNINGS", ...review.warnings.map((warning) => `- ${warning}`));
-  lines.push("", `STATUS: ${review.status}`, review.nextStep);
+  const otherWarnings = review.warnings.filter((warning) => !review.blocking.includes(warning));
+  if (otherWarnings.length > 0) lines.push("", "WARNINGS", ...otherWarnings.map((warning) => `- ${warning}`));
+  if (review.blocking.length > 0) lines.push("", "BLOCKING (resolve before any approval)", ...review.blocking.map((item) => `- ${item}`));
+  lines.push("", `STATUS: ${review.status}${review.ok ? "" : " — BLOCKED"}`, review.nextStep);
   return lines.join("\n");
 }
 
@@ -622,6 +783,9 @@ async function prepareEvidence(
   const input = evidenceSchema.parse(value);
   const checks: Check[] = [];
   const warnings: string[] = [];
+  // Refuses (throws) unless the EvidenceModule still runs the pinned
+  // implementation whose key semantics the rest of this function assumes.
+  checks.push(await checkEvidenceModule(rpc, network));
 
   if (input.fileURI !== undefined) {
     input.fileURI = normalizeIpfsUri(input.fileURI, "fileURI");
@@ -698,6 +862,8 @@ async function prepareEvidence(
   const evidenceJson = JSON.stringify(input);
   return {
     kind: "kleros-v2-evidence-preflight",
+    ok: true,
+    blocking: [] as string[],
     status: "REVIEW_ONLY_NOT_SUBMITTED",
     network: networkSummary(network),
     checks,
@@ -793,8 +959,53 @@ async function receipt(hash: Hex, rpcUrl: string, requested?: string, expectDisp
       // Not a DisputeCreation log from this ABI — ignore.
     }
   }
+
+  const blocking: string[] = [];
+  const warnings: string[] = [];
+  if (transactionReceipt.status !== "success") {
+    blocking.push(`Transaction ${hash} REVERTED: nothing was created or submitted. Do not report success.`);
+  }
+  if (transactionReceipt.status === "success" && disputes.length === 0 && evidence.length === 0) {
+    blocking.push(`Transaction ${hash} emitted no DisputeCreation from Kleros Core and no Evidence from the EvidenceModule on ${network.label}; it is not a dispute creation or evidence submission for this deployment.`);
+  }
+  if (expected && evidence.length === 0) {
+    blocking.push(`--dispute ${expected.disputeId} asks to verify evidence, but ${hash} contains no Evidence event from the EvidenceModule.`);
+  }
+  if (expected && evidence.some((item) => !item.keyedToExpectedDispute)) {
+    blocking.push(`MIS-KEYED evidence: dispute ${expected.disputeId} indexes evidence group ${expected.evidenceGroupId}, and at least one Evidence event uses a different key. It will never appear on the case; resubmit against the correct group.`);
+  }
+  if (evidence.some((item) => item.parsed === null || typeof item.parsed !== "object")) {
+    blocking.push("An Evidence event is not a JSON object; jurors will see a raw string instead of a title and description. Resubmit as a JSON object.");
+  }
+
+  // The decoding above assumes the pinned EvidenceModule implementation. Check
+  // it as of the transaction's block (falling back to latest if the RPC has no
+  // historical state) whenever the evidence key is being relied on.
+  let evidenceModuleCheck: Check | null = null;
+  if (evidence.length > 0 || expected) {
+    let actual: Address | null;
+    let at = `block ${transactionReceipt.blockNumber}`;
+    try {
+      actual = await readEvidenceModuleImplementation(rpc, network, transactionReceipt.blockNumber);
+    } catch {
+      actual = await readEvidenceModuleImplementation(rpc, network);
+      at = "latest block (historical state unavailable on this RPC)";
+    }
+    if (actual !== getAddress(network.evidenceModuleImplementation)) {
+      blocking.push(`At ${at}: ${evidenceModuleMismatch(network, actual)}`);
+      evidenceModuleCheck = { name: "evidence-module-implementation", status: "fail", detail: `${actual ?? "(none)"} at ${at}` };
+    } else {
+      evidenceModuleCheck = { name: "evidence-module-implementation", status: "ok", detail: `Pinned implementation ${actual} at ${at}.` };
+    }
+  }
+  warnings.push(...blocking);
+
   return {
     kind: "kleros-v2-dispute-receipt",
+    ok: blocking.length === 0,
+    blocking,
+    warnings,
+    checks: evidenceModuleCheck ? [evidenceModuleCheck] : [],
     network: networkSummary(network),
     transactionHash: hash,
     transactionUrl: `${network.explorer}/tx/${hash}`,
@@ -843,110 +1054,194 @@ commands:
 networks: ${Object.values(NETWORKS).map((n) => `${n.key} (${n.chainId})`).join(", ")}
 The RPC chain ID is authoritative; --network is an optional assertion against it.`;
 
-const [command, ...tokens] = process.argv.slice(2);
-const args = new Map<string, string | true>();
-for (let index = 0; index < tokens.length; index += 1) {
-  const name = tokens[index];
-  if (!name?.startsWith("--")) throw new Error(`unexpected argument: ${name}\n\n${USAGE}`);
-  const value = tokens[index + 1];
-  if (!value || value.startsWith("--")) args.set(name, true);
-  else { args.set(name, value); index += 1; }
-}
-const required = (name: string) => {
-  const value = args.get(name);
-  if (typeof value !== "string") throw new Error(`${name} is required\n\n${USAGE}`);
-  return value;
+/// Per-command flag allowlist. Every flag either takes exactly one value or is
+/// a boolean switch; anything else is an error, so a misspelt or valueless
+/// safety flag (`--maxfee`, a bare `--max-fee`) can never be silently ignored.
+export const COMMAND_FLAGS: Record<string, { value: readonly string[]; boolean: readonly string[]; required: readonly string[] }> = {
+  validate: { value: ["--case", "--network"], boolean: [], required: ["--case"] },
+  quote: { value: ["--case", "--rpc-url", "--network", "--max-fee"], boolean: [], required: ["--case", "--rpc-url"] },
+  preflight: { value: ["--case", "--rpc-url", "--network", "--max-fee", "--from"], boolean: ["--human"], required: ["--case", "--rpc-url"] },
+  prepare: { value: ["--case", "--rpc-url", "--network", "--max-fee"], boolean: [], required: ["--case", "--rpc-url"] },
+  simulate: { value: ["--case", "--rpc-url", "--network", "--max-fee", "--from"], boolean: [], required: ["--case", "--rpc-url", "--from"] },
+  evidence: { value: ["--evidence", "--rpc-url", "--network", "--dispute", "--creation-tx", "--evidence-group"], boolean: [], required: ["--evidence", "--rpc-url"] },
+  receipt: { value: ["--tx", "--rpc-url", "--network", "--dispute"], boolean: [], required: ["--tx", "--rpc-url"] },
 };
-const optional = (name: string) => {
-  const value = args.get(name);
-  return typeof value === "string" ? value : undefined;
-};
-const readCase = async () => JSON.parse(await readFile(required("--case"), "utf8")) as unknown;
-const quoteOptions = (): QuoteOptions => ({ network: optional("--network"), maxFeeEth: optional("--max-fee") });
 
-let output: unknown;
-if (command === "validate") {
-  const network = await resolveNetwork(optional("--network"));
-  const result = validate(await readCase(), network);
-  output = {
-    valid: true,
-    network: networkSummary(network),
-    template: result.template,
-    extraData: result.extraData,
-    numberOfRulingOptions: result.numberOfRulingOptions,
-    warnings: result.warnings,
-  };
-} else if (command === "quote") {
-  const priced = await quote(await readCase(), required("--rpc-url"), quoteOptions());
-  output = {
-    network: networkSummary(priced.network),
-    checks: priced.checks,
-    valueWei: priced.valueWei,
-    valueEth: formatEther(priced.valueWei),
-    blockNumber: priced.blockNumber,
-    quotedAt: priced.quotedAt,
-    expiresAt: priced.expiresAt,
-    warnings: priced.result.warnings,
-  };
-} else if (command === "prepare") {
-  const prepared = await prepare(await readCase(), required("--rpc-url"), quoteOptions());
-  const { priced, ...rest } = prepared;
-  output = { network: networkSummary(priced.network), checks: priced.checks, ...rest };
-} else if (command === "preflight") {
-  const review = await preflight(await readCase(), required("--rpc-url"), {
-    ...quoteOptions(),
-    from: optional("--from") ? getAddress(required("--from")) as Address : undefined,
-  });
-  if (args.get("--human") === true) {
-    console.log(formatHumanPreflight(review));
-    process.exit(0);
+export function parseArgs(command: string | undefined, tokens: readonly string[]) {
+  const spec = command === undefined ? undefined : COMMAND_FLAGS[command];
+  if (!spec) throw new Error(`unknown command: ${command ?? "(none)"}\n\n${USAGE}`);
+  const args = new Map<string, string | true>();
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (!token.startsWith("--")) throw new Error(`unexpected argument ${JSON.stringify(token)} for ${command}\n\n${USAGE}`);
+    const eq = token.indexOf("=");
+    const name = eq === -1 ? token : token.slice(0, eq);
+    if (args.has(name)) throw new Error(`${name} given more than once`);
+    if (spec.boolean.includes(name)) {
+      if (eq !== -1) throw new Error(`${name} is a switch and takes no value`);
+      args.set(name, true);
+    } else if (spec.value.includes(name)) {
+      const value = eq === -1 ? tokens[index + 1] : token.slice(eq + 1);
+      if (value === undefined || value === "" || (eq === -1 && value.startsWith("--"))) {
+        throw new Error(`${name} needs a value`);
+      }
+      args.set(name, value);
+      if (eq === -1) index += 1;
+    } else {
+      const allowed = [...spec.value, ...spec.boolean].join(", ");
+      throw new Error(`unknown flag ${name} for ${command}; allowed: ${allowed}`);
+    }
   }
-  output = review;
-} else if (command === "simulate") {
-  const rpcUrl = required("--rpc-url");
-  const prepared = await prepare(await readCase(), rpcUrl, quoteOptions());
-  const simulation = await client(prepared.priced.network, rpcUrl).simulateContract({
-    account: getAddress(required("--from")) as Address,
-    address: getAddress(prepared.priced.network.resolver),
-    abi: resolverAbi,
-    functionName: "createDisputeForTemplate",
-    args: [prepared.decoded.arbitratorExtraData, prepared.priced.result.templateJson, "", prepared.decoded.numberOfRulingOptions],
-    value: prepared.value,
-  });
-  const { priced, ...rest } = prepared;
-  output = {
-    network: networkSummary(priced.network),
-    checks: priced.checks,
-    prepared: rest,
-    simulation: { nextDisputeId: simulation.result, caseUrlIfCreated: caseUrl(priced.network, simulation.result) },
-  };
-} else if (command === "evidence") {
-  const evidenceValue = JSON.parse(await readFile(required("--evidence"), "utf8")) as unknown;
-  const disputeFlag = optional("--dispute");
-  const creationTx = optional("--creation-tx");
-  if (disputeFlag === undefined && creationTx === undefined) {
-    throw new Error(`evidence needs --dispute <court case id> or --creation-tx <hash>\n\n${USAGE}`);
+  for (const name of spec.required) {
+    if (!args.has(name)) throw new Error(`${name} is required for ${command}\n\n${USAGE}`);
   }
-  const claimed = optional("--evidence-group");
-  output = await prepareEvidence(
-    evidenceValue,
-    {
-      disputeId: disputeFlag === undefined ? undefined : BigInt(disputeFlag),
-      creationTx: creationTx as Hex | undefined,
-      claimedEvidenceGroup: claimed === undefined ? undefined : BigInt(claimed),
-    },
-    required("--rpc-url"),
-    optional("--network"),
-  );
-} else if (command === "receipt") {
-  const expect = optional("--dispute");
-  output = await receipt(
-    required("--tx") as Hex,
-    required("--rpc-url"),
-    optional("--network"),
-    expect === undefined ? undefined : BigInt(expect),
-  );
-} else {
-  throw new Error(`unknown command: ${command ?? "(none)"}\n\n${USAGE}`);
+  return args;
 }
-console.log(JSON.stringify(output, (_key, item) => typeof item === "bigint" ? item.toString() : item, 2));
+
+/// Everything that can be checked without the network, checked before the
+/// network: a bad flag must fail in milliseconds, not after RPC and IPFS calls.
+export function parseCommandLine(argv: readonly string[]) {
+  const [command, ...tokens] = argv;
+  const args = parseArgs(command, tokens);
+  const get = (name: string) => {
+    const value = args.get(name);
+    return typeof value === "string" ? value : undefined;
+  };
+  const rpcUrl = get("--rpc-url");
+  if (rpcUrl !== undefined) {
+    let protocol = "";
+    try { protocol = new URL(rpcUrl).protocol; } catch { /* reported below */ }
+    if (protocol !== "http:" && protocol !== "https:") throw new Error("--rpc-url must be an http(s) URL");
+  }
+  const network = get("--network");
+  if (network !== undefined) networkByAlias(network);
+  const from = get("--from");
+  if (from !== undefined && !isAddress(from, { strict: true })) {
+    throw new Error(`--from must be a 0x-prefixed 20-byte address with a valid checksum (or all lowercase), got ${JSON.stringify(from)}`);
+  }
+  const maxFee = get("--max-fee");
+  const dispute = get("--dispute");
+  const group = get("--evidence-group");
+  const tx = get("--tx");
+  const creationTx = get("--creation-tx");
+  return {
+    command: command as string,
+    human: args.get("--human") === true,
+    casePath: get("--case"),
+    evidencePath: get("--evidence"),
+    rpcUrl,
+    network,
+    from: from === undefined ? undefined : getAddress(from),
+    maxFeeWei: maxFee === undefined ? undefined : parseMaxFee(maxFee),
+    disputeId: dispute === undefined ? undefined : parseDecimalId(dispute, "--dispute"),
+    evidenceGroup: group === undefined ? undefined : parseDecimalId(group, "--evidence-group"),
+    tx: tx === undefined ? undefined : parseTxHash(tx, "--tx"),
+    creationTx: creationTx === undefined ? undefined : parseTxHash(creationTx, "--creation-tx"),
+  };
+}
+
+async function main(argv: readonly string[]) {
+  const cli = parseCommandLine(argv);
+  const { command } = cli;
+  const rpcUrl = cli.rpcUrl as string;
+  const quoteOptions: QuoteOptions = { network: cli.network, maxFeeWei: cli.maxFeeWei };
+  const readCase = async () => JSON.parse(await readFile(cli.casePath as string, "utf8")) as unknown;
+
+  let output: { ok: boolean; blocking: string[] } & Record<string, unknown>;
+  if (command === "validate") {
+    const network = await resolveNetwork(cli.network);
+    const result = validate(await readCase(), network);
+    output = {
+      ok: true,
+      blocking: [],
+      valid: true,
+      network: networkSummary(network),
+      template: result.template,
+      extraData: result.extraData,
+      numberOfRulingOptions: result.numberOfRulingOptions,
+      warnings: result.warnings,
+    };
+  } else if (command === "quote") {
+    const priced = await quote(await readCase(), rpcUrl, quoteOptions);
+    output = {
+      ok: true,
+      blocking: [],
+      network: networkSummary(priced.network),
+      checks: priced.checks,
+      valueWei: priced.valueWei,
+      valueEth: formatEther(priced.valueWei),
+      blockNumber: priced.blockNumber,
+      quotedAt: priced.quotedAt,
+      expiresAt: priced.expiresAt,
+      warnings: priced.result.warnings,
+    };
+  } else if (command === "prepare") {
+    const prepared = await prepare(await readCase(), rpcUrl, quoteOptions);
+    const { priced, ...rest } = prepared;
+    output = { ok: true, blocking: [], network: networkSummary(priced.network), checks: priced.checks, ...rest };
+  } else if (command === "preflight") {
+    const review = await preflight(await readCase(), rpcUrl, { ...quoteOptions, from: cli.from });
+    if (cli.human) {
+      console.log(formatHumanPreflight(review));
+      return review.ok ? 0 : 2;
+    }
+    output = review;
+  } else if (command === "simulate") {
+    const prepared = await prepare(await readCase(), rpcUrl, quoteOptions);
+    const { priced, ...rest } = prepared;
+    const blocking: string[] = [];
+    let simulation: { nextDisputeId: bigint; caseUrlIfCreated: string } | { reverted: true; reason: string };
+    try {
+      const simulated = await client(priced.network, rpcUrl).simulateContract({
+        account: cli.from as Address,
+        address: getAddress(priced.network.resolver),
+        abi: resolverAbi,
+        functionName: "createDisputeForTemplate",
+        args: [prepared.decoded.arbitratorExtraData, priced.result.templateJson, "", prepared.decoded.numberOfRulingOptions],
+        value: prepared.value,
+      });
+      simulation = { nextDisputeId: simulated.result, caseUrlIfCreated: caseUrl(priced.network, simulated.result) };
+    } catch (error) {
+      simulation = { reverted: true, reason: shortError(error) };
+      blocking.push(`Simulation from ${cli.from} failed: ${shortError(error)}. The transaction would not create a dispute; do not sign.`);
+    }
+    output = {
+      ok: blocking.length === 0,
+      blocking,
+      network: networkSummary(priced.network),
+      checks: priced.checks,
+      prepared: rest,
+      simulation,
+      warnings: [...prepared.warnings, ...blocking],
+    };
+  } else if (command === "evidence") {
+    if (cli.disputeId === undefined && cli.creationTx === undefined) {
+      throw new Error(`evidence needs --dispute <court case id> or --creation-tx <hash>\n\n${USAGE}`);
+    }
+    const evidenceValue = JSON.parse(await readFile(cli.evidencePath as string, "utf8")) as unknown;
+    output = await prepareEvidence(
+      evidenceValue,
+      { disputeId: cli.disputeId, creationTx: cli.creationTx, claimedEvidenceGroup: cli.evidenceGroup },
+      rpcUrl,
+      cli.network,
+    );
+  } else if (command === "receipt") {
+    output = await receipt(cli.tx as Hex, rpcUrl, cli.network, cli.disputeId);
+  } else {
+    throw new Error(`unknown command: ${command}\n\n${USAGE}`);
+  }
+  console.log(JSON.stringify(output, (_key, item) => typeof item === "bigint" ? item.toString() : item, 2));
+  // Exit 2 = the command completed but found something that must stop the flow
+  // (would-revert, insufficient balance, reverted or mis-keyed receipt).
+  return output.ok ? 0 : 2;
+}
+
+// Run only as a CLI, so tests can import the pure functions above.
+const invokedDirectly = (() => {
+  try {
+    return process.argv[1] !== undefined && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+})();
+if (invokedDirectly) process.exitCode = await main(process.argv.slice(2));

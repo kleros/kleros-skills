@@ -62,6 +62,15 @@ npx tsx prepare-dispute.ts evidence  --evidence EV --rpc-url RPC (--dispute ID |
 npx tsx prepare-dispute.ts receipt   --tx 0x... --rpc-url RPC [--dispute ID]
 ```
 
+Every command prints JSON with a top-level `ok` and a `blocking` list (`preflight
+--human` prints them as a `BLOCKED — DO NOT SIGN` banner). Exit `0` = ok; exit `2`
+= the command completed but found a blocking problem (transaction would revert,
+balance too low, simulation failed, receipt reverted or evidence MIS-KEYED); any
+other non-zero exit = refused or failed. **On `ok:false` or any non-zero exit,
+stop: show the blocking items or error verbatim, do not ask for approval, and do
+not sign, broadcast, or report success.** Unknown or valueless flags are errors —
+fix the command rather than dropping the flag.
+
 ## Evidence after dispute creation
 
 Creating a dispute does not submit evidence. Evidence is optional to the
@@ -128,6 +137,16 @@ the ID `receipt` reported. `evidence` derives it from the chain — from the
 available, and rejects an `--evidence-group` that contradicts them. Pass
 `--creation-tx` whenever the creation hash is at hand.
 
+**Version caveat (verified 2026-11-04).** This key rule holds for the deployed
+EvidenceModule implementations only: Arbitrum One proxy `0x48e0…1EB3` →
+`0xA502A3942abCF8e71FBD87ed442B39b798b192C8`; Arbitrum Sepolia proxy
+`0xA88A…1397` → `0xC4e64e6E949936a18269937FC1e18cb11E3db14D` (kleros-v2 `master`
+deployments). kleros-v2 `dev` re-keys `submitEvidence` by the arbitrator dispute
+ID, and an upgrade keeps the proxy address. The helper reads the proxy's
+EIP-1967 implementation slot and **refuses** `evidence` (and flags `receipt`
+as blocking) if it differs. If that happens, do not work around it — the skill
+must be updated first.
+
 ## Non-negotiable invariants
 
 - Only the two deployments above. `validate` stamps the selected network's
@@ -135,8 +154,12 @@ available, and rejects an `--evidence-group` that contradicts them. Pass
   one network is never encoded for the other.
 - Every RPC command first verifies bytecode, `DisputeResolver.arbitrator()`, that
   the court exists and is enabled, that it supports the dispute kit, and — where
-  Kleros Core enforces one — that the resolver is on the arbitrable whitelist.
-  A failed check stops the run; do not work around it.
+  Kleros Core enforces one — that the resolver is on the arbitrable whitelist
+  (Arbitrum One must answer `true`; an RPC error there stops the run, it is never
+  read as "not enforced"). A failed check stops the run; do not work around it.
+- Juror-facing text must not contain `{{` or `}}`: the Court renders the
+  template through mustache, so they would erase text or blank the whole case,
+  permanently. `validate` rejects them; rephrase instead of escaping.
 - Ruling `0` is reserved by the protocol *and* rendered by the Court as the first
   choice on every ballot ("Refuse to Arbitrate / Invalid"). It is not part of the
   template, so never write a refuse or invalid answer of your own — it would show

@@ -39,26 +39,26 @@ Line refs = PR head 8bbab84. Paths relative to repo root; `PD` = `kleros-create-
 Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 
 ### 🔴 Blockers
-- [ ] **B-01** Mustache injection in template strings → unreadable case
-- [ ] **B-02** EvidenceModule upgrade will mis-key evidence (no impl pin)
+- [x] **B-01** Mustache injection in template strings → unreadable case — this commit
+- [x] **B-02** EvidenceModule upgrade will mis-key evidence (no impl pin) — this commit
 
 ### 🟠 Major
-- [ ] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost)
-- [ ] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried
-- [ ] **M-03** IPFS URI regex looser than SDK `isMultiaddr`
+- [x] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost) — this commit
+- [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — this commit
+- [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — this commit
 - [ ] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors
 - [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
 - [ ] **M-06** Tests never execute the script
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
-- [ ] **m-01** Whitelist check fails open on any read error
+- [x] **m-01** Whitelist check fails open on any read error — this commit
 - [ ] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist"
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
 - [ ] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high)
 - [ ] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci`
-- [ ] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format)
+- [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — this commit
 - [ ] **m-08** IPFS check proves resolve, not content; body never consumed
 - [ ] **m-09** Size limits in UTF-16 units, not bytes
 - [ ] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late

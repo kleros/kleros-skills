@@ -1,10 +1,16 @@
 // The create-dispute skill documents its deployment allowlist and its command
 // surface in prose; the helper is what actually runs. These assertions keep the
 // two from drifting — a wrong address in SKILL.md is a real safety failure.
-const { describe, it } = require("node:test");
+//
+// The "helper behaviour" suite runs the real TypeScript helper, offline only
+// (validate + argument parsing; no RPC, no IPFS). It needs the helper's own
+// dependencies: run `npm ci` in kleros-create-dispute/scripts/ first. Without
+// them that suite is skipped with a message rather than failing.
+const { describe, it, before } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
 const skillDir = path.join(__dirname, "..", "kleros-create-dispute");
 const skill = fs.readFileSync(path.join(skillDir, "SKILL.md"), "utf8");
@@ -95,12 +101,6 @@ describe("kleros-create-dispute", () => {
     assert.match(helper, /RESERVED_RULING\.pattern\.test\(title\)/, "validate must reject an answer that repeats ruling 0");
     assert.match(helper, /repeats ruling 0, which the Court already puts on every ballot/, "the error must say why, not just that it failed");
     assert.match(helper, /new Set<string>\(\[RESERVED_RULING\.title\.toLocaleLowerCase\(\)\]\)/, "the dedupe set must be seeded with the reserved title");
-    for (const title of ["Refuse to Arbitrate / Invalid", "refuse to arbitrate", "Invalid", "Refuse"]) {
-      assert.ok(/refuse to arbitrate|refuse to rule|unable to rule|^\s*(refuse|invalid)\s*$|^\s*refuse\s*\/\s*invalid\s*$/i.test(title), `${title} must be caught as a duplicate refuse option`);
-    }
-    for (const title of ["Refund the buyer", "Pay the seller", "Refuse the refund request"]) {
-      assert.ok(!/refuse to arbitrate|refuse to rule|unable to rule|^\s*(refuse|invalid)\s*$|^\s*refuse\s*\/\s*invalid\s*$/i.test(title), `${title} is a legitimate answer and must not be rejected`);
-    }
     assert.match(skill, /never write a refuse or invalid answer of your own/i, "SKILL.md must state the rule");
   });
 
@@ -120,5 +120,173 @@ describe("kleros-create-dispute", () => {
     assert.match(skill, /Creating a dispute does not submit evidence/, "SKILL.md must separate creation from evidence");
     assert.match(skill, /indexed and visible/i, "SKILL.md must distinguish confirmed from indexed from visible");
     assert.ok(skill.includes("prepare-dispute.ts receipt   --tx 0x... --rpc-url RPC [--dispute ID]"), "SKILL.md must document the evidence verification flag");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper behaviour (offline). Spawns the real CLI through the scripts' own tsx.
+// ---------------------------------------------------------------------------
+const scriptsDir = path.join(skillDir, "scripts");
+const script = path.join(scriptsDir, "prepare-dispute.ts");
+const tsxBin = path.join(scriptsDir, "node_modules", ".bin", process.platform === "win32" ? "tsx.cmd" : "tsx");
+const tsxApi = path.join(scriptsDir, "node_modules", "tsx", "dist", "esm", "api", "index.cjs");
+const fixtures = path.join(__dirname, "fixtures", "create-dispute");
+const haveDeps = fs.existsSync(tsxBin) && fs.existsSync(tsxApi);
+const skipReason = haveDeps ? false : "helper deps missing: run `npm ci` in kleros-create-dispute/scripts";
+
+function run(...args) {
+  const result = spawnSync(tsxBin, [script, ...args], { encoding: "utf8", timeout: 60_000 });
+  return { code: result.status, stdout: result.stdout, stderr: result.stderr, out: `${result.stdout}\n${result.stderr}` };
+}
+const fixture = (name) => path.join(fixtures, `${name}.json`);
+// A syntactically valid but unreachable RPC: argument errors must fire before
+// any network call, so these runs never touch it.
+const DEAD_RPC = "http://127.0.0.1:9";
+
+describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
+  let helperModule;
+  before(async () => {
+    const { tsImport } = require(tsxApi);
+    helperModule = await tsImport(script, __filename);
+  });
+
+  it("validates a well-formed case offline and reports ok", () => {
+    const result = run("validate", "--case", fixture("valid"), "--network", "arbitrumSepolia");
+    assert.equal(result.code, 0, result.out);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.ok, true);
+    assert.deepEqual(output.blocking, []);
+    assert.equal(output.template.policyURI, "/ipfs/bafkqaaa");
+  });
+
+  // n-15: the test uses the helper's own pattern instead of restating it.
+  it("reserved-ruling pattern catches refuse options and spares real answers", () => {
+    const { pattern } = helperModule.RESERVED_RULING;
+    for (const title of ["Refuse to Arbitrate / Invalid", "refuse to arbitrate", "Invalid", "Refuse"]) {
+      assert.ok(pattern.test(title), `${title} must be caught as a duplicate refuse option`);
+    }
+    for (const title of ["Refund the buyer", "Pay the seller", "Refuse the refund request"]) {
+      assert.ok(!pattern.test(title), `${title} is a legitimate answer and must not be rejected`);
+    }
+  });
+
+  // B-01: the Court renders templates through mustache; braces are permanent damage.
+  for (const [name, field] of [
+    ["mustache-unclosed", "description"],
+    ["mustache-variable", "title"],
+    ["mustache-answer-close", "answers[1].description"],
+  ]) {
+    it(`B-01 rejects mustache delimiters (${name})`, () => {
+      const result = run("validate", "--case", fixture(name), "--network", "arbitrumSepolia");
+      assert.notEqual(result.code, 0, result.out);
+      assert.ok(result.out.includes(`${field} contains "{{" or "}}"`), result.out);
+    });
+  }
+
+  // M-03: aligned with (and stricter than) the SDK's isMultiaddr.
+  for (const name of ["ipfs-dotdot", "ipfs-whitespace", "ipfs-trailing-slash", "ipfs-query"]) {
+    it(`M-03 rejects malformed IPFS URI (${name})`, () => {
+      const result = run("validate", "--case", fixture(name), "--network", "arbitrumSepolia");
+      assert.notEqual(result.code, 0, result.out);
+      assert.match(result.out, /policyURI must be an IPFS reference/);
+    });
+  }
+
+  it("M-03 normalises ipfs:// with a path to /ipfs/", () => {
+    const result = run("validate", "--case", fixture("ipfs-scheme-path"), "--network", "arbitrumSepolia");
+    assert.equal(result.code, 0, result.out);
+    assert.equal(JSON.parse(result.stdout).template.policyURI, "/ipfs/QmPolicy/policy.pdf");
+    const { normalizeIpfsUri } = helperModule;
+    for (const bad of ["/ipfs/Qm/../x", "/ipfs/Qm/./x", "/ipfs/Qm//x", "/ipfs/Qm/x#y", "/ipfs/Qm x", "/ipfs/"]) {
+      assert.throws(() => normalizeIpfsUri(bad, "fileURI"), /fileURI must be an IPFS reference/, bad);
+    }
+  });
+
+  // m-07: decimal-only, normalised identifiers.
+  it("m-07 normalises courtId \"01\" to \"1\" and still warns about the General Court", () => {
+    const result = run("validate", "--case", fixture("court-leading-zero"), "--network", "arbitrumSepolia");
+    assert.equal(result.code, 0, result.out);
+    const output = JSON.parse(result.stdout);
+    assert.ok(output.warnings.some((warning) => warning.startsWith("General Court (1)")), result.out);
+    assert.equal(
+      output.extraData.slice(0, 66),
+      `0x${"0".repeat(63)}1`,
+      "extraData must encode court 1",
+    );
+  });
+
+  for (const name of ["court-hex", "court-garbage"]) {
+    it(`m-07 rejects non-decimal courtId (${name})`, () => {
+      const result = run("validate", "--case", fixture(name), "--network", "arbitrumSepolia");
+      assert.notEqual(result.code, 0, result.out);
+      assert.match(result.out, /courtId must be a decimal integer/);
+    });
+  }
+
+  it("m-07 rejects hex/garbage dispute IDs and malformed tx hashes before any network call", () => {
+    let result = run("evidence", "--evidence", fixture("valid"), "--rpc-url", DEAD_RPC, "--dispute", "0x10");
+    assert.notEqual(result.code, 0);
+    assert.match(result.out, /--dispute must be a decimal integer/);
+    result = run("evidence", "--evidence", fixture("valid"), "--rpc-url", DEAD_RPC, "--dispute", "1", "--evidence-group", "abc");
+    assert.match(result.out, /--evidence-group must be a decimal integer/);
+    result = run("receipt", "--tx", "0x1234", "--rpc-url", DEAD_RPC);
+    assert.match(result.out, /--tx must be a transaction hash/);
+    result = run("evidence", "--evidence", fixture("valid"), "--rpc-url", DEAD_RPC, "--creation-tx", `0x${"g".repeat(64)}`);
+    assert.match(result.out, /--creation-tx must be a transaction hash/);
+    assert.equal(helperModule.parseDecimalId("007", "--dispute"), 7n);
+  });
+
+  // M-01: no silently dropped flags.
+  it("M-01 errors on a valueless --max-fee instead of dropping the cap", () => {
+    const result = run("quote", "--case", fixture("valid"), "--rpc-url", DEAD_RPC, "--max-fee");
+    assert.notEqual(result.code, 0);
+    assert.match(result.out, /--max-fee needs a value/);
+    const followed = run("quote", "--case", fixture("valid"), "--max-fee", "--rpc-url", DEAD_RPC);
+    assert.match(followed.out, /--max-fee needs a value/);
+  });
+
+  it("M-01 rejects unknown flags such as --maxfee", () => {
+    const result = run("quote", "--case", fixture("valid"), "--rpc-url", DEAD_RPC, "--maxfee", "0.01");
+    assert.notEqual(result.code, 0);
+    assert.match(result.out, /unknown flag --maxfee for quote/);
+    const wrongCommand = run("validate", "--case", fixture("valid"), "--from", "0x000000000000000000000000000000000000dEaD");
+    assert.match(wrongCommand.out, /unknown flag --from for validate/);
+  });
+
+  it("M-01 parses --max-fee before any network call", () => {
+    const result = run("quote", "--case", fixture("valid"), "--rpc-url", DEAD_RPC, "--max-fee", "abc");
+    assert.match(result.out, /--max-fee must be a decimal ETH amount/);
+    const from = run("simulate", "--case", fixture("valid"), "--rpc-url", DEAD_RPC, "--from", "0x1234");
+    assert.match(from.out, /--from must be a 0x-prefixed 20-byte address/);
+  });
+
+  it("M-01 keeps --human a switch that never swallows the next token", () => {
+    const { parseArgs } = helperModule;
+    const args = parseArgs("preflight", ["--human", "--case", "c.json", "--rpc-url", "http://x"]);
+    assert.equal(args.get("--human"), true);
+    assert.equal(args.get("--case"), "c.json");
+    assert.throws(() => parseArgs("preflight", ["--case", "c.json", "--rpc-url", "http://x", "--human", "yes"]), /unexpected argument "yes"/);
+    assert.throws(() => parseArgs("preflight", ["--case", "c.json", "--rpc-url", "http://x", "--human=yes"]), /takes no value/);
+    assert.throws(() => parseArgs("preflight", ["--case", "a", "--case", "b", "--rpc-url", "http://x"]), /more than once/);
+    assert.throws(() => parseArgs("simulate", ["--case", "c.json", "--rpc-url", "http://x"]), /--from is required/);
+  });
+
+  // B-02: implementation pins exist per network (on-chain check needs an RPC).
+  it("B-02 pins an EvidenceModule implementation for every network", () => {
+    for (const network of Object.values(helperModule.NETWORKS)) {
+      assert.match(network.evidenceModuleImplementation, /^0x[0-9a-fA-F]{40}$/, network.key);
+    }
+    assert.match(helper, /0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc/, "EIP-1967 implementation slot");
+    assert.match(skill, /Version caveat \(verified \d{4}-\d{2}-\d{2}\)/, "SKILL.md must date the evidence-key caveat");
+  });
+
+  // M-02: agents are told to stop on ok:false / non-zero exit.
+  it("M-02 documents ok/blocking and the stop rule", () => {
+    assert.match(skill, /On `ok:false` or any non-zero exit/);
+    for (const kind of ["kleros-v2-dispute-preflight", "kleros-v2-evidence-preflight", "kleros-v2-dispute-receipt"]) {
+      const at = helper.indexOf(`kind: "${kind}"`);
+      assert.ok(at > 0, kind);
+      assert.match(helper.slice(at, at + 200), /ok: /, `${kind} must carry ok`);
+    }
   });
 });
