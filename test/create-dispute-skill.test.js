@@ -321,6 +321,24 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     }
   });
 
+  it("E-4 an error carrying user text with newlines is still one stderr line", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kcd-"));
+    const file = path.join(dir, "newline.json");
+    const value = baseCase();
+    value.answers = [answer("0x01", "Pay\nthe seller"), answer("0x02", "Pay\n\n  the seller")];
+    fs.writeFileSync(file, JSON.stringify(value));
+    try {
+      const result = await run("validate", "--case", file, "--network", "arbitrumSepolia");
+      const output = assertCleanError(result, 1, "input");
+      assert.match(output.error, /duplicates another answer title/);
+      assert.ok(output.error.includes("\n"), "the JSON error keeps the exact text");
+      assert.equal(result.stderr.split("\n").filter(Boolean).length, 1, `stderr must be one line:\n${result.stderr}`);
+      assert.match(result.stderr, /^prepare-dispute: input error: answers\[1\] "Pay the seller" duplicates/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("M-06 answer IDs must run 0x01..0xN, are emitted as two-digit hex, and set numberOfRulingOptions", () => {
     const value = baseCase();
     value.answers = [answer("0x1", "Refund"), answer("0x0002", "Pay"), answer("0x03", "Split")];
@@ -506,6 +524,9 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     }
     assert.ok(!helperModule.QUESTION_END.test("Did the seller deliver."));
     assert.ok(helperModule.QUESTION_END.test("Did the seller deliver\ufe56".normalize("NFKC")), "small question mark folds to ? under NFKC");
+    // …and validate() really applies NFKC before the check (E-8).
+    const value = JSON.parse(fs.readFileSync(fixture("valid"), "utf8"));
+    assert.doesNotThrow(() => helperModule.validate({ ...value, question: "Did the seller deliver order 1234\ufe56" }, helperModule.NETWORKS.arbitrumSepolia));
   });
 
   it("D-6 rejects zero-width characters inside IPFS URI paths", async () => {
@@ -528,6 +549,12 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     assert.equal(ok.status, "ok");
     assert.equal(cancelled, 1, "the body must be cancelled after the first chunk");
     await assert.rejects(checkIpfsResolves("/ipfs/QmX", "fileURI", stub(new Response("nope", { status: 404 }))), /could not be retrieved .*HTTP 404/);
+    // A 4xx is final (retrying a bad CID cannot help); a 5xx is retried once.
+    for (const [status, attempts] of [[404, 1], [503, 2]]) {
+      let fetches = 0;
+      await assert.rejects(checkIpfsResolves("/ipfs/QmX", "fileURI", async () => { fetches += 1; return new Response("x", { status }); }), new RegExp(`HTTP ${status}`));
+      assert.equal(fetches, attempts, `HTTP ${status}`);
+    }
   });
 
   it("m-02 tells a contract revert from a transport failure and redacts the cause", async () => {

@@ -9,8 +9,10 @@
 // a real Arbitrum node would for the helper to get anywhere.
 //
 // A scenario is `{ handle(method, params) }`. `handle` returns the JSON-RPC
-// result or throws an `RpcError` (sent back as a JSON-RPC error object).
-// Every request is recorded in `scenario.requests` for assertions.
+// result, throws an `RpcError` (sent back as a JSON-RPC error object with any
+// code / message / data), or throws an `HttpStatus` (the whole HTTP response
+// becomes that status and body, as a rate-limiting or overloaded provider
+// answers). Every request is recorded in `scenario.requests` for assertions.
 const http = require("node:http");
 
 class RpcError extends Error {
@@ -18,6 +20,14 @@ class RpcError extends Error {
     super(message);
     this.code = code;
     this.data = data;
+  }
+}
+
+class HttpStatus extends Error {
+  constructor(status, body = "") {
+    super(`HTTP ${status}`);
+    this.status = status;
+    this.body = body;
   }
 }
 
@@ -37,6 +47,7 @@ async function startRpcStub() {
         try {
           return { ...base, result: scenario.handle(message.method, message.params ?? []) };
         } catch (error) {
+          if (error instanceof HttpStatus) throw error;
           if (error instanceof RpcError) {
             return { ...base, error: { code: error.code, message: error.message, ...(error.data === undefined ? {} : { data: error.data }) } };
           }
@@ -45,7 +56,14 @@ async function startRpcStub() {
       };
       let payload;
       try { payload = JSON.parse(body); } catch { payload = { id: null, method: "(unparseable)" }; }
-      const out = Array.isArray(payload) ? payload.map(answer) : answer(payload);
+      let out;
+      try {
+        out = Array.isArray(payload) ? payload.map(answer) : answer(payload);
+      } catch (error) {
+        response.writeHead(error.status, { "content-type": "text/plain" });
+        response.end(error.body);
+        return;
+      }
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify(out));
     });
@@ -64,4 +82,4 @@ async function startRpcStub() {
   };
 }
 
-module.exports = { startRpcStub, RpcError };
+module.exports = { startRpcStub, RpcError, HttpStatus };

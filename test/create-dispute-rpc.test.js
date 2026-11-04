@@ -28,7 +28,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { pathToFileURL } = require("node:url");
-const { startRpcStub, RpcError } = require("./helpers/rpc-stub.js");
+const { startRpcStub, RpcError, HttpStatus } = require("./helpers/rpc-stub.js");
 
 const scriptsDir = path.join(__dirname, "..", "kleros-create-dispute", "scripts");
 const script = path.join(scriptsDir, "prepare-dispute.ts");
@@ -94,6 +94,7 @@ const evidenceAbi = haveDeps ? parseAbi([
 // Chain model
 // ---------------------------------------------------------------------------
 const REVERT = (reason = "") => ({ revert: reason });
+const ZERO_DATA = { zeroData: true }; // the node runs the call and returns nothing (no such function)
 const revertError = (reason) => new RpcError(
   3,
   reason ? `execution reverted: ${reason}` : "execution reverted",
@@ -125,8 +126,10 @@ function klerosChain(net, overrides = {}) {
     receipts: {}, // tx hash -> raw receipt (see receiptOf)
     ...overrides,
   };
+  // Any read's value may instead be REVERT(), ZERO_DATA, an RpcError or an HttpStatus.
   const reply = (abi, functionName, value) => {
-    if (value && typeof value === "object" && "revert" in value) throw revertError(value.revert);
+    fail(value);
+    if (value === ZERO_DATA) return "0x";
     return encodeFunctionResult({ abi, functionName, result: value });
   };
   const call = (tx) => {
@@ -139,7 +142,7 @@ function klerosChain(net, overrides = {}) {
         case "arbitrationCost": return reply(coreAbi, "arbitrationCost", state.arbitrationCost);
         case "courts": {
           const c = state.court;
-          if ("revert" in c) throw revertError(c.revert);
+          fail(c);
           return reply(coreAbi, "courts", [c.parent, c.hiddenVotes, c.minStake, c.alpha, c.feeForJuror, c.jurorsForCourtJump, c.disabled]);
         }
         case "isSupported": return reply(coreAbi, "isSupported", state.isSupported);
@@ -171,7 +174,7 @@ function klerosChain(net, overrides = {}) {
     receiptsRoot: ZERO_WORD, size: "0x1", transactions: [], uncles: [],
   });
   const fail = (value) => {
-    if (value instanceof RpcError) throw value;
+    if (value instanceof RpcError || value instanceof HttpStatus) throw value;
     if (value && typeof value === "object" && "revert" in value) throw revertError(value.revert);
   };
   return {
@@ -404,6 +407,83 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.network.chainId, 42161);
   });
 
+  it("quote: --max-fee is inclusive — fee == cap is allowed, cap + 1 wei is refused", async () => {
+    const cap = parseEther("0.0015");
+    let output = expectJson(await cli(["quote", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { arbitrationCost: cap })), "--max-fee", "0.0015"]), 0);
+    assert.equal(output.valueWei, cap.toString());
+    output = expectJson(await cli(["quote", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { arbitrationCost: cap + 1n })), "--max-fee", "0.0015"]), 1);
+    assert.equal(output.kind, "input");
+    assert.match(output.error, /arbitration fee 0\.001500000000000001 ETH exceeds --max-fee 0\.0015 ETH/);
+  });
+
+  // E-1 / batch-3 F-2: viem turns every node answer below into a different error
+  // shape. These are the real objects viem builds (test-process viem, against the
+  // stub), classified by the helper's own predicates.
+  it("revert classification on real viem errors: only a node's revert answer is a revert", async () => {
+    const { isContractRevert, isTransactionVerdict, readFailure } = helperModule;
+    const cases = [
+      ["code 3, data 0x", new RpcError(3, "execution reverted", "0x"), true],
+      ["-32000 execution reverted, data 0x", new RpcError(-32000, "execution reverted", "0x"), true],
+      ["-32000 execution reverted, no data", new RpcError(-32000, "execution reverted"), true],
+      ["-32603 execution reverted", new RpcError(-32603, "execution reverted"), true],
+      ["-32603 Internal error", new RpcError(-32603, "Internal error"), false],
+      ["-32005 rate limit", new RpcError(-32005, "rate limit exceeded"), false],
+      ["-32000 header not found", new RpcError(-32000, "header not found"), false],
+      ["-32000 missing trie node", new RpcError(-32000, "missing trie node 1234 (path ) <nil>"), false],
+      ["-32601 method not found", new RpcError(-32601, "the method eth_call does not exist/is not available"), false],
+      // Nethermind's VM error: viem does not call it a revert, and neither does the helper.
+      ["-32015 VM execution error", new RpcError(-32015, "VM execution error.", "revert"), false],
+      ["HTTP 429", new HttpStatus(429, "Too Many Requests"), false],
+      ["HTTP 503", new HttpStatus(503, "Service Unavailable"), false],
+      ["no such function (0x)", ZERO_DATA, true],
+    ];
+    const abi = parseAbi(["function f(uint256) view returns (bool)", "function g() payable returns (uint256)"]);
+    const target = "0x0000000000000000000000000000000000000001";
+    for (const [label, answer, revert] of cases) {
+      const url = stub.url({
+        handle(method) {
+          if (method === "eth_chainId") return hex(SEPOLIA.chainId);
+          if (answer === ZERO_DATA) return "0x";
+          throw answer;
+        },
+      });
+      const rpc = viem.createPublicClient({ transport: viem.http(url, { retryCount: 0 }) });
+      const read = await rpc.readContract({ address: target, abi, functionName: "f", args: [1n] }).then(() => assert.fail(`${label}: read did not fail`), (error) => error);
+      assert.equal(isContractRevert(read), revert, `${label} (eth_call): ${read.shortMessage}`);
+      assert.equal(readFailure(read, "does not exist", "reading").kind, revert ? "input" : "network", label);
+      if (answer === ZERO_DATA) continue; // estimateGas never "returns nothing"
+      const gas = await rpc.estimateContractGas({ account: FROM, address: target, abi, functionName: "g" }).then(() => assert.fail(`${label}: estimate did not fail`), (error) => error);
+      assert.equal(isContractRevert(gas), revert, `${label} (eth_estimateGas): ${gas.shortMessage}`);
+      assert.equal(isTransactionVerdict(gas), revert, `${label} (eth_estimateGas)`);
+    }
+    // A sender that cannot pay is a verdict on the transaction, not a revert.
+    const url = stub.url({ handle(method) { if (method === "eth_chainId") return hex(SEPOLIA.chainId); throw new RpcError(-32000, "insufficient funds for gas * price + value: have 0 want 1500000000000000"); } });
+    const rpc = viem.createPublicClient({ transport: viem.http(url, { retryCount: 0 }) });
+    const poor = await rpc.estimateContractGas({ account: FROM, address: target, abi, functionName: "g" }).then(() => assert.fail("did not fail"), (error) => error);
+    assert.ok(!isContractRevert(poor) && isTransactionVerdict(poor));
+  });
+
+  it("quote: Sepolia's absent arbitrableWhitelist is 'not enforced' however the node says it reverted", async () => {
+    for (const whitelist of [ZERO_DATA, new RpcError(-32000, "execution reverted"), new RpcError(-32000, "execution reverted", "0x"), new RpcError(3, "execution reverted", "0x")]) {
+      const output = expectJson(await cli(["quote", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { whitelist }))]), 0);
+      const check = output.checks.find((item) => item.name === "arbitrable-whitelist");
+      assert.equal(check.status, "ok");
+      assert.match(check.detail, /no arbitrableWhitelist \(call reverts\); no whitelist is enforced/);
+    }
+    // …but a node failure on that read is not a revert, so it proves nothing.
+    const output = expectJson(await cli(["quote", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { whitelist: new RpcError(-32603, "Internal error") }))]), 1);
+    assert.equal(output.kind, "network");
+  });
+
+  it("quote: an isSupported read the RPC fails is a network error, never 'kit unsupported'", async () => {
+    for (const isSupported of [new HttpStatus(503, "Service Unavailable"), new RpcError(-32005, "rate limit exceeded"), new RpcError(-32000, "header not found")]) {
+      const output = expectJson(await cli(["quote", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { isSupported }))]), 1);
+      assert.equal(output.kind, "network", output.error);
+      assert.match(output.error, /reading isSupported\(2, 1\) on Arbitrum Sepolia failed for a reason other than a contract revert/);
+      assert.doesNotMatch(output.error, /does not support/);
+    }
+  });
+
   it("prepare: calldata decodes back to exactly the validated case", async () => {
     const chain = klerosChain(SEPOLIA);
     const output = expectJson(await cli(["prepare", "--case", caseFile, "--rpc-url", rpcFor(chain)]), 0);
@@ -474,6 +554,18 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.price.networkFee.available, false);
   });
 
+  it("preflight --from: a gas-estimation failure that is not about the transaction is exit 1 network, never 'would fail'", async () => {
+    for (const estimateGas of [new RpcError(-32000, "header not found"), new RpcError(-32601, "the method eth_estimateGas does not exist/is not available")]) {
+      const output = expectJson(await cli(["preflight", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { estimateGas })), "--from", FROM], { spawn: estimateGas.code === -32000 }), 1);
+      assert.equal(output.kind, "network");
+      assert.match(output.error, /^estimating gas from 0x0+dEaD failed for a reason other than a contract revert/);
+      assert.doesNotMatch(output.error, /would fail|Do not sign/);
+    }
+    // A node verdict on the sender (cannot pay) still blocks.
+    const output = expectJson(await cli(["preflight", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { estimateGas: new RpcError(-32000, "insufficient funds for gas * price + value: have 0 want 1500000000000000") })), "--from", FROM]), 2);
+    assert.match(output.blocking[0], /^The transaction would fail from 0x0+dEaD: .*insufficient funds/i);
+  });
+
   it("preflight --human: BLOCKED banner and exit 2 when blocking; no banner when clean", async () => {
     const blocked = await cli(["preflight", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { balance: 0n })), "--from", FROM, "--human"], { spawn: true });
     assert.equal(blocked.code, 2, blocked.out);
@@ -507,6 +599,14 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.simulation.reverted, true);
     assert.equal(output.blocking.length, 1);
     assert.match(output.blocking[0], /^Simulation from 0x0+dEaD failed: .*Arbitration fees not paid.*do not sign/);
+  });
+
+  it("simulate: a node failure is exit 1 network; a revert the node words as -32000 still blocks", async () => {
+    let output = expectJson(await cli(["simulate", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { simulateResult: new RpcError(-32000, "header not found") })), "--from", FROM]), 1);
+    assert.equal(output.kind, "network");
+    assert.match(output.error, /^simulating createDisputeForTemplate failed for a reason other than a contract revert/);
+    output = expectJson(await cli(["simulate", "--case", valid, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { simulateResult: new RpcError(-32000, "execution reverted") })), "--from", FROM]), 2);
+    assert.equal(output.simulation.reverted, true);
   });
 
   // ---- evidence (B-02) -------------------------------------------------------
@@ -682,6 +782,19 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
       assert.equal(output.blocking.length, 1, text);
       assert.match(output.blocking[0], /not a JSON object/);
     }
+  });
+
+  it("receipt --dispute: a successful tx with no Evidence event is exit 2, even when it created a dispute", async () => {
+    const { hash, overrides } = creation(SEPOLIA, 57n, 12n);
+    let output = expectJson(await cli(["receipt", "--tx", hash, "--rpc-url", rpcFor(klerosChain(SEPOLIA, overrides)), "--dispute", "57"]), 2);
+    assert.equal(output.ok, false);
+    assert.deepEqual(output.blocking, [`--dispute 57 asks to verify evidence, but ${hash} contains no Evidence event from the EvidenceModule.`]);
+    // Neither DisputeCreation nor Evidence: both reasons are reported.
+    const other = TX(0x5151);
+    output = expectJson(await cli(["receipt", "--tx", other, "--rpc-url", rpcFor(klerosChain(SEPOLIA, { ...overrides, receipts: { [other]: receiptOf(other, { to: OTHER_ARBITRABLE }) } })), "--dispute", "57"]), 2);
+    assert.equal(output.blocking.length, 2);
+    assert.match(output.blocking[0], /emitted no DisputeCreation from Kleros Core and no Evidence/);
+    assert.match(output.blocking[1], /^--dispute 57 asks to verify evidence, but .* contains no Evidence event/);
   });
 
   it("receipt: an unknown tx hash is an input error, not a crash", async () => {

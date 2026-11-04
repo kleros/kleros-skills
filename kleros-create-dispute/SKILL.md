@@ -71,9 +71,10 @@ prints text, with blocking items as a `BLOCKED — DO NOT SIGN` banner). Exit co
   would revert, balance too low, simulation failed, receipt reverted or evidence
   MIS-KEYED).
 - `1` — refused or failed: `{"ok":false,"error":"…","kind":"input|network|internal"}`.
-  `network` means the RPC did not answer (or refused: rate limit, internal error)
-  — it says nothing about the case, court or dispute; retry with a working RPC,
-  never read it as "does not exist". An IPFS gateway failure is reported as
+  `network` means the RPC did not answer, or failed for a reason that is not a
+  verdict on the call (rate limit, internal error, missing state, unsupported
+  method) — it says nothing about the case, court, dispute or transaction; retry
+  with a working RPC, never read it as "does not exist" or "would revert". An IPFS gateway failure is reported as
   `input`: the reference could not be verified, so do not proceed with it.
 - `64` — usage error (`"kind":"usage"`): unknown command, or an unknown,
   valueless, missing or malformed flag. Fix the command rather than dropping the

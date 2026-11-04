@@ -420,6 +420,13 @@ function* causeChain(error: unknown) {
 export function isContractRevert(error: unknown) {
   const chain = [...causeChain(error)];
   if (chain.some((cause) => cause.name === "ContractFunctionZeroDataError")) return true; // node answered `0x`: no such function / no code
+  // viem builds ExecutionRevertedError (getNodeError) only from a node answer: JSON-RPC
+  // code 3, or a message matching /execution reverted|gas required exceeds allowance/
+  // under any code (geth/Nitro answer reverts as -32000 "execution reverted", with or
+  // without data). Never from a bare "Internal error". Nethermind's -32015 "VM
+  // execution error" is not included: viem does not map it to a revert either, and
+  // the Arbitrum nodes this skill targets (Nitro) answer reverts with code 3.
+  if (chain.some((cause) => cause.name === "ExecutionRevertedError")) return true;
   const reverted = chain.find((cause) => cause.name === "ContractFunctionRevertedError");
   if (!reverted) return false;
   // viem also maps JSON-RPC -32603 ("internal error") to ContractFunctionRevertedError,
@@ -429,6 +436,17 @@ export function isContractRevert(error: unknown) {
   if (reverted.data !== undefined) return true;
   return chain.some((cause) => cause.code === 3
     || (cause.code === -32603 && [cause.details, cause.shortMessage, cause.message].some((text) => typeof text === "string" && /revert/i.test(text))));
+}
+
+/// The node answered the call or estimate with a verdict on the transaction
+/// itself: a revert, or one of viem's node errors built from a node message
+/// about the sender or the fee (e.g. "insufficient funds for gas * price + value").
+/// Only these may become a blocking "would fail / do not sign"; every other
+/// failure (transport, rate limit, missing state, unknown method) proves nothing
+/// about the transaction and is a `network` error instead.
+const TX_VERDICT_ERROR_NAMES = new Set(["InsufficientFundsError", "IntrinsicGasTooHighError", "IntrinsicGasTooLowError", "FeeCapTooHighError", "FeeCapTooLowError", "TipAboveFeeCapError"]);
+export function isTransactionVerdict(error: unknown) {
+  return isContractRevert(error) || [...causeChain(error)].some((cause) => typeof cause.name === "string" && TX_VERDICT_ERROR_NAMES.has(cause.name));
 }
 
 /// The request never got a node's answer (HTTP failure, timeout, socket), so the
@@ -697,7 +715,9 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
   } catch (error) {
     const detail = `${shortError(error)}`;
     checks.push({ name: "evidence-module-implementation", status: "warn", detail });
-    const unreadable = isTransportError(error) || (error instanceof CliError && error.kind === "network");
+    // Only checkEvidenceModule's own plain Error is a verdict (implementation
+    // mismatch); any viem error means the slot could not be read.
+    const unreadable = error instanceof BaseError || (error instanceof CliError && error.kind === "network");
     warnings.push(!unreadable
       ? `Evidence for this case cannot be submitted through this skill until it is updated: ${detail}`
       : `Could not read the EvidenceModule implementation (${detail}); this says nothing about the module. Re-run preflight with a working RPC before relying on the evidence step.`);
@@ -742,7 +762,7 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
       rpc.estimateFeesPerGas({ type: "eip1559" }),
       rpc.getBalance({ address: from }),
     ]);
-    if ("error" in gasResult && isTransportError(gasResult.error)) {
+    if ("error" in gasResult && !isTransactionVerdict(gasResult.error)) {
       throw readFailure(gasResult.error, "", `estimating gas from ${from}`);
     }
     if ("error" in gasResult) {
@@ -1401,7 +1421,9 @@ export function describeFailure(error: unknown): { ok: false; error: string; kin
     message = formatZodError(error);
   } else if (error instanceof BaseError) {
     // A revert or an unknown transaction is an answer from the chain about the
-    // input; everything else from viem is treated as the RPC failing.
+    // input; everything else from viem (including errors no rule here names, E-7)
+    // came out of talking to the RPC and is `network`, as in readFailure.
+    // Non-viem errors nobody anticipated stay `internal` (below).
     kind = isContractRevert(error) || (!isTransportError(error) && error.walk((cause) => (cause as Error).name === "TransactionReceiptNotFoundError") !== null) ? "input" : "network";
     message = shortError(error);
   } else if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
@@ -1483,8 +1505,9 @@ async function runCommand(argv: readonly string[]) {
       });
       simulation = { nextDisputeId: simulated.result, caseUrlIfCreated: caseUrl(priced.network, simulated.result) };
     } catch (error) {
-      // A transport failure is not a verdict on the transaction (m-02).
-      if (isTransportError(error)) throw readFailure(error, "", "simulating createDisputeForTemplate");
+      // Only a node verdict on the transaction blocks; anything else (transport,
+      // rate limit, "header not found", unknown method) says nothing about it (m-02).
+      if (!isTransactionVerdict(error)) throw readFailure(error, "", "simulating createDisputeForTemplate");
       simulation = { reverted: true, reason: shortError(error) };
       blocking.push(`Simulation from ${cli.from} failed: ${shortError(error)}. The transaction would not create a dispute; do not sign.`);
     }
@@ -1529,7 +1552,9 @@ export async function main(argv: readonly string[]): Promise<number> {
   } catch (error) {
     const failure = describeFailure(error);
     console.log(json(failure.kind === "usage" ? { ...failure, usage: USAGE } : failure));
-    console.error(`prepare-dispute: ${failure.kind} error: ${failure.error}${failure.kind === "usage" ? " (run with --help for usage)" : ""}`);
+    // stderr is one line whatever the message carries (user text can hold
+    // newlines, e.g. an answer title); the JSON on stdout keeps it exact.
+    console.error(`prepare-dispute: ${failure.kind} error: ${failure.error.replace(/\s*\n\s*/g, " ")}${failure.kind === "usage" ? " (run with --help for usage)" : ""}`);
     if (process.env.DEBUG && error instanceof Error && error.stack) console.error(redact(error.stack));
     return failure.kind === "usage" ? 64 : 1;
   }
