@@ -48,7 +48,7 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — 7f58b66 (+ encoded-dot bypass D-1 closed in follow-up commit)
 - [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — 2fecec8
 - [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
-- [ ] **M-06** Tests never execute the script
+- [x] **M-06** Tests never execute the script — this commit
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
@@ -71,7 +71,7 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [ ] **m-17** Evidence submission not routable from surfaces
 - [ ] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link
 - [ ] **m-19** `CLAUDE.md:9` "Published:" not updated
-- [ ] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG)
+- [x] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG) — this commit
 - [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — 2fecec8
 - [ ] **m-22** Description: missing trigger synonyms / "pushy" clause
 
@@ -257,7 +257,7 @@ Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 
 
 - [x] **D-1** (medium) `%2e%2e` / `\..\` bypass `..` rejection — WHATWG URL normalises → gateway serves other CID. Fix: `%` and `\` excluded from IPFS path segments; regression cases added.
 - [x] **D-2** (medium) behaviour suite skipped in CI (no `npm ci` in scripts) → CI coverage dropped. Fix: `sync-master.yml` installs `npm ci --prefix kleros-create-dispute/scripts` before `npm test`; test file throws when `CI` set and deps missing.
-- [ ] **D-3** (low) B-02 / M-02 tests weak (pin format + source grep only; no exit-2 / BLOCKED assertion). Needs stubbed `PublicClient` → batch 3.
+- [x] **D-3** (low) B-02 / M-02 tests weak (pin format + source grep only; no exit-2 / BLOCKED assertion). Needs stubbed `PublicClient` → batch 3. — this commit
 - [x] **D-4** (low) `receipt` accepted JSON array as evidence object. Fix: `Array.isArray` check.
 - [x] **D-5** (low) `case-format.md` silent on `{{`/`}}` ban. Fix: one paragraph added.
 - [x] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2. — 2fecec8
@@ -279,3 +279,9 @@ Independent verifier on 2fecec8: M-04, m-08, m-09, m-10, m-11, m-21, n-04, n-08,
 - [ ] **E-7** (nit) unclassified viem errors → `network` (could be `internal`). Deferred.
 - [x] **E-8** (nit) `﹖` (U+FE56) accepted via NFKC before question-mark check.
 - [ ] **E-9** (info) test fixtures use empty `/ipfs/bafkqaaa`; fine offline, any future live test needs a real CID.
+
+## Batch 3 — tests (2026-11-04)
+
+Harness: `test/helpers/rpc-stub.js` (in-process JSON-RPC server, one URL per scenario, CLI reached via normal `--rpc-url`) + `test/helpers/mock-gateway.mjs` (test-only fetch stand-in for cdn.kleros.link; `node --import` preload for spawned runs, installed on globalThis for in-process `main()` runs; refuses all non-local hosts). No helper-side bypass added. New `test/create-dispute-rpc.test.js` (D-3 + quote/prepare/preflight/simulate/evidence/receipt); M-06 validate/evidence semantics in `create-dispute-skill.test.js`; helper-source greps replaced by behaviour tests (remaining greps check prose or source layout only). Both create-dispute suites run concurrently (~37 s full `npm test`, was ~57 s).
+
+- [x] **F-1** (minor, found by M-06 tests) answer objects were not `.strict()`: a misspelt answer key (e.g. `"ruling": 0`) was silently stripped. Fix: `.strict()` on the answer schema — this commit.

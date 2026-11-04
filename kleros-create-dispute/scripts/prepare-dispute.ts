@@ -157,7 +157,7 @@ const schema = z.object({
     id: z.string().regex(/^0x[0-9a-fA-F]+$/),
     title: z.string().trim().min(1).max(160),
     description: z.string().trim().min(12).max(2_000),
-  })).min(2).max(32),
+  }).strict()).min(2).max(32), // strict like the root: a misspelt answer key must fail, not vanish
   policyURI: z.string().trim().min(1),
   category: z.string().trim().min(1).max(100).default("Other"),
   lang: z.string().regex(/^[a-z]{2}_[A-Z]{2}$/).default("en_US"),
