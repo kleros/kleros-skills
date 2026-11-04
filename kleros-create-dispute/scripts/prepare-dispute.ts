@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
@@ -85,7 +84,35 @@ const NETWORK_ALIASES: Record<string, Network> = {
 };
 
 const KLEROS_IPFS_HTTP_GATEWAY = "https://cdn.kleros.link";
+// Review freshness, not an on-chain expiry: arbitrationCost follows the court's
+// feeForJuror, which governance can change at any time. The fee is paid in the
+// tx `value`; if it rose since the quote the tx reverts, and if it fell the
+// excess buys extra jurors rather than being refunded. Five minutes is long
+// enough for a human to read the preflight and short enough that a stale quote
+// is re-run instead of signed. Policy choice, not a protocol constant.
 const QUOTE_TTL_MS = 300_000;
+// Per-attempt gateway timeout (two attempts). A cold cdn.kleros.link miss has to
+// find the CID on the IPFS network, which routinely takes 10-20 s for a freshly
+// pinned upload; 25 s covers that while two attempts (~50 s) still finish
+// inside the 60 s+ tool-call timeouts agent harnesses commonly use. Heuristic.
+const IPFS_TIMEOUT_MS = 25_000;
+// UTF-8 byte caps for strings that travel inline in calldata. The Arbitrum Nitro
+// sequencer drops transactions larger than MaxTxDataSize (default 95,000 bytes,
+// OffchainLabs/nitro execution/gethexec/sequencer.go). The template is ABI-encoded
+// with ~0.4 KB of overhead, so 64 KiB leaves ample headroom for the envelope and
+// signature. zod's .max() counts UTF-16 units: 20,000 CJK characters are ~60 KB,
+// so the per-field character limits alone do not bound the transaction.
+export const MAX_TEMPLATE_BYTES = 64 * 1024;
+export const MAX_EVIDENCE_BYTES = 64 * 1024;
+
+export type ErrorKind = "usage" | "input" | "network" | "internal";
+/// An error that already knows how to be reported: usage → exit 64, else exit 1.
+export class CliError extends Error {
+  constructor(message: string, readonly kind: ErrorKind, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "CliError";
+  }
+}
 
 const coreAbi = parseAbi([
   "function arbitrationCost(bytes _extraData) view returns (uint256 cost)",
@@ -156,8 +183,10 @@ export function normalizeIpfsUri(raw: string, field: string) {
   const trimmed = raw.trim();
   const uri = trimmed.startsWith("ipfs://") ? `/ipfs/${trimmed.slice(7)}` : trimmed;
   const segments = uri.split("/");
-  if (!IPFS_URI_PATTERN.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
-    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, "?", "#", "%", "\\", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
+  // \p{Cf} (zero-width space/joiner, bidi controls, BOM…) is invisible to the
+  // reviewer but part of the path the gateway is asked for.
+  if (!IPFS_URI_PATTERN.test(uri) || /\p{Cf}/u.test(uri) || segments.some((segment) => segment === "." || segment === "..")) {
+    throw new Error(`${field} must be an IPFS reference of the form /ipfs/<CID> or /ipfs/<CID>/<path> (no whitespace, invisible format characters, "?", "#", "%", "\\", "." or ".." segments, or trailing slash), got ${JSON.stringify(raw)}`);
   }
   return uri;
 }
@@ -206,26 +235,46 @@ export function parseTxHash(raw: string, field: string): Hex {
 /// the gateway answers 4xx for garbage and 5xx/timeout for a CID nobody pinned.
 /// Content the Kleros gateway cannot serve is content jurors cannot read, so
 /// either outcome is a hard stop — this is the check that catches a fabricated CID.
-async function checkIpfsResolves(uri: string, field: string): Promise<Check> {
+/// A 200 is not enough either: an identity CID such as `bafkqaaa` resolves to
+/// zero bytes. Require at least one byte (Content-Length when given, else the
+/// first body chunk) and always release the body so no download is left open.
+export async function checkIpfsResolves(uri: string, field: string, fetchImpl: typeof fetch = fetch): Promise<Check> {
   const url = `${KLEROS_IPFS_HTTP_GATEWAY}${uri}`;
   let reason = "";
   for (let attempt = 1; attempt <= 2; attempt += 1) {
+    let response: Response | undefined;
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(25_000) });
+      response = await fetchImpl(url, { signal: AbortSignal.timeout(IPFS_TIMEOUT_MS) });
       if (response.ok) {
+        const length = response.headers.get("content-length");
+        let empty: boolean;
+        if (length !== null && /^\d+$/.test(length.trim())) {
+          empty = Number(length) === 0;
+        } else {
+          const reader = response.body?.getReader();
+          const first = reader ? await reader.read() : { done: true, value: undefined };
+          empty = first.done || !first.value || first.value.byteLength === 0;
+          await reader?.cancel().catch(() => {});
+        }
+        if (empty) {
+          throw new CliError(`${field} ${uri} resolves to EMPTY content on the Kleros gateway (HTTP ${response.status}, 0 bytes). Jurors would see nothing. Upload the real file with the kleros-ipfs-upload skill and use the CID it returns. Checked: ${url}`, "input");
+        }
         return {
           name: `${field}-resolves`,
           status: "ok",
-          detail: `${url} → HTTP ${response.status}, ${response.headers.get("content-type") ?? "unknown type"}.`,
+          detail: `${url} → HTTP ${response.status}, ${response.headers.get("content-type") ?? "unknown type"}, non-empty.`,
         };
       }
       reason = `HTTP ${response.status}`;
       if (response.status >= 400 && response.status < 500) break; // malformed CID: retrying cannot help
     } catch (error) {
-      reason = (error as Error).name === "TimeoutError" ? "timed out after 25s" : (error as Error).message;
+      if (error instanceof CliError) throw error;
+      reason = (error as Error).name === "TimeoutError" ? `timed out after ${IPFS_TIMEOUT_MS / 1000}s` : (error as Error).message;
+    } finally {
+      await response?.body?.cancel().catch(() => {});
     }
   }
-  throw new Error(`${field} ${uri} could not be retrieved from the Kleros IPFS gateway (${reason}). Upload the real file with the kleros-ipfs-upload skill and use the CID it returns; never write a CID you did not receive from an upload. Checked: ${url}`);
+  throw new CliError(`${field} ${uri} could not be retrieved from the Kleros IPFS gateway (${reason}). Upload the real file with the kleros-ipfs-upload skill and use the CID it returns; never write a CID you did not receive from an upload. Checked: ${url}`, "input");
 }
 
 const evidenceSchema = z.object({
@@ -235,6 +284,21 @@ const evidenceSchema = z.object({
   fileTypeExtension: z.string().trim().min(1).max(16).optional(),
 }).strict();
 
+/// Comparison key for answer titles. NFKC folds fullwidth/compatibility forms
+/// ("ＹＥＳ" → "YES"), \p{Cf} drops zero-width and bidi format characters a reader
+/// cannot see, whitespace runs collapse, and toLowerCase() is locale-independent
+/// (toLocaleLowerCase would fold "I" differently under a Turkish locale).
+export function titleKey(title: string) {
+  return title.normalize("NFKC").replace(/\p{Cf}/gu, "").replace(/\s+/gu, " ").trim().toLowerCase();
+}
+
+/// Question marks jurors will recognise: ASCII, fullwidth (CJK) and Arabic.
+export const QUESTION_END = /[?？؟]$/u;
+
+function utf8Bytes(value: string) {
+  return Buffer.byteLength(value, "utf8");
+}
+
 export function validate(value: unknown, network: Network) {
   const input = schema.parse(value);
   assertNoMustache(input, "");
@@ -242,22 +306,22 @@ export function validate(value: unknown, network: Network) {
   input.courtId = parseDecimalId(input.courtId, "courtId", UINT96_MAX).toString();
   if (BigInt(input.courtId) === 0n) throw new Error("courtId 0 is the reserved forking court; pick a real court");
   if (input.numberOfJurors % 2 === 0) throw new Error("numberOfJurors must be odd");
-  if (!input.question.endsWith("?")) throw new Error("question must end in ?");
+  if (!QUESTION_END.test(input.question)) throw new Error("question must end in a question mark (?, ？ or ؟)");
   // Ruling 0 is not merely reserved: the Court renders it as the first choice on
   // every ballot, titled "Refuse to Arbitrate / Invalid". An answer of the same
   // kind is therefore a second refuse option with a different description, which
   // splits that vote and cannot be corrected once the case exists. Seeding the
   // dedupe set with the reserved title makes the collision fall out of the
   // uniqueness check that is already here.
-  const titles = new Set<string>([RESERVED_RULING.title.toLocaleLowerCase()]);
+  const titles = new Set<string>([titleKey(RESERVED_RULING.title)]);
   input.answers.forEach((answer, index) => {
     const expected = BigInt(index + 1);
     if (BigInt(answer.id) !== expected) throw new Error(`answers[${index}].id must be 0x${expected.toString(16).padStart(2, "0")}`);
-    const title = answer.title.toLocaleLowerCase();
+    const title = titleKey(answer.title);
     if (RESERVED_RULING.pattern.test(title)) {
       throw new Error(`answers[${index}] "${answer.title}" repeats ruling 0, which the Court already puts on every ballot as "${RESERVED_RULING.title}". Remove the answer; jurors can always refuse.`);
     }
-    if (titles.has(title)) throw new Error("answer titles must be unique");
+    if (titles.has(title)) throw new Error(`answers[${index}] "${answer.title}" duplicates another answer title (compared after Unicode NFKC, invisible-character removal and case folding); titles must be unique`);
     titles.add(title);
     answer.id = `0x${expected.toString(16).padStart(2, "0")}`;
   });
@@ -274,6 +338,11 @@ export function validate(value: unknown, network: Network) {
     arbitratorChainID: String(network.chainId),
   };
   assertNoMustache(template, "");
+  const templateJson = JSON.stringify(template);
+  const templateBytes = utf8Bytes(templateJson);
+  if (templateBytes > MAX_TEMPLATE_BYTES) {
+    throw new Error(`the serialized template is ${templateBytes} bytes of UTF-8, over the ${MAX_TEMPLATE_BYTES}-byte cap (the Arbitrum sequencer rejects transactions over ~95,000 bytes). Shorten the description or answers — non-Latin scripts take 2-4 bytes per character.`);
+  }
   const warnings: string[] = [];
   if (input.courtId === "1") warnings.push("General Court (1) selected; confirm the court choice.");
   if (!network.production) warnings.push(`${network.label} is a test network: the dispute, its fee, and its ruling have no production value.`);
@@ -281,7 +350,7 @@ export function validate(value: unknown, network: Network) {
     network,
     input,
     template,
-    templateJson: JSON.stringify(template),
+    templateJson,
     extraData: encodeAbiParameters(
       [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
       [BigInt(input.courtId), BigInt(input.numberOfJurors), BigInt(input.disputeKitId)],
@@ -289,6 +358,19 @@ export function validate(value: unknown, network: Network) {
     numberOfRulingOptions: BigInt(input.answers.length),
     warnings,
   };
+}
+
+/// Everything about an evidence file that needs no network: schema, IPFS shape,
+/// and the inline byte size. Runs before any RPC or gateway call.
+export function validateEvidence(value: unknown) {
+  const input = evidenceSchema.parse(value);
+  if (input.fileURI !== undefined) input.fileURI = normalizeIpfsUri(input.fileURI, "fileURI");
+  const evidenceJson = JSON.stringify(input);
+  const bytes = utf8Bytes(evidenceJson);
+  if (bytes > MAX_EVIDENCE_BYTES) {
+    throw new Error(`the evidence JSON is ${bytes} bytes of UTF-8, over the ${MAX_EVIDENCE_BYTES}-byte cap for inline calldata; move long text into the uploaded file and summarise it in description`);
+  }
+  return { input, evidenceJson };
 }
 
 export function networkByAlias(raw: string) {
@@ -301,8 +383,17 @@ export function networkByAlias(raw: string) {
 /// case can never be priced on one network and encoded for another.
 async function resolveNetwork(requested: string | undefined, rpcUrl?: string): Promise<Network> {
   const asked = requested ? networkByAlias(requested) : undefined;
-  if (!rpcUrl) return asked ?? NETWORKS.arbitrum;
-  const chainId = await createPublicClient({ transport: http(rpcUrl) }).getChainId();
+  if (!rpcUrl) {
+    // No silent mainnet default: the network is stamped into the template.
+    if (!asked) throw new CliError(`--network is required without --rpc-url; use ${Object.values(NETWORKS).map((n) => n.key).join(" or ")}`, "usage");
+    return asked;
+  }
+  let chainId: number;
+  try {
+    chainId = await createPublicClient({ transport: http(rpcUrl) }).getChainId();
+  } catch (error) {
+    throw new CliError(`could not read the chain ID from --rpc-url (${shortError(error)}); check the URL and retry with a working RPC`, "network", { cause: error });
+  }
   const detected = Object.values(NETWORKS).find((n) => n.chainId === chainId);
   if (!detected) {
     throw new Error(`RPC chain ${chainId} has no Kleros V2 deployment in this skill; supported: ${Object.values(NETWORKS).map((n) => `${n.label} (${n.chainId})`).join(", ")}`);
@@ -319,14 +410,86 @@ type Check = { name: string; status: "ok" | "warn" | "fail"; detail: string };
 
 /// True only when the node executed the call and the contract reverted (or had
 /// no matching function and returned nothing) — never for transport failures.
+/// Matched by error name along the cause chain so it also holds across duplicate
+/// viem copies (ESM/CJS) where instanceof would not.
+const REVERT_ERROR_NAMES = new Set(["ContractFunctionRevertedError", "ContractFunctionZeroDataError"]);
 export function isContractRevert(error: unknown) {
-  if (!(error instanceof BaseError)) return false;
-  return error.walk((cause) => cause instanceof ContractFunctionRevertedError || cause instanceof ContractFunctionZeroDataError) !== null;
+  if (error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError || cause instanceof ContractFunctionZeroDataError) !== null) return true;
+  for (let cause = error as { name?: string; cause?: unknown } | undefined, depth = 0; cause && depth < 16; cause = cause.cause as typeof cause, depth += 1) {
+    if (typeof cause.name === "string" && REVERT_ERROR_NAMES.has(cause.name)) return true;
+  }
+  return false;
 }
 
+/// The request never got a node's answer (HTTP failure, timeout, socket), so the
+/// error says nothing about the contract or the transaction.
+const TRANSPORT_ERROR_NAMES = new Set(["HttpRequestError", "TimeoutError", "WebSocketRequestError", "SocketClosedError", "AbortError"]);
+export function isTransportError(error: unknown) {
+  for (let cause = error as { name?: string; cause?: unknown } | undefined, depth = 0; cause && depth < 16; cause = cause.cause as typeof cause, depth += 1) {
+    if (typeof cause.name === "string" && TRANSPORT_ERROR_NAMES.has(cause.name)) return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Redaction. RPC URLs routinely embed API keys (path, query or userinfo), and
+// viem errors echo the URL. Nothing printed may carry them.
+// ---------------------------------------------------------------------------
+const secrets = new Set<string>();
+/// Register a URL whose parts must never be printed (the --rpc-url).
+export function registerSecretUrl(raw: string) {
+  secrets.add(raw);
+  try {
+    const url = new URL(raw);
+    secrets.add(url.href);
+    // Length floors keep short, common strings ("user", "v2") from being
+    // scrubbed out of unrelated text; real keys and tokens are far longer.
+    if (url.username.length >= 8) secrets.add(url.username);
+    if (url.password.length >= 4) secrets.add(url.password);
+    for (const part of [url.search.slice(1), url.hash.slice(1)]) if (part.length >= 6) secrets.add(part);
+    for (const segment of url.pathname.split("/")) if (segment.length >= 6) secrets.add(segment);
+    for (const [, value] of url.searchParams) if (value.length >= 6) secrets.add(value);
+  } catch { /* not a URL: the raw string is registered */ }
+}
+
+const SAFE_URL_HOSTS = new Set([new URL(KLEROS_IPFS_HTTP_GATEWAY).host, "arbiscan.io", "sepolia.arbiscan.io", "v2.kleros.builders", "kleros-v2-testnet.netlify.app"]);
+/// Strip credentials, query, fragment and path from every URL except the public
+/// ones this script itself prints (IPFS gateway, explorers, Court app), then
+/// remove any registered secret that survived in another form.
+export function redact(text: string) {
+  let out = text.replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>()]+/gi, (match) => {
+    try {
+      const url = new URL(match);
+      if (SAFE_URL_HOSTS.has(url.host) && !url.username && !url.password) return match;
+      return `${url.protocol}//${url.host}${url.pathname !== "/" || url.search || url.hash ? "/<redacted>" : ""}`;
+    } catch {
+      return "<redacted-url>";
+    }
+  });
+  for (const secret of [...secrets].sort((a, b) => b.length - a.length)) out = out.split(secret).join("<redacted>");
+  return out;
+}
+
+/// One line, redacted. viem's shortMessage drops the request body and URL; its
+/// `details` (e.g. "fetch failed", the revert reason) is kept when short.
 function shortError(error: unknown) {
-  const message = error instanceof BaseError ? error.shortMessage : ((error as Error)?.message ?? String(error)).split("\n")[0];
-  return message.replace(/\.+$/, "");
+  let message: string;
+  if (error instanceof BaseError) {
+    message = error.shortMessage.replace(/\.+$/, "");
+    if (error.details && error.details.length < 200 && !message.includes(error.details)) message += `: ${error.details}`;
+  } else {
+    message = ((error as Error)?.message ?? String(error)).split("\n")[0];
+  }
+  return redact(message.replace(/\.+$/, ""));
+}
+
+/// m-02: a failed contract read only means "does not exist / unsupported" when
+/// the node actually executed it and it reverted. Anything else (RPC down,
+/// rate limit, timeout, bad URL) proves nothing about the chain and is reported
+/// as a network error with its (redacted) cause.
+export function readFailure(error: unknown, ifReverted: string, what: string): CliError {
+  if (isContractRevert(error)) return new CliError(ifReverted, "input", { cause: error });
+  return new CliError(`${what} failed for a reason other than a contract revert (${shortError(error)}); this says nothing about the chain state. Retry with a working RPC.`, "network", { cause: error });
 }
 
 const EIP1967_IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc" as const;
@@ -379,13 +542,17 @@ async function verifyDeployment(rpc: PublicClient, network: Network, courtId: st
   ]);
   const [arbitratorRead, courtRead, kitRead, whitelistRead] = settled;
 
-  if (arbitratorRead.status === "rejected") throw new Error(`DisputeResolver ${resolver} did not answer arbitrator()`);
+  if (arbitratorRead.status === "rejected") {
+    throw readFailure(arbitratorRead.reason, `DisputeResolver ${resolver} reverted on arbitrator() on ${network.label}`, `reading DisputeResolver.arbitrator() on ${network.label}`);
+  }
   if (getAddress(arbitratorRead.value as Address) !== core) {
     throw new Error(`DisputeResolver ${resolver} points at arbitrator ${arbitratorRead.value}, not the allowlisted Kleros Core ${core}`);
   }
   checks.push({ name: "resolver-arbitrator", status: "ok", detail: `DisputeResolver.arbitrator() == ${core}.` });
 
-  if (courtRead.status === "rejected") throw new Error(`court ${courtId} does not exist on ${network.label}`);
+  if (courtRead.status === "rejected") {
+    throw readFailure(courtRead.reason, `court ${courtId} does not exist on ${network.label} (courts(${courtId}) reverted)`, `reading court ${courtId} on ${network.label}`);
+  }
   const court = courtRead.value as readonly [bigint, boolean, bigint, bigint, bigint, bigint, boolean];
   if (court[6]) throw new Error(`court ${courtId} is disabled on ${network.label}`);
   checks.push({
@@ -394,6 +561,9 @@ async function verifyDeployment(rpc: PublicClient, network: Network, courtId: st
     detail: `Court ${courtId} exists, is enabled, feeForJuror ${formatEther(court[4])} ETH, hiddenVotes ${court[1]}.`,
   });
 
+  if (kitRead.status === "rejected" && !isContractRevert(kitRead.reason)) {
+    throw readFailure(kitRead.reason, "", `reading isSupported(${courtId}, ${disputeKitId}) on ${network.label}`);
+  }
   if (kitRead.status === "rejected" || kitRead.value !== true) {
     throw new Error(`court ${courtId} does not support dispute kit ${disputeKitId} on ${network.label}`);
   }
@@ -407,9 +577,9 @@ async function verifyDeployment(rpc: PublicClient, network: Network, courtId: st
     if (network.arbitrableWhitelist === "absent" && isContractRevert(error)) {
       checks.push({ name: "arbitrable-whitelist", status: "ok", detail: `${network.label} Kleros Core has no arbitrableWhitelist (call reverts); no whitelist is enforced.` });
     } else if (network.arbitrableWhitelist === "required") {
-      throw new Error(`could not confirm that DisputeResolver ${resolver} is on the ${network.label} Kleros Core arbitrable whitelist (${shortError(error)}); a dispute from a non-whitelisted arbitrable reverts. Retry with a working RPC.`);
+      throw new CliError(`could not confirm that DisputeResolver ${resolver} is on the ${network.label} Kleros Core arbitrable whitelist (${shortError(error)}); a dispute from a non-whitelisted arbitrable reverts. Retry with a working RPC.`, isContractRevert(error) ? "input" : "network", { cause: error });
     } else {
-      throw new Error(`arbitrableWhitelist read on ${network.label} failed for a reason other than a revert (${shortError(error)}); cannot tell whether a whitelist is enforced. Retry with a working RPC.`);
+      throw new CliError(`arbitrableWhitelist read on ${network.label} failed for a reason other than a revert (${shortError(error)}); cannot tell whether a whitelist is enforced. Retry with a working RPC.`, "network", { cause: error });
     }
   } else if (whitelistRead.value !== true) {
     throw new Error(`Kleros Core on ${network.label} enforces an arbitrable whitelist and DisputeResolver ${resolver} is not on it`);
@@ -432,6 +602,9 @@ export function parseMaxFee(raw: string): bigint {
 }
 
 async function quote(value: unknown, rpcUrl: string, options: QuoteOptions = {}) {
+  // Offline checks first (m-10): case content is network-independent except for
+  // the stamped arbitrator, so a bad case fails before any RPC call.
+  validate(value, options.network ? networkByAlias(options.network) : NETWORKS.arbitrum);
   const network = await resolveNetwork(options.network, rpcUrl);
   const result = validate(value, network);
   const rpc = client(network, rpcUrl);
@@ -516,7 +689,7 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
     | {
         available: true;
         estimatedGas: bigint;
-        gasPriceWei: bigint;
+        maxFeePerGasWei: bigint;
         estimatedFeeWei: bigint;
         estimatedFeeEth: string;
         estimatedTotalWei: bigint;
@@ -537,7 +710,9 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
       "",
       prepared.decoded.numberOfRulingOptions,
     ] as const;
-    const [gasResult, gasPriceWei, balanceWei] = await Promise.all([
+    // EIP-1559: price the estimate at maxFeePerGas (what the wallet will sign as
+    // the cap), so the total is an upper bound rather than a legacy gasPrice guess.
+    const [gasResult, fees, balanceWei] = await Promise.all([
       rpc.estimateContractGas({
         account: from,
         address: getAddress(network.resolver),
@@ -546,9 +721,12 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
         args: callArgs,
         value: prepared.value,
       }).then((gas) => ({ gas }), (error: Error) => ({ error })),
-      rpc.getGasPrice(),
+      rpc.estimateFeesPerGas({ type: "eip1559" }),
       rpc.getBalance({ address: from }),
     ]);
+    if ("error" in gasResult && isTransportError(gasResult.error)) {
+      throw readFailure(gasResult.error, "", `estimating gas from ${from}`);
+    }
     if ("error" in gasResult) {
       networkFee = {
         available: false,
@@ -556,12 +734,13 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
       };
       blocking.push(`The transaction would fail from ${from}: ${networkFee.reason}. Do not sign; fix the cause and re-run preflight.`);
     } else {
-      const estimatedFeeWei = gasResult.gas * gasPriceWei;
+      const maxFeePerGasWei = fees.maxFeePerGas;
+      const estimatedFeeWei = gasResult.gas * maxFeePerGasWei;
       const estimatedTotalWei = prepared.value + estimatedFeeWei;
       networkFee = {
         available: true,
         estimatedGas: gasResult.gas,
-        gasPriceWei,
+        maxFeePerGasWei,
         estimatedFeeWei,
         estimatedFeeEth: formatEther(estimatedFeeWei),
         estimatedTotalWei,
@@ -570,7 +749,7 @@ async function preflight(value: unknown, rpcUrl: string, options: QuoteOptions &
         balanceEth: formatEther(balanceWei),
         sufficientBalance: balanceWei >= estimatedTotalWei,
         from,
-        warning: "Gas and total are estimates, not spending guarantees; the wallet must re-estimate before signing.",
+        warning: "Gas and total are estimates (gas × EIP-1559 maxFeePerGas, an upper bound on the fee), not spending guarantees; the wallet must re-estimate before signing.",
       };
       if (!networkFee.sufficientBalance) {
         blocking.push(`${from} holds ${networkFee.balanceEth} ETH, less than the estimated total ${networkFee.estimatedTotalEth} ETH. Do not sign until the wallet is funded; then re-run preflight.`);
@@ -709,7 +888,7 @@ function formatHumanPreflight(review: Preflight) {
     lines.push(
       `Estimated network fee: ${fee.estimatedFeeEth} ETH (${fee.estimatedFeeWei.toString()} wei)`,
       `Estimated total: ${fee.estimatedTotalEth} ETH (${fee.estimatedTotalWei.toString()} wei)`,
-      `Gas estimate / gas price: ${fee.estimatedGas.toString()} / ${fee.gasPriceWei.toString()} wei`,
+      `Gas estimate / max fee per gas (EIP-1559): ${fee.estimatedGas.toString()} / ${fee.maxFeePerGasWei.toString()} wei`,
       `Estimate account: ${fee.from}`,
       `Account balance: ${fee.balanceEth} ETH — ${fee.sufficientBalance ? "covers the estimated total" : "DOES NOT cover the estimated total"}`,
       `Price warning: ${fee.warning}`,
@@ -781,9 +960,10 @@ async function prepareEvidence(
   rpcUrl: string,
   requested?: string,
 ) {
+  // Offline checks first (m-10): a bad evidence file fails before any RPC call.
+  const { input, evidenceJson } = validateEvidence(value);
   const network = await resolveNetwork(requested, rpcUrl);
   const rpc = client(network, rpcUrl);
-  const input = evidenceSchema.parse(value);
   const checks: Check[] = [];
   const warnings: string[] = [];
   // Refuses (throws) unless the EvidenceModule still runs the pinned
@@ -791,7 +971,6 @@ async function prepareEvidence(
   checks.push(await checkEvidenceModule(rpc, network));
 
   if (input.fileURI !== undefined) {
-    input.fileURI = normalizeIpfsUri(input.fileURI, "fileURI");
     checks.push(await checkIpfsResolves(input.fileURI, "fileURI"));
   }
 
@@ -821,8 +1000,8 @@ async function prepareEvidence(
     dispute = await rpc.readContract({
       address: getAddress(network.core), abi: coreAbi, functionName: "disputes", args: [disputeId],
     }) as readonly [bigint, Address, number, boolean, bigint];
-  } catch {
-    throw new Error(`dispute ${disputeId} does not exist on ${network.label} — check the ID and the network`);
+  } catch (error) {
+    throw readFailure(error, `dispute ${disputeId} does not exist on ${network.label} (disputes(${disputeId}) reverted) — check the ID and the network`, `reading dispute ${disputeId} on ${network.label}`);
   }
   const [courtID, arbitrated, period, ruled] = dispute;
   if (ruled) throw new Error(`dispute ${disputeId} is already ruled on ${network.label}; evidence can no longer affect it`);
@@ -862,7 +1041,6 @@ async function prepareEvidence(
   }
   if (!network.production) warnings.push(`${network.label} is a test network.`);
 
-  const evidenceJson = JSON.stringify(input);
   return {
     kind: "kleros-v2-evidence-preflight",
     ok: true,
@@ -903,9 +1081,14 @@ async function receipt(hash: Hex, rpcUrl: string, requested?: string, expectDisp
 
   let expected: { disputeId: bigint; evidenceGroupId: bigint } | undefined;
   if (expectDisputeId !== undefined) {
-    const [, arbitrated] = await rpc.readContract({
-      address: core, abi: coreAbi, functionName: "disputes", args: [expectDisputeId],
-    }) as readonly [bigint, Address, number, boolean, bigint];
+    let arbitrated: Address;
+    try {
+      [, arbitrated] = await rpc.readContract({
+        address: core, abi: coreAbi, functionName: "disputes", args: [expectDisputeId],
+      }) as readonly [bigint, Address, number, boolean, bigint];
+    } catch (error) {
+      throw readFailure(error, `dispute ${expectDisputeId} does not exist on ${network.label} (disputes(${expectDisputeId}) reverted) — check --dispute and the network`, `reading dispute ${expectDisputeId} on ${network.label}`);
+    }
     if (getAddress(arbitrated) !== resolver) {
       throw new Error(`dispute ${expectDisputeId} belongs to arbitrable ${getAddress(arbitrated)}, not this skill's DisputeResolver, so its evidence group cannot be derived here`);
     }
@@ -1046,7 +1229,7 @@ async function receipt(hash: Hex, rpcUrl: string, requested?: string, expectDisp
 const USAGE = `usage: prepare-dispute.ts <command> [flags]
 
 commands:
-  validate   --case <file> [--network <name>]
+  validate   --case <file> --network <name>
   quote      --case <file> --rpc-url <url> [--network <name>] [--max-fee <eth>]
   preflight  --case <file> --rpc-url <url> [--network <name>] [--max-fee <eth>] [--from <address>] [--human]
   prepare    --case <file> --rpc-url <url> [--network <name>] [--max-fee <eth>]
@@ -1055,13 +1238,19 @@ commands:
   receipt    --tx <hash> --rpc-url <url> [--network <name>] [--dispute <id>]
 
 networks: ${Object.values(NETWORKS).map((n) => `${n.key} (${n.chainId})`).join(", ")}
-The RPC chain ID is authoritative; --network is an optional assertion against it.`;
+With --rpc-url the RPC chain ID is authoritative and --network is an optional
+assertion against it; validate has no RPC, so --network is required there.
+
+output: one JSON object on stdout with top-level "ok" (preflight --human: text).
+exit:   0 ok · 2 completed but blocking (ok:false, see "blocking")
+        1 error ({"ok":false,"error","kind":"input|network|internal"})
+        64 usage error ({"ok":false,"kind":"usage"}) · --help/-h: this text, 0`;
 
 /// Per-command flag allowlist. Every flag either takes exactly one value or is
 /// a boolean switch; anything else is an error, so a misspelt or valueless
 /// safety flag (`--maxfee`, a bare `--max-fee`) can never be silently ignored.
 export const COMMAND_FLAGS: Record<string, { value: readonly string[]; boolean: readonly string[]; required: readonly string[] }> = {
-  validate: { value: ["--case", "--network"], boolean: [], required: ["--case"] },
+  validate: { value: ["--case", "--network"], boolean: [], required: ["--case", "--network"] },
   quote: { value: ["--case", "--rpc-url", "--network", "--max-fee"], boolean: [], required: ["--case", "--rpc-url"] },
   preflight: { value: ["--case", "--rpc-url", "--network", "--max-fee", "--from"], boolean: ["--human"], required: ["--case", "--rpc-url"] },
   prepare: { value: ["--case", "--rpc-url", "--network", "--max-fee"], boolean: [], required: ["--case", "--rpc-url"] },
@@ -1072,11 +1261,11 @@ export const COMMAND_FLAGS: Record<string, { value: readonly string[]; boolean: 
 
 export function parseArgs(command: string | undefined, tokens: readonly string[]) {
   const spec = command === undefined ? undefined : COMMAND_FLAGS[command];
-  if (!spec) throw new Error(`unknown command: ${command ?? "(none)"}\n\n${USAGE}`);
+  if (!spec) throw new CliError(`unknown command: ${command ?? "(none)"}; commands: ${Object.keys(COMMAND_FLAGS).join(", ")}`, "usage");
   const args = new Map<string, string | true>();
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
-    if (!token.startsWith("--")) throw new Error(`unexpected argument ${JSON.stringify(token)} for ${command}\n\n${USAGE}`);
+    if (!token.startsWith("--")) throw new Error(`unexpected argument ${JSON.stringify(token)} for ${command}`);
     const eq = token.indexOf("=");
     const name = eq === -1 ? token : token.slice(0, eq);
     if (args.has(name)) throw new Error(`${name} given more than once`);
@@ -1096,14 +1285,24 @@ export function parseArgs(command: string | undefined, tokens: readonly string[]
     }
   }
   for (const name of spec.required) {
-    if (!args.has(name)) throw new Error(`${name} is required for ${command}\n\n${USAGE}`);
+    if (!args.has(name)) throw new Error(`${name} is required for ${command}`);
   }
   return args;
 }
 
 /// Everything that can be checked without the network, checked before the
 /// network: a bad flag must fail in milliseconds, not after RPC and IPFS calls.
+/// Every failure here is a usage error (exit 64).
 export function parseCommandLine(argv: readonly string[]) {
+  try {
+    return parseCommandLineUnchecked(argv);
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    throw new CliError((error as Error).message, "usage", { cause: error });
+  }
+}
+
+function parseCommandLineUnchecked(argv: readonly string[]) {
   const [command, ...tokens] = argv;
   const args = parseArgs(command, tokens);
   const get = (name: string) => {
@@ -1112,6 +1311,7 @@ export function parseCommandLine(argv: readonly string[]) {
   };
   const rpcUrl = get("--rpc-url");
   if (rpcUrl !== undefined) {
+    registerSecretUrl(rpcUrl);
     let protocol = "";
     try { protocol = new URL(rpcUrl).protocol; } catch { /* reported below */ }
     if (protocol !== "http:" && protocol !== "https:") throw new Error("--rpc-url must be an http(s) URL");
@@ -1127,6 +1327,9 @@ export function parseCommandLine(argv: readonly string[]) {
   const group = get("--evidence-group");
   const tx = get("--tx");
   const creationTx = get("--creation-tx");
+  if (command === "evidence" && dispute === undefined && creationTx === undefined) {
+    throw new Error("evidence needs --dispute <court case id> or --creation-tx <hash>");
+  }
   return {
     command: command as string,
     human: args.get("--human") === true,
@@ -1143,17 +1346,74 @@ export function parseCommandLine(argv: readonly string[]) {
   };
 }
 
-async function main(argv: readonly string[]) {
+/// m-21: read and parse a JSON input file, naming the file on failure.
+export async function readJsonFile(file: string, label: string): Promise<unknown> {
+  let text: string;
+  try {
+    text = await readFile(file, "utf8");
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    throw new CliError(`cannot read ${label} file ${JSON.stringify(file)}${code === "ENOENT" ? ": no such file" : code ? `: ${code}` : ""}`, "input", { cause: error });
+  }
+  try {
+    return JSON.parse(text.replace(/^\uFEFF/, "")) as unknown;
+  } catch (error) {
+    throw new CliError(`${label} file ${JSON.stringify(file)} is not valid JSON: ${(error as Error).message}`, "input", { cause: error });
+  }
+}
+
+/// zod issues as "path: message" pairs instead of the raw issue dump.
+export function formatZodError(error: z.ZodError) {
+  const issues = error.issues.map((issue) => {
+    const where = issue.path.reduce<string>((acc, key) => typeof key === "number" ? `${acc}[${key}]` : acc ? `${acc}.${String(key)}` : String(key), "");
+    return `${where || "(root)"}: ${issue.message}`;
+  });
+  return `invalid input: ${issues.join("; ")}`;
+}
+
+/// Map any thrown value to the one JSON error object the CLI prints.
+export function describeFailure(error: unknown): { ok: false; error: string; kind: ErrorKind } {
+  let kind: ErrorKind;
+  let message: string;
+  if (error instanceof CliError) {
+    kind = error.kind;
+    message = error.message;
+  } else if (error instanceof z.ZodError) {
+    kind = "input";
+    message = formatZodError(error);
+  } else if (error instanceof BaseError) {
+    // A revert or an unknown transaction is an answer from the chain about the
+    // input; everything else from viem is treated as the RPC failing.
+    kind = isContractRevert(error) || (!isTransportError(error) && error.walk((cause) => (cause as Error).name === "TransactionReceiptNotFoundError") !== null) ? "input" : "network";
+    message = shortError(error);
+  } else if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+    kind = "network";
+    message = error.message;
+  } else if (error instanceof Error && error.constructor === Error) {
+    // Plain Errors are this script's own refusals (validation, chain-state checks).
+    kind = "input";
+    message = error.message;
+  } else {
+    kind = "internal";
+    message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  }
+  return { ok: false, error: redact(message), kind };
+}
+
+const json = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item, 2);
+
+async function runCommand(argv: readonly string[]) {
   const cli = parseCommandLine(argv);
   const { command } = cli;
   const rpcUrl = cli.rpcUrl as string;
   const quoteOptions: QuoteOptions = { network: cli.network, maxFeeWei: cli.maxFeeWei };
-  const readCase = async () => JSON.parse(await readFile(cli.casePath as string, "utf8")) as unknown;
+  const readCase = () => readJsonFile(cli.casePath as string, "case");
 
   let output: { ok: boolean; blocking: string[] } & Record<string, unknown>;
   if (command === "validate") {
+    const value = await readCase();
     const network = await resolveNetwork(cli.network);
-    const result = validate(await readCase(), network);
+    const result = validate(value, network);
     output = {
       ok: true,
       blocking: [],
@@ -1205,6 +1465,8 @@ async function main(argv: readonly string[]) {
       });
       simulation = { nextDisputeId: simulated.result, caseUrlIfCreated: caseUrl(priced.network, simulated.result) };
     } catch (error) {
+      // A transport failure is not a verdict on the transaction (m-02).
+      if (isTransportError(error)) throw readFailure(error, "", "simulating createDisputeForTemplate");
       simulation = { reverted: true, reason: shortError(error) };
       blocking.push(`Simulation from ${cli.from} failed: ${shortError(error)}. The transaction would not create a dispute; do not sign.`);
     }
@@ -1218,10 +1480,7 @@ async function main(argv: readonly string[]) {
       warnings: [...prepared.warnings, ...blocking],
     };
   } else if (command === "evidence") {
-    if (cli.disputeId === undefined && cli.creationTx === undefined) {
-      throw new Error(`evidence needs --dispute <court case id> or --creation-tx <hash>\n\n${USAGE}`);
-    }
-    const evidenceValue = JSON.parse(await readFile(cli.evidencePath as string, "utf8")) as unknown;
+    const evidenceValue = await readJsonFile(cli.evidencePath as string, "evidence");
     output = await prepareEvidence(
       evidenceValue,
       { disputeId: cli.disputeId, creationTx: cli.creationTx, claimedEvidenceGroup: cli.evidenceGroup },
@@ -1231,12 +1490,31 @@ async function main(argv: readonly string[]) {
   } else if (command === "receipt") {
     output = await receipt(cli.tx as Hex, rpcUrl, cli.network, cli.disputeId);
   } else {
-    throw new Error(`unknown command: ${command}\n\n${USAGE}`);
+    throw new CliError(`unknown command: ${command}`, "usage");
   }
-  console.log(JSON.stringify(output, (_key, item) => typeof item === "bigint" ? item.toString() : item, 2));
+  console.log(json(output));
   // Exit 2 = the command completed but found something that must stop the flow
   // (would-revert, insufficient balance, reverted or mis-keyed receipt).
   return output.ok ? 0 : 2;
+}
+
+/// M-04: the only entry point. Never throws: every failure becomes one JSON
+/// object on stdout plus one redacted line on stderr (stack only with DEBUG).
+/// Exit 0 ok · 2 blocking · 1 error · 64 usage.
+export async function main(argv: readonly string[]): Promise<number> {
+  if (argv.length === 0 || argv.some((token) => token === "--help" || token === "-h") || argv[0] === "help") {
+    console.log(USAGE);
+    return 0;
+  }
+  try {
+    return await runCommand(argv);
+  } catch (error) {
+    const failure = describeFailure(error);
+    console.log(json(failure.kind === "usage" ? { ...failure, usage: USAGE } : failure));
+    console.error(`prepare-dispute: ${failure.kind} error: ${failure.error}${failure.kind === "usage" ? " (run with --help for usage)" : ""}`);
+    if (process.env.DEBUG && error instanceof Error && error.stack) console.error(redact(error.stack));
+    return failure.kind === "usage" ? 64 : 1;
+  }
 }
 
 // Run only as a CLI, so tests can import the pure functions above.

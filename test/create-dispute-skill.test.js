@@ -11,6 +11,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const os = require("node:os");
 
 const skillDir = path.join(__dirname, "..", "kleros-create-dispute");
 const skill = fs.readFileSync(path.join(skillDir, "SKILL.md"), "utf8");
@@ -100,7 +101,7 @@ describe("kleros-create-dispute", () => {
     assert.match(helper, /const RESERVED_RULING = \{/, "the reserved ruling must be defined once, not restated");
     assert.match(helper, /RESERVED_RULING\.pattern\.test\(title\)/, "validate must reject an answer that repeats ruling 0");
     assert.match(helper, /repeats ruling 0, which the Court already puts on every ballot/, "the error must say why, not just that it failed");
-    assert.match(helper, /new Set<string>\(\[RESERVED_RULING\.title\.toLocaleLowerCase\(\)\]\)/, "the dedupe set must be seeded with the reserved title");
+    assert.match(helper, /new Set<string>\(\[titleKey\(RESERVED_RULING\.title\)\]\)/, "the dedupe set must be seeded with the reserved title");
     assert.match(skill, /never write a refuse or invalid answer of your own/i, "SKILL.md must state the rule");
   });
 
@@ -293,5 +294,160 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason }, () => {
       assert.ok(at > 0, kind);
       assert.match(helper.slice(at, at + 200), /ok: /, `${kind} must carry ok`);
     }
+  });
+
+  // ---- batch 2: CLI hygiene ----------------------------------------------
+  const parseJson = (result) => {
+    try { return JSON.parse(result.stdout); } catch { assert.fail(`stdout is not one JSON object:\n${result.out}`); }
+  };
+  const assertCleanError = (result, code, kind) => {
+    assert.equal(result.code, code, result.out);
+    const output = parseJson(result);
+    assert.equal(output.ok, false);
+    assert.equal(output.kind, kind, result.out);
+    assert.equal(typeof output.error, "string");
+    assert.doesNotMatch(result.out, /\n\s+at .+:\d+:\d+/, "no stack trace without DEBUG");
+    return output;
+  };
+
+  it("M-04 --help, -h and no arguments print usage and exit 0", () => {
+    for (const args of [["--help"], ["-h"], [], ["quote", "--help"]]) {
+      const result = run(...args);
+      assert.equal(result.code, 0, `${args.join(" ")}: ${result.out}`);
+      assert.match(result.stdout, /^usage: prepare-dispute\.ts <command>/);
+    }
+  });
+
+  it("M-04 usage errors exit 64 with a JSON error object", () => {
+    let output = assertCleanError(run("frobnicate"), 64, "usage");
+    assert.match(output.error, /unknown command: frobnicate/);
+    output = assertCleanError(run("quote", "--case", fixture("valid"), "--rpc-url", DEAD_RPC, "--maxfee", "1"), 64, "usage");
+    assert.match(output.error, /unknown flag --maxfee/);
+    assertCleanError(run("evidence", "--evidence", fixture("valid"), "--rpc-url", DEAD_RPC), 64, "usage");
+  });
+
+  it("M-04 input errors exit 1 as concise JSON (missing case file, zod issues)", () => {
+    let output = assertCleanError(run("validate", "--case", fixture("does-not-exist"), "--network", "arbitrumSepolia"), 1, "input");
+    assert.match(output.error, /cannot read case file .*does-not-exist\.json.*no such file/);
+    output = assertCleanError(run("evidence", "--evidence", fixture("valid"), "--rpc-url", DEAD_RPC, "--dispute", "1"), 1, "input");
+    assert.match(output.error, /^invalid input: name: /, "zod errors are 'path: message' pairs");
+    assert.doesNotMatch(output.error, /"code":|"path":/, "no raw zod issue dump");
+  });
+
+  it("M-04 redacts RPC credentials and API keys from error output", () => {
+    for (const rpc of ["http://user:secret@127.0.0.1:9/v2/SECRETKEY", "http://127.0.0.1:9/v2/SECRETKEY?apikey=QUERYKEY"]) {
+      const result = run("quote", "--case", fixture("valid"), "--rpc-url", rpc);
+      const output = assertCleanError(result, 1, "network");
+      for (const secret of ["SECRETKEY", "secret", "QUERYKEY"]) assert.ok(!result.out.includes(secret), `${secret} leaked: ${result.out}`);
+      assert.match(output.error, /could not read the chain ID/);
+    }
+    const { redact, registerSecretUrl } = helperModule;
+    const alchemy = "https://arb-mainnet.g.alchemy.com/v2/abcDEF123456ghiJKL";
+    assert.equal(redact(`HTTP request failed. URL: ${alchemy}`), "HTTP request failed. URL: https://arb-mainnet.g.alchemy.com/<redacted>");
+    registerSecretUrl("https://rpc.example/key/zzTOPSECRETzz");
+    assert.equal(redact("node said zzTOPSECRETzz"), "node said <redacted>", "a registered key is scrubbed even outside a URL");
+    assert.equal(redact("see https://cdn.kleros.link/ipfs/bafkqaaa"), "see https://cdn.kleros.link/ipfs/bafkqaaa", "public gateway links stay readable");
+  });
+
+  it("m-11 validate requires --network instead of defaulting to mainnet", () => {
+    const output = assertCleanError(run("validate", "--case", fixture("valid")), 64, "usage");
+    assert.match(output.error, /--network is required for validate/);
+    const mainnet = run("validate", "--case", fixture("valid"), "--network", "arbitrum");
+    assert.equal(mainnet.code, 0, mainnet.out);
+    assert.equal(parseJson(mainnet).network.chainId, 42161);
+    assert.ok(skill.includes("prepare-dispute.ts validate  --case CASE --network NET"), "SKILL.md must show --network as required");
+  });
+
+  it("m-21 malformed case and evidence JSON name the file", () => {
+    let output = assertCleanError(run("validate", "--case", fixture("malformed"), "--network", "arbitrumSepolia"), 1, "input");
+    assert.match(output.error, /case file ".*malformed\.json" is not valid JSON/);
+    output = assertCleanError(run("evidence", "--evidence", fixture("malformed"), "--rpc-url", DEAD_RPC, "--dispute", "1"), 1, "input");
+    assert.match(output.error, /evidence file ".*malformed\.json" is not valid JSON/);
+  });
+
+  it("m-09 caps the template by UTF-8 bytes, not characters", () => {
+    const base = JSON.parse(fs.readFileSync(fixture("valid"), "utf8"));
+    // 20,000 + 2,000 CJK characters: inside every per-field character limit,
+    // but ~66 KB of UTF-8 — over the 64 KiB cap.
+    const big = { ...base, lang: "zh_CN", description: "案".repeat(20_000), question: `${"问".repeat(1_999)}？` };
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kcd-"));
+    const file = path.join(dir, "cjk.json");
+    fs.writeFileSync(file, JSON.stringify(big));
+    try {
+      const output = assertCleanError(run("validate", "--case", file, "--network", "arbitrumSepolia"), 1, "input");
+      assert.match(output.error, /serialized template is \d+ bytes of UTF-8, over the 65536-byte cap/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+    assert.equal(helperModule.MAX_TEMPLATE_BYTES, 65536);
+    // Evidence: 20,000 CJK characters (at the char limit) plus a CJK file path.
+    assert.doesNotThrow(() => helperModule.validateEvidence({ name: "Short", description: "証".repeat(20_000) }));
+    assert.throws(
+      () => helperModule.validateEvidence({ name: "Long", description: "証".repeat(20_000), fileURI: `/ipfs/QmX/${"書".repeat(2_000)}.pdf` }),
+      /evidence JSON is \d+ bytes of UTF-8, over the 65536-byte cap/,
+    );
+  });
+
+  it("n-07 de-duplicates answer titles after NFKC, invisible-char stripping and case folding", () => {
+    for (const name of ["answers-zero-width", "answers-fullwidth"]) {
+      const output = assertCleanError(run("validate", "--case", fixture(name), "--network", "arbitrumSepolia"), 1, "input");
+      assert.match(output.error, /duplicates another answer title/, name);
+    }
+    const { titleKey } = helperModule;
+    assert.equal(titleKey("Ｒｅｆｕｓｅ\u200b  to\tArbitrate"), "refuse to arbitrate");
+    assert.equal(titleKey("INVALID"), titleKey("invalid"));
+  });
+
+  it("n-08 accepts fullwidth and Arabic question marks", () => {
+    for (const name of ["question-arabic", "question-fullwidth"]) {
+      const result = run("validate", "--case", fixture(name), "--network", "arbitrumSepolia");
+      assert.equal(result.code, 0, `${name}: ${result.out}`);
+    }
+    assert.ok(!helperModule.QUESTION_END.test("Did the seller deliver."));
+  });
+
+  it("D-6 rejects zero-width characters inside IPFS URI paths", () => {
+    const output = assertCleanError(run("validate", "--case", fixture("ipfs-zero-width"), "--network", "arbitrumSepolia"), 1, "input");
+    assert.match(output.error, /policyURI must be an IPFS reference/);
+    assert.throws(() => helperModule.normalizeIpfsUri("/ipfs/Qm\u2060abc", "fileURI"), /invisible format characters/);
+  });
+
+  it("m-08 rejects empty IPFS content and always releases the body", async () => {
+    const { checkIpfsResolves } = helperModule;
+    let cancelled = 0;
+    const streaming = (chunks) => new ReadableStream({
+      pull(controller) { if (chunks.length) controller.enqueue(new TextEncoder().encode(chunks.shift())); else controller.close(); },
+      cancel() { cancelled += 1; },
+    });
+    const stub = (response) => async () => response;
+    await assert.rejects(checkIpfsResolves("/ipfs/bafkqaaa", "policyURI", stub(new Response(""))), /EMPTY content/);
+    await assert.rejects(checkIpfsResolves("/ipfs/bafkqaaa", "policyURI", stub(new Response(null, { headers: { "content-length": "0" } }))), /EMPTY content/);
+    const ok = await checkIpfsResolves("/ipfs/QmX", "fileURI", stub(new Response(streaming(["%PDF", "-rest", "-more"]))));
+    assert.equal(ok.status, "ok");
+    assert.equal(cancelled, 1, "the body must be cancelled after the first chunk");
+    await assert.rejects(checkIpfsResolves("/ipfs/QmX", "fileURI", stub(new Response("nope", { status: 404 }))), /could not be retrieved .*HTTP 404/);
+  });
+
+  it("m-02 tells a contract revert from a transport failure and redacts the cause", () => {
+    const { readFailure, isContractRevert, isTransportError } = helperModule;
+    const named = (name, message, cause) => Object.assign(new Error(message, { cause }), { name });
+    const revert = named("ContractFunctionExecutionError", "courts reverted", named("ContractFunctionRevertedError", "panic 0x32"));
+    const transport = named("ContractFunctionExecutionError", "HTTP request failed. URL: http://127.0.0.1:9/v2/SECRETKEY", named("HttpRequestError", "fetch failed"));
+    assert.ok(isContractRevert(revert) && !isTransportError(revert));
+    assert.ok(isTransportError(transport) && !isContractRevert(transport));
+    const asRevert = readFailure(revert, "court 99 does not exist", "reading court 99");
+    assert.equal(asRevert.kind, "input");
+    assert.equal(asRevert.message, "court 99 does not exist");
+    const asTransport = readFailure(transport, "court 99 does not exist", "reading court 99");
+    assert.equal(asTransport.kind, "network");
+    assert.doesNotMatch(asTransport.message, /does not exist/);
+    assert.match(asTransport.message, /reading court 99 failed for a reason other than a contract revert/);
+    assert.ok(!asTransport.message.includes("SECRETKEY"), asTransport.message);
+  });
+
+  it("n-10 / n-11 no node shebang on the .ts helper; EIP-1559 fee estimate", () => {
+    assert.ok(!helper.startsWith("#!"), "the helper is run with npx tsx, not executed directly");
+    assert.match(helper, /estimateFeesPerGas\(/);
+    assert.doesNotMatch(helper, /getGasPrice\(/);
   });
 });

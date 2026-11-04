@@ -46,23 +46,23 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **M-01** Flag parser silently drops valueless/unknown flags (`--max-fee` cap lost) — 7f58b66
 - [x] **M-02** Doomed tx / reverted / mis-keyed paths exit 0; signals buried — 7f58b66
 - [x] **M-03** IPFS URI regex looser than SDK `isMultiaddr` — 7f58b66 (+ encoded-dot bypass D-1 closed in follow-up commit)
-- [ ] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors
+- [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — this commit
 - [ ] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate`
 - [ ] **M-06** Tests never execute the script
 - [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
 
 ### 🟡 Minor
 - [x] **m-01** Whitelist check fails open on any read error — 7f58b66
-- [ ] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist"
+- [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — this commit
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
 - [ ] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high)
 - [ ] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci`
 - [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
-- [ ] **m-08** IPFS check proves resolve, not content; body never consumed
-- [ ] **m-09** Size limits in UTF-16 units, not bytes
-- [ ] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late
-- [ ] **m-11** `validate` silently defaults to mainnet
+- [x] **m-08** IPFS check proves resolve, not content; body never consumed — this commit
+- [x] **m-09** Size limits in UTF-16 units, not bytes — this commit
+- [x] **m-10** `simulate` checks `--from` after all network calls; `--max-fee` parsed late — this commit
+- [x] **m-11** `validate` silently defaults to mainnet — this commit
 - [ ] **m-12** Shared evidence group across arbitrables not flagged
 - [ ] **m-13** Evidence `description` allows empty
 - [ ] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}`
@@ -72,21 +72,21 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [ ] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link
 - [ ] **m-19** `CLAUDE.md:9` "Published:" not updated
 - [ ] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG)
-- [ ] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly
+- [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — this commit
 - [ ] **m-22** Description: missing trigger synonyms / "pushy" clause
 
 ### 🟢 Nits
 - [ ] **n-01** Ruling-0 wording partly wrong (SDK replaces `0x0`, doesn't duplicate)
 - [ ] **n-02** Sources links point to dev `DisputeResolver.sol`, not deployment ABIs
 - [ ] **n-03** Ruling-0 rationale repeated 3×; step-4 list duplicates `preflight --human`
-- [ ] **n-04** Voodoo constants (`QUOTE_TTL_MS`, 25 s IPFS timeout)
+- [x] **n-04** Voodoo constants (`QUOTE_TTL_MS`, 25 s IPFS timeout) — this commit
 - [ ] **n-05** No "When NOT to use" / "Example" sections (sibling parity)
 - [ ] **n-06** `../` cross-skill links assume full plugin install
-- [ ] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping
-- [ ] **n-08** `question.endsWith("?")` rejects `؟`
+- [x] **n-07** Title dedupe locale-dependent; no NFKC / zero-width stripping — this commit
+- [x] **n-08** `question.endsWith("?")` rejects `؟` — this commit
 - [x] **n-09** `--human yes` swallows value → JSON output
-- [ ] **n-10** Node shebang on non-executable `.ts`
-- [ ] **n-11** Legacy `getGasPrice` vs EIP-1559
+- [x] **n-10** Node shebang on non-executable `.ts` — this commit
+- [x] **n-11** Legacy `getGasPrice` vs EIP-1559 — this commit
 - [ ] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins
 - [ ] **n-13** `plugin.json` keywords lack `arbitrum`/`v2`
 - [ ] **n-14** Landing card "Testnet" tag undersells mainnet target
@@ -260,6 +260,6 @@ Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 
 - [ ] **D-3** (low) B-02 / M-02 tests weak (pin format + source grep only; no exit-2 / BLOCKED assertion). Needs stubbed `PublicClient` → batch 3.
 - [x] **D-4** (low) `receipt` accepted JSON array as evidence object. Fix: `Array.isArray` check.
 - [x] **D-5** (low) `case-format.md` silent on `{{`/`}}` ban. Fix: one paragraph added.
-- [ ] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2.
+- [x] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2. — this commit
 - [x] **n-15** reserved-ruling test uses real pattern — 7f58b66 (incidental).
 - [x] **n-09** `--human yes` now an error — 7f58b66 (incidental).

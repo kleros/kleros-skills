@@ -18,7 +18,7 @@ fee, ID, encoding, check, simulation, and receipt.
 
 The RPC's chain ID selects the network and is authoritative; `--network arbitrum`
 or `--network arbitrumSepolia` is an optional assertion the script checks against
-it. A real ruling only exists on Arbitrum One — rehearse on Arbitrum Sepolia,
+it. `validate` has no RPC, so it requires `--network` — there is no default. A real ruling only exists on Arbitrum One — rehearse on Arbitrum Sepolia,
 where the arbitration fee is negligible, before spending mainnet ETH.
 
 ## Flow
@@ -35,7 +35,8 @@ where the arbitration fee is negligible, before spending mainnet ETH.
    `preflight`, `prepare`, and `simulate` against the target RPC. Use
    `preflight --human` for a person and its default JSON for an agent. Pass the
    real wallet with `--from` when available so it can estimate gas, balance, and
-   total; never invent an address. Add `--max-fee <eth>` when the user gave a cap.
+   total (gas × EIP-1559 `maxFeePerGas`, an upper bound); never invent an
+   address. Add `--max-fee <eth>` when the user gave a cap.
 4. Show the complete preflight before asking for approval: network, every check,
    title, description, juror question, every ruling ID/title/description,
    category, language, openable policy link, evidence timing, court, initial
@@ -53,7 +54,7 @@ where the arbitration fee is negligible, before spending mainnet ETH.
 Install the helper once with `npm install` in `scripts/`, then run:
 
 ```bash
-npx tsx prepare-dispute.ts validate  --case CASE [--network NET]
+npx tsx prepare-dispute.ts validate  --case CASE --network NET
 npx tsx prepare-dispute.ts quote     --case CASE --rpc-url RPC [--max-fee ETH]
 npx tsx prepare-dispute.ts preflight --case CASE --rpc-url RPC [--from 0x...] [--human]
 npx tsx prepare-dispute.ts prepare   --case CASE --rpc-url RPC
@@ -62,14 +63,25 @@ npx tsx prepare-dispute.ts evidence  --evidence EV --rpc-url RPC (--dispute ID |
 npx tsx prepare-dispute.ts receipt   --tx 0x... --rpc-url RPC [--dispute ID]
 ```
 
-Every command prints JSON with a top-level `ok` and a `blocking` list (`preflight
---human` prints them as a `BLOCKED — DO NOT SIGN` banner). Exit `0` = ok; exit `2`
-= the command completed but found a blocking problem (transaction would revert,
-balance too low, simulation failed, receipt reverted or evidence MIS-KEYED); any
-other non-zero exit = refused or failed. **On `ok:false` or any non-zero exit,
-stop: show the blocking items or error verbatim, do not ask for approval, and do
-not sign, broadcast, or report success.** Unknown or valueless flags are errors —
-fix the command rather than dropping the flag.
+Every command prints one JSON object with a top-level `ok` (`preflight --human`
+prints text, with blocking items as a `BLOCKED — DO NOT SIGN` banner). Exit codes:
+
+- `0` — ok.
+- `2` — completed but found a blocking problem, listed in `blocking` (transaction
+  would revert, balance too low, simulation failed, receipt reverted or evidence
+  MIS-KEYED).
+- `1` — refused or failed: `{"ok":false,"error":"…","kind":"input|network|internal"}`.
+  `network` means the RPC or gateway did not answer — it says nothing about the
+  case, court or dispute; retry with a working RPC, never read it as "does not
+  exist".
+- `64` — usage error (`"kind":"usage"`): unknown command, or an unknown,
+  valueless, missing or malformed flag. Fix the command rather than dropping the
+  flag. `--help` prints usage and exits `0`.
+
+**On `ok:false` or any non-zero exit, stop: show the blocking items or error
+verbatim, do not ask for approval, and do not sign, broadcast, or report
+success.** Errors never echo RPC keys (URLs are redacted); stack traces print
+only with `DEBUG=1`.
 
 ## Evidence after dispute creation
 
