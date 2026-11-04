@@ -13,7 +13,7 @@
       "type": "skill-md",
       "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
       "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
-      "digest": "sha256:c33d3d2e3a351fef9097840ba82767d56ebc4aa4feeea090dcc8bdf836ed6bf4"
+      "digest": "sha256:4553b08e644fd462f777b28dbfc79e44fd1a404f45f5f50b09169988a8a6472b"
     },
     {
       "name": "kleros-curate",
@@ -27,7 +27,7 @@
       "type": "skill-md",
       "description": "Create a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia with policy upload, validation, deployment preflight, live fee quote, prepared calldata, simulation, and receipt parsing",
       "url": "https://skills.kleros.io/kleros-create-dispute/SKILL.md",
-      "digest": "sha256:b869ef1cd0b9d2074f08caff9d5ceab6b9c516cd960333aacaa675930953f613"
+      "digest": "sha256:b069c1df9ddf0f1b88f171674eadca7362e13bedce3ad6b748092d4f790dd101"
     },
     {
       "name": "openclaw-skill",

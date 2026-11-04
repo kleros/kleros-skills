@@ -56,8 +56,8 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **m-02** RPC errors misreported as "court does not exist" / "dispute does not exist" — this commit
 - [ ] **m-03** Overpayment semantics undocumented (excess buys jurors, not refunded)
 - [ ] **m-04** Testnet Court URL non-canonical
-- [ ] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high)
-- [ ] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci`
+- [x] **m-05** zod 4.4.3 — GHSA-mrhx-c7xc-m3w5 (high) — this commit (→ 4.6.7)
+- [x] **m-06** Lockfile policy inconsistent / undocumented; `npm install` vs `npm ci` — this commit (decision 2026-11-04: lockfiles committed for both skills; only recorded prior rationale was "so dep versions stay fresh", `045c0d6`)
 - [x] **m-07** Numeric inputs not normalised (`courtId "01"`, `--dispute 0x10`, tx hash format) — 7f58b66
 - [x] **m-08** IPFS check proves resolve, not content; body never consumed — this commit
 - [x] **m-09** Size limits in UTF-16 units, not bytes — this commit
@@ -263,3 +263,5 @@ Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 
 - [x] **D-6** (info) zero-width chars accepted in URI paths; gateway check catches broken ones. Won't fix unless cheap in batch 2. — this commit
 - [x] **n-15** reserved-ruling test uses real pattern — 7f58b66 (incidental).
 - [x] **n-09** `--human yes` now an error — 7f58b66 (incidental).
+
+- [ ] **L-1** (follow-up, out of PR scope) `kleros-ipfs-upload/scripts` lockfile surfaces 29 transitive advisories (18 high) via `x402-fetch@1.2.0` (latest) → wallet SDK tree (ws, viem, zod, uuid, …). Pre-existing for every unlocked install; non-breaking `npm audit fix` can't resolve. Needs upstream x402 bump / overrides review.

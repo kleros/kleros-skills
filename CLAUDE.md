@@ -19,7 +19,7 @@ Run `update-digests` after editing any SKILL.md — it checks all digests and up
 
 No build step. No linting configured. The landing page is a static `index.html`.
 
-Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — they have their own `package.json` (no lockfile committed intentionally).
+Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — they have their own `package.json` and a committed `package-lock.json`. Same for `kleros-create-dispute/scripts/`. Lockfiles are committed so payment / tx-building deps are reproducible; install with `npm ci`, bump deps deliberately (`npm update` + review), never via unlocked installs.
 
 ## Claude Code setup
 

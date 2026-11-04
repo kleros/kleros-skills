@@ -39,11 +39,11 @@ Two paths depending on what your agent already has:
 
 ```bash
 cd path/to/this-skill/scripts
-npm install
+npm ci
 EVM_PRIVATE_KEY=0xYourPayerKey npx tsx pay-and-upload.ts /path/to/file.json
 ```
 
-`npm install` creates a `package-lock.json` and a `node_modules/` in the scripts dir — both are fine to leave in place or delete after use; not committed to the skill on purpose so dep versions stay fresh.
+`npm ci` installs the exact dependency versions pinned in the committed `package-lock.json` into `node_modules/` in the scripts dir (fine to leave in place or delete after use). The lockfile is committed on purpose: this script signs payments, so its dependency tree must be reproducible.
 
 On success the script prints every CID reported by the gateway, one per line (so you can capture the normal
 single CID with `$(npx tsx pay-and-upload.ts ...)`). The array-shaped response is legacy API structure, not
@@ -146,7 +146,7 @@ A bundled runner ships at `scripts/pay-and-upload-cdp.ts` for agents that prefer
 
 ```bash
 cd path/to/this-skill/scripts
-npm install
+npm ci
 CDP_API_KEY_ID=... \
 CDP_API_KEY_SECRET=... \
 CDP_WALLET_SECRET=... \
@@ -311,7 +311,7 @@ Steps:
 Both scripts are **optional**. They exist so agents without x402 tooling can pay and upload without rediscovering `x402-fetch` from scratch. If your agent already speaks x402, ignore them and call the gateway directly.
 
 - `scripts/pay-and-upload.ts` — reference single-file Node implementation. Adapt to your project context, or run standalone.
-- `scripts/package.json` — declares the two deps (`x402-fetch`, `tsx`). No lockfile and no tsconfig (tsx runs TS natively).
+- `scripts/package.json` — declares the two deps (`x402-fetch`, `tsx`). `scripts/package-lock.json` pins the full dependency tree (install with `npm ci`). No tsconfig (tsx runs TS natively).
 
 If you're integrating into an existing Node project, you can ignore the bundled `package.json` and just `npm i x402-fetch` in your own project.
 

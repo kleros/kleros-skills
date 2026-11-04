@@ -51,7 +51,7 @@ where the arbitration fee is negligible, before spending mainnet ETH.
    with its own approval — see below. It is due during the `evidence` period, so
    do not leave it until the case has moved on to voting.
 
-Install the helper once with `npm install` in `scripts/`, then run:
+Install the helper once with `npm ci` in `scripts/` (uses the committed lockfile), then run:
 
 ```bash
 npx tsx prepare-dispute.ts validate  --case CASE --network NET

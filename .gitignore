@@ -6,7 +6,6 @@
 
 # dependencies
 node_modules/
-/kleros-ipfs-upload/scripts/package-lock.json
 /.pnp
 .pnp.*
 .yarn/*

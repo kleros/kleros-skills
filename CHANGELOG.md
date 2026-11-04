@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.claude-plugin/marketplace.json` `metadata.version` bumped to 2.1.0 — the catalog now publishes three skills.
 - `.github/workflows/sync-master.yml` sanity check learned the new skill directory; `CLAUDE.md` records the workflow allowlist as a multi-surface publication target so future skills cannot break the release sync.
 - `.gitignore` now ignores nested `node_modules/` so per-skill `scripts/` installs are never committed.
+- Script dependencies are now locked for both skills: `kleros-ipfs-upload/scripts/package-lock.json` is committed (previously deliberately omitted) alongside `kleros-create-dispute/scripts/package-lock.json`, and both skills install with `npm ci`. Both scripts sign payments or build transactions, so their dependency trees must be reproducible; deps are bumped deliberately instead of drifting on every install.
+
+### Security
+- `kleros-create-dispute/scripts`: zod 4.4.3 → 4.6.7 (GHSA-mrhx-c7xc-m3w5).
 
 ## [2.4.0] - 2026-07-18
 
