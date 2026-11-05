@@ -17,8 +17,14 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
-  # Skill-discriminating: only the skill derives the evidence group from the creation tx
-  # with its helper; the baseline offers generic submitEvidence advice.
+  # Skill-discriminating (judge, not regex): a correct with-skill reply may ask for the
+  # evidence content before naming the helper command, so a literal "--creation-tx"
+  # regex was flaky (0/3 in the 2026-11-05 full run while behaving correctly).
   - name: chain-derived-group
-    type: regex
-    pattern: '--creation-tx|prepare-dispute\.ts\S{0,4}\s+evidence\b|\bevidence\s+--(?:evidence|creation-tx|dispute)\b'
+    type: llm
+    criteria: |
+      PASS only if the reply shows element (2) AND at least one of (1) or (3):
+      (1) it asks for (or drafts) the evidence document fields — a name and a description, with an optional attached file uploaded to IPFS first;
+      (2) it says the evidence group / key is read from the chain (from the creation transaction or the resolver) by the skill's helper, and is not typed, guessed, or assumed equal to the case number;
+      (3) it says the evidence transaction is prepared for the user's wallet and only sent after the user's explicit approval, unchanged.
+      FAIL if it states or uses a specific evidence-group number it did not read from the chain, or if it offers only generic advice (e.g. "call submitEvidence on the arbitrable" or "use the Court UI") without any of the above.
