@@ -13,6 +13,8 @@ Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet), `klero
 ```bash
 npm test                    # Node built-in test runner (node --test)
 npm run update-digests      # Recalculate SHA-256 hashes in .well-known/agent-skills/index.json
+npm run eval:check          # Free: parse test/evals cases + sanity-test grader regexes
+npm run eval                # PAID claude plugin eval suite (test/evals/) — needs bubblewrap+socat; not part of npm test; see test/evals/README.md
 ```
 
 Run `update-digests` after editing any SKILL.md — it checks all digests and updates stale ones in-place. Commit the updated `index.json` alongside the skill change.
@@ -50,7 +52,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
 - Release tags reference dev commits, not master — `git tag --contains HEAD` on a master checkout finds nothing.
 - Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
-- Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
+- Strip-list (excluded from master): `.planning/`, `test/` (incl. `test/evals/`), `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
 
 **Live infrastructure:**

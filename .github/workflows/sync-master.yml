@@ -134,7 +134,7 @@ jobs:
       #
       #    Strip-list:
       #      .planning/        — GSD planning artefacts
-      #      test/             — test suite
+      #      test/             — test suite + claude plugin eval suite (test/evals/)
       #      scripts/          — dev helper scripts
       #      package.json      — dev dependencies / npm scripts
       #      yarn.lock         — lockfile

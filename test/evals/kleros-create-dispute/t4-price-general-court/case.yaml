@@ -1,0 +1,23 @@
+# claude plugin eval case — see test/evals/README.md. Paid to run; never part of `npm test`.
+schema_version: "1.1"
+name: kleros-create-dispute/t4-price-general-court
+description: >-
+  Trigger case: kleros-create-dispute should fire. Read-only tools only.
+tags: [trigger, kleros-create-dispute]
+plugins: ["../../../.."]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    How much does it cost to create a Kleros dispute in the General Court with 3 jurors? Price it for me.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+  - name: live-quote
+    type: regex
+    pattern: 'arbitrationCost|quote|preflight'
+    flags: i

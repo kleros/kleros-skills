@@ -1,0 +1,23 @@
+# claude plugin eval case — see test/evals/README.md. Paid to run; never part of `npm test`.
+schema_version: "1.1"
+name: kleros-create-dispute/t1-freelance-dispute
+description: >-
+  Trigger case: kleros-create-dispute should fire. Read-only tools only.
+tags: [trigger, kleros-create-dispute]
+plugins: ["../../../.."]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    I paid a freelance designer 0.3 ETH up front for a logo and they never delivered. Can you take this freelance payment dispute to Kleros?
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+  - name: dispute-drafting
+    type: regex
+    pattern: 'policy|ruling|juror'
+    flags: i

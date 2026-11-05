@@ -49,7 +49,7 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **M-04** No structured errors; `--help` exits 1; RPC key may leak via viem errors — 2fecec8
 - [x] **M-05** `case-format.md` contradicts SKILL.md (evidence) + overstates `validate` — this commit (claim softened, pattern unchanged: `validate` list stated exactly; "cannot be evaluated"/"abstain"/"neither" left to drafting since "neither" etc. can be legitimate answers; stale evidence exclusion dropped)
 - [x] **M-06** Tests never execute the script — this commit
-- [ ] **M-07** No evals (trigger / should-not-trigger / behavioural)
+- [x] **M-07** No evals (trigger / should-not-trigger / behavioural) — this commit (suite written; paid run pending)
 
 ### 🟡 Minor
 - [x] **m-01** Whitelist check fails open on any read error — 7f58b66

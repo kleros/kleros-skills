@@ -4,7 +4,12 @@
   "description": "Kleros Skills — Knowledge for AI agents working with Kleros",
   "scripts": {
     "test": "node --test 'test/*.test.js'",
-    "update-digests": "node scripts/update-digests.js"
+    "update-digests": "node scripts/update-digests.js",
+    "eval:check": "node test/evals/check-graders.mjs",
+    "eval:triggers": "env -u EVM_PRIVATE_KEY -u CDP_API_KEY_ID -u CDP_API_KEY_SECRET -u CDP_WALLET_SECRET -u CDP_CREDS_PATH -u GATEWAY_URL claude plugin eval . --eval-dir test/evals --model sonnet --judge-model haiku --no-publish --threshold 0.8 --tag trigger --max-cost-usd 6",
+    "eval:behaviour": "npm ci --prefix kleros-create-dispute/scripts && env -u EVM_PRIVATE_KEY -u CDP_API_KEY_ID -u CDP_API_KEY_SECRET -u CDP_WALLET_SECRET -u CDP_CREDS_PATH -u GATEWAY_URL claude plugin eval . --eval-dir test/evals --model sonnet --judge-model haiku --no-publish --threshold 0.8 --tag behaviour --max-cost-usd 20 --allow-tools 'Bash(npm --prefix * exec -- tsx *prepare-dispute.ts*)' Write 'WebFetch(domain:sepolia-rollup.arbitrum.io)' 'WebFetch(domain:arb1.arbitrum.io)' 'WebFetch(domain:cdn.kleros.link)'",
+    "eval": "npm run eval:triggers; t=$?; npm run eval:behaviour; b=$?; [ $t -eq 0 ] && [ $b -eq 0 ]",
+    "eval:pilot": "env -u EVM_PRIVATE_KEY -u CDP_API_KEY_ID -u CDP_API_KEY_SECRET -u CDP_WALLET_SECRET -u CDP_CREDS_PATH -u GATEWAY_URL claude plugin eval . --eval-dir test/evals --model sonnet --judge-model haiku --no-publish --threshold 0.8 --tag trigger --runs 1 --max-cost-usd 3; t=$?; npm ci --prefix kleros-create-dispute/scripts && env -u EVM_PRIVATE_KEY -u CDP_API_KEY_ID -u CDP_API_KEY_SECRET -u CDP_WALLET_SECRET -u CDP_CREDS_PATH -u GATEWAY_URL claude plugin eval . --eval-dir test/evals --model sonnet --judge-model haiku --no-publish --threshold 0.8 --tag behaviour --runs 1 --max-cost-usd 5 --allow-tools 'Bash(npm --prefix * exec -- tsx *prepare-dispute.ts*)' Write 'WebFetch(domain:sepolia-rollup.arbitrum.io)' 'WebFetch(domain:arb1.arbitrum.io)' 'WebFetch(domain:cdn.kleros.link)'; b=$?; [ $t -eq 0 ] && [ $b -eq 0 ]"
   },
   "license": "MIT"
 }

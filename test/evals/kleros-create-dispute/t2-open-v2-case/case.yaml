@@ -1,0 +1,23 @@
+# claude plugin eval case — see test/evals/README.md. Paid to run; never part of `npm test`.
+schema_version: "1.1"
+name: kleros-create-dispute/t2-open-v2-case
+description: >-
+  Trigger case: kleros-create-dispute should fire. Read-only tools only.
+tags: [trigger, kleros-create-dispute]
+plugins: ["../../../.."]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    Open an arbitration case on Kleros V2 with two options for the jurors.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+  - name: network-choice
+    type: regex
+    pattern: 'Sepolia|Arbitrum One|testnet'
+    flags: i
