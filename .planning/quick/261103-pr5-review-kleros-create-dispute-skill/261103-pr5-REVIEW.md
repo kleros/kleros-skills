@@ -274,8 +274,8 @@ Independent verifier on 2fecec8: M-04, m-08, m-09, m-10, m-11, m-21, n-04, n-08,
 - [x] **E-2** (minor) `\p{Cf}` missed U+034F, U+FE0F, U+3164, U+2800 → `"Invalid͏"` bypassed reserved-ruling check. Fix: `\p{Default_Ignorable_Code_Point}` + U+2800 in title key and IPFS path check.
 - [x] **E-3** (minor) SKILL.md said gateway failures are `network`; script reports them `input`. Fix: SKILL.md wording.
 - [x] **E-4** (nit) multi-line stderr errors → newlines collapsed in `shortError`.
-- [ ] **E-5** (nit) RPC path keys < 6 chars not registered as secrets (echoed if the RPC repeats its path). Deferred.
-- [ ] **E-6** (nit) zero-length first chunk followed by data reported EMPTY. Deferred.
+- [x] **E-5** (nit) RPC path keys < 6 chars not registered as secrets (echoed if the RPC repeats its path). — this commit: every --rpc-url path segment / query value / userinfo part registered unless a well-known token (v1-v4, rpc, api, network names, bare numbers); < 6 chars scrubbed as whole tokens only, 6+ as substrings.
+- [x] **E-6** (nit) zero-length first chunk followed by data reported EMPTY. — this commit: read until first non-empty chunk or end of stream (fetch timeout still applies), reader always cancelled.
 - [x] **E-7** (nit) unclassified viem errors → `network` (could be `internal`). Deferred. → resolved with F-3 (9de9659), see below.
 - [x] **E-8** (nit) `﹖` (U+FE56) accepted via NFKC before question-mark check.
 - [ ] **E-9** (info) test fixtures use empty `/ipfs/bafkqaaa`; fine offline, any future live test needs a real CID.

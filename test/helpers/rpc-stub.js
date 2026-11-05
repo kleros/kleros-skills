@@ -8,7 +8,8 @@
 // eth_chainId, the bytecode / deployment reads and the EIP-1967 slot exactly as
 // a real Arbitrum node would for the helper to get anywhere.
 //
-// A scenario is `{ handle(method, params) }`. `handle` returns the JSON-RPC
+// A scenario is `{ handle(method, params, request) }` (`request` carries the raw
+// `url` path+query and the `authorization` header, for tests that echo them). `handle` returns the JSON-RPC
 // result, throws an `RpcError` (sent back as a JSON-RPC error object with any
 // code / message / data), or throws an `HttpStatus` (the whole HTTP response
 // becomes that status and body, as a rate-limiting or overloaded provider
@@ -39,13 +40,14 @@ async function startRpcStub() {
     request.setEncoding("utf8");
     request.on("data", (chunk) => { body += chunk; });
     request.on("end", () => {
-      const scenario = scenarios.get(request.url.split("/")[1]);
+      const scenario = scenarios.get(request.url.split(/[?#]/)[0].split("/")[1]);
+      const meta = { url: request.url, authorization: request.headers.authorization };
       const answer = (message) => {
         const base = { jsonrpc: "2.0", id: message.id };
         if (!scenario) return { ...base, error: { code: -32000, message: `unknown stub scenario ${request.url}` } };
         scenario.requests.push({ method: message.method, params: message.params });
         try {
-          return { ...base, result: scenario.handle(message.method, message.params ?? []) };
+          return { ...base, result: scenario.handle(message.method, message.params ?? [], meta) };
         } catch (error) {
           if (error instanceof HttpStatus) throw error;
           if (error instanceof RpcError) {

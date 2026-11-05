@@ -237,7 +237,7 @@ export function parseTxHash(raw: string, field: string): Hex {
 /// either outcome is a hard stop — this is the check that catches a fabricated CID.
 /// A 200 is not enough either: an identity CID such as `bafkqaaa` resolves to
 /// zero bytes. Require at least one byte (Content-Length when given, else the
-/// first body chunk) and always release the body so no download is left open.
+/// first non-empty body chunk) and always release the body so no download is left open.
 export async function checkIpfsResolves(uri: string, field: string, fetchImpl: typeof fetch = fetch): Promise<Check> {
   const url = `${KLEROS_IPFS_HTTP_GATEWAY}${uri}`;
   let reason = "";
@@ -251,10 +251,23 @@ export async function checkIpfsResolves(uri: string, field: string, fetchImpl: t
         if (length !== null && /^\d+$/.test(length.trim())) {
           empty = Number(length) === 0;
         } else {
+          // E-6: a stream may open with zero-length chunks before the data, so
+          // read until the first non-empty chunk or the end of the stream — never
+          // further — then release it. The fetch's timeout signal also aborts
+          // these reads, so a gateway trickling empty chunks cannot stall us.
+          empty = true;
           const reader = response.body?.getReader();
-          const first = reader ? await reader.read() : { done: true, value: undefined };
-          empty = first.done || !first.value || first.value.byteLength === 0;
-          await reader?.cancel().catch(() => {});
+          if (reader) {
+            try {
+              for (;;) {
+                const chunk = await reader.read();
+                if (chunk.done) break;
+                if (chunk.value && chunk.value.byteLength > 0) { empty = false; break; }
+              }
+            } finally {
+              await reader.cancel().catch(() => {});
+            }
+          }
         }
         if (empty) {
           throw new CliError(`${field} ${uri} resolves to EMPTY content on the Kleros gateway (HTTP ${response.status}, 0 bytes). Jurors would see nothing. Upload the real file with the kleros-ipfs-upload skill and use the CID it returns. Checked: ${url}`, "input");
@@ -468,20 +481,45 @@ export function isTransportError(error: unknown) {
 // Redaction. RPC URLs routinely embed API keys (path, query or userinfo), and
 // viem errors echo the URL. Nothing printed may carry them.
 // ---------------------------------------------------------------------------
-const secrets = new Set<string>();
+// E-5: every part of the --rpc-url that could be a credential is registered —
+// no length floor, because a short key (`/v2/ab12c`, `?key=x9z`) is still a key.
+// Two tiers keep that from blanking ordinary words out of normal output:
+// - well-known non-secret URL tokens (version / API / transport words, Arbitrum
+//   network names, bare chain ids and ports) are never registered;
+// - parts of 6+ characters are scrubbed wherever they appear (substring), as
+//   before; shorter parts only as a whole token (not flanked by a letter or
+//   digit), so a 5-character key cannot cut into "kleros", a CID or a hash.
+// redact() already strips the path, query and userinfo of every non-allowlisted
+// URL in the text, so the tiers only matter for a part echoed outside a URL —
+// where a short key can only appear as its own token. Successful output (JSON,
+// --human preflight, gateway / explorer / Court links) is never passed through
+// redact(); error text is, and loses at most an exact match of a URL part.
+const secrets = new Set<string>(); // scrubbed as substrings (6+ chars)
+const shortSecrets = new Set<string>(); // scrubbed as whole tokens (< 6 chars)
+const NON_SECRET_URL_TOKENS = new Set([
+  "v1", "v2", "v3", "v4", "rpc", "api", "jsonrpc", "http", "https", "ws", "wss", "public",
+  "arbitrum", "arb", "arb1", "one", "nova", "sepolia", "mainnet", "testnet",
+]);
+function registerSecretPart(part: string) {
+  let decoded = part;
+  try { decoded = decodeURIComponent(part); } catch { /* keep the raw form */ }
+  for (const candidate of new Set([part, decoded])) {
+    if (!candidate || NON_SECRET_URL_TOKENS.has(candidate.toLowerCase()) || /^\d{1,7}$/.test(candidate)) continue;
+    (candidate.length >= 6 ? secrets : shortSecrets).add(candidate);
+  }
+}
 /// Register a URL whose parts must never be printed (the --rpc-url).
 export function registerSecretUrl(raw: string) {
   secrets.add(raw);
   try {
     const url = new URL(raw);
     secrets.add(url.href);
-    // Length floors keep short, common strings ("user", "v2") from being
-    // scrubbed out of unrelated text; real keys and tokens are far longer.
-    if (url.username.length >= 8) secrets.add(url.username);
-    if (url.password.length >= 4) secrets.add(url.password);
-    for (const part of [url.search.slice(1), url.hash.slice(1)]) if (part.length >= 6) secrets.add(part);
-    for (const segment of url.pathname.split("/")) if (segment.length >= 6) secrets.add(segment);
-    for (const [, value] of url.searchParams) if (value.length >= 6) secrets.add(value);
+    registerSecretPart(url.username);
+    registerSecretPart(url.password);
+    registerSecretPart(url.search.slice(1));
+    registerSecretPart(url.hash.slice(1));
+    for (const segment of url.pathname.split("/")) registerSecretPart(segment);
+    for (const [, value] of url.searchParams) registerSecretPart(value);
   } catch { /* not a URL: the raw string is registered */ }
 }
 
@@ -500,6 +538,10 @@ export function redact(text: string) {
     }
   });
   for (const secret of [...secrets].sort((a, b) => b.length - a.length)) out = out.split(secret).join("<redacted>");
+  for (const secret of [...shortSecrets].sort((a, b) => b.length - a.length)) {
+    const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, "g"), "<redacted>");
+  }
   return out;
 }
 

@@ -570,6 +570,38 @@ describe("kleros-create-dispute helper behaviour", { skip: skipReason, concurren
     }
   });
 
+  it("E-6 reads past zero-length leading chunks; an all-empty stream is still EMPTY; the body is always released", async () => {
+    const { checkIpfsResolves } = helperModule;
+    const streaming = (chunks) => {
+      const state = { cancelled: 0 };
+      state.stream = new ReadableStream({
+        pull(controller) { if (chunks.length) controller.enqueue(new TextEncoder().encode(chunks.shift())); else controller.close(); },
+        cancel() { state.cancelled += 1; },
+      });
+      return state;
+    };
+    const stub = (body) => async () => new Response(body);
+    // Count reader.cancel() calls: a closed stream never reaches its source's cancel().
+    const proto = ReadableStreamDefaultReader.prototype;
+    const realCancel = proto.cancel;
+    let readerCancels = 0;
+    proto.cancel = function cancel(...args) { readerCancels += 1; return realCancel.apply(this, args); };
+    try {
+      const data = streaming(["", "", "%PDF-1.7", "-rest"]);
+      const ok = await checkIpfsResolves("/ipfs/QmX", "fileURI", stub(data.stream));
+      assert.equal(ok.status, "ok");
+      assert.equal(data.cancelled, 1, "the body is cancelled right after the first non-empty chunk");
+      for (const chunks of [["", ""], []]) {
+        const empty = streaming(chunks);
+        readerCancels = 0;
+        await assert.rejects(checkIpfsResolves("/ipfs/bafkqaaa", "policyURI", stub(empty.stream)), /EMPTY content/, JSON.stringify(chunks));
+        assert.ok(readerCancels >= 1, `reader released for ${JSON.stringify(chunks)}`);
+      }
+    } finally {
+      proto.cancel = realCancel;
+    }
+  });
+
   it("m-02 tells a contract revert from a transport failure and redacts the cause", async () => {
     const { readFailure, isContractRevert, isTransportError } = helperModule;
     const named = (name, message, cause) => Object.assign(new Error(message, { cause }), { name });

@@ -244,10 +244,10 @@ const GATEWAY = { [POLICY]: { body: "%PDF-1.7 policy" }, [EVIDENCE_FILE]: { body
 const preloads = haveDeps ? ["--import", pathToFileURL(tsxLoader).href, "--import", pathToFileURL(path.join(__dirname, "helpers", "mock-gateway.mjs")).href] : [];
 
 /// Spawn the helper as a real process: exit codes are process exit codes.
-function spawnCli(args, gateway) {
+function spawnCli(args, gateway, env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [...preloads, script, ...args], {
-      env: { ...process.env, DEBUG: "", KCD_TEST_GATEWAY: JSON.stringify(gateway) },
+      env: { ...process.env, DEBUG: "", KCD_TEST_GATEWAY: JSON.stringify(gateway), ...env },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -298,7 +298,7 @@ function finish(code, stdout, stderr) {
 }
 
 /// `spawn: true` for tests whose point is the process exit code.
-const cli = (args, { gateway = GATEWAY, spawn: asProcess = false } = {}) => (asProcess ? spawnCli : inProcessCli)(args, gateway);
+const cli = (args, { gateway = GATEWAY, spawn: asProcess = false, env } = {}) => (asProcess ? spawnCli(args, gateway, env) : inProcessCli(args, gateway));
 const expectJson = (result, code) => {
   assert.equal(result.code, code, result.out);
   assert.ok(result.json, `stdout is not one JSON object:\n${result.out}`);
@@ -795,6 +795,54 @@ describe("kleros-create-dispute on-chain behaviour (stubbed RPC + gateway)", { s
     assert.equal(output.blocking.length, 2);
     assert.match(output.blocking[0], /emitted no DisputeCreation from Kleros Core and no Evidence/);
     assert.match(output.blocking[1], /^--dispute 57 asks to verify evidence, but .* contains no Evidence event/);
+  });
+
+  // ---- E-5: short RPC keys -------------------------------------------------
+  it("E-5 a short RPC key (path, query, userinfo) never reaches stdout/stderr, even echoed by the node and with DEBUG=1", async () => {
+    // The node rejects eth_chainId with a message that repeats every credential
+    // it was sent: bare (outside any URL) and inside its full request URL.
+    const echoing = (keys) => {
+      const chain = klerosChain(SEPOLIA);
+      return {
+        ...chain,
+        handle(method, params, request) {
+          if (method !== "eth_chainId") return chain.handle(method, params, request);
+          const auth = request.authorization ? Buffer.from(request.authorization.replace(/^Basic /, ""), "base64").toString() : "";
+          throw new RpcError(-32000, `invalid key ${[...keys, auth].join(" ")} for http://127.0.0.1${request.url}`);
+        },
+      };
+    };
+    const cases = [
+      [(base) => `${base}/v2/ab12c`, ["ab12c"]],
+      [(base) => `${base}?key=x9z`, ["x9z"]],
+      [(base) => base.replace("http://", "http://u5r:pw9@"), ["u5r", "pw9"]],
+    ];
+    for (const [makeUrl, secrets] of cases) {
+      for (const asProcess of [false, true]) {
+        const result = await cli(["quote", "--case", valid, "--rpc-url", makeUrl(rpcFor(echoing(secrets)))], { spawn: asProcess, env: { DEBUG: "1" } });
+        const output = expectJson(result, 1);
+        assert.match(output.error, /invalid key <redacted>/, `the node's echo must reach the output, scrubbed: ${result.out}`);
+        if (asProcess) assert.match(result.stderr, /\n\s+at .+:\d+:\d+/, "DEBUG=1 prints the (redacted) stack");
+        for (const secret of secrets) assert.ok(!result.out.includes(secret), `${secret} leaked (${asProcess ? "spawned, DEBUG=1" : "in-process"}):\n${result.out}`);
+      }
+    }
+  });
+
+  it("E-5 registering short keys leaves ordinary output alone", async () => {
+    const { redact, registerSecretUrl } = helperModule;
+    // Short parts that are substrings of normal text, plus well-known non-secret tokens.
+    registerSecretUrl("https://u7:pw@arb-sepolia.example/rpc/arbitrum/sepolia/421614/v2/klero?key=bafkq&net=arbis&b=build");
+    const normal = "Checked: https://cdn.kleros.link/ipfs/bafkqaaa → HTTP 200, application/pdf, non-empty. " +
+      "See https://sepolia.arbiscan.io/tx/0xabc and https://v2-testnet.kleros.builders/#/cases/57 or https://v2.kleros.builders/#/cases/1; " +
+      "Kleros Core on arbitrum sepolia (421614) via rpc v2 api, court 7 builders.";
+    assert.equal(redact(normal), normal);
+    assert.equal(redact("node said: bad key klero (u7:pw) net=arbis"), "node said: bad key <redacted> (<redacted>:<redacted>) net=<redacted>");
+    // A successful run's JSON is the same whether or not the RPC URL carries a short key.
+    const strip = (result) => { const { quotedAt, expiresAt, ...rest } = expectJson(result, 0); return rest; };
+    const plain = strip(await cli(["quote", "--case", caseFile, "--rpc-url", rpcFor(klerosChain(SEPOLIA))]));
+    const keyed = strip(await cli(["quote", "--case", caseFile, "--rpc-url", `${rpcFor(klerosChain(SEPOLIA))}/v2/klero?key=ab1`]));
+    assert.deepEqual(keyed, plain);
+    assert.match(JSON.stringify(keyed), /https:\/\/cdn\.kleros\.link\/ipfs\/bafkqaaa/);
   });
 
   it("receipt: an unknown tx hash is an input error, not a crash", async () => {
