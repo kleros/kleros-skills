@@ -91,10 +91,19 @@ const account = privateKeyToAccount(privateKey);
 const client = new x402Client()
   .registerV1("base", new ExactEvmSchemeV1(account))     // gateway speaks x402 v1
   .register("eip155:8453", new ExactEvmScheme(account))  // v2, Base only
-  // Never sign for anything but ≤ 0.10 USDC on Base.
-  .registerPolicy((_v, reqs) => reqs.filter((r: any) =>
-    r.asset?.toLowerCase() === BASE_USDC &&
-    BigInt(r.maxAmountRequired ?? r.amount) <= 100_000n));
+  .setSpendControls({ maxAmountPerPayment: "$0.10" })    // SDK cap (default $1)
+  // Never sign for anything but ≤ 0.10 USDC on Base. Read the field the scheme
+  // signs: v1 maxAmountRequired, v2 amount (ignore any extra field on v2).
+  // EIP-3009 only (Permit2 can lead to an unlimited approve), valid ≤ 1 hour.
+  .registerPolicy((v, reqs) => reqs.filter((r: any) => {
+    const raw = v === 1 ? r.maxAmountRequired : r.amount;
+    const method = r.extra?.assetTransferMethod;
+    return r.asset?.toLowerCase() === BASE_USDC &&
+      typeof raw === "string" && /^\d+$/.test(raw) && BigInt(raw) <= 100_000n &&
+      (method === undefined || method === "eip3009") &&
+      Number.isInteger(r.maxTimeoutSeconds) &&
+      r.maxTimeoutSeconds > 0 && r.maxTimeoutSeconds <= 3600;
+  }));
 const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 const form = new FormData();
@@ -108,7 +117,7 @@ if (!Array.isArray(cids) || cids.length === 0) throw new Error("Gateway returned
 const cid = cids[0];
 ```
 
-`@x402/fetch` handles the `402 Payment Required` challenge, signs an EIP-3009 `transferWithAuthorization` over USDC, and retries the request with the `X-PAYMENT` header. The caller sees a normal 200 response containing the result for that one uploaded file. Keep the spending policy: without it the client will sign whatever amount the server asks for, up to the SDK's default $1 cap.
+`@x402/fetch` handles the `402 Payment Required` challenge, signs an EIP-3009 `transferWithAuthorization` over USDC, and retries the request with the `X-PAYMENT` header. The caller sees a normal 200 response containing the result for that one uploaded file. Keep both spending checks: without them the client will sign whatever amount the server asks for, up to the SDK's default $1 cap. A policy must read the amount for the challenge's version (`maxAmountRequired` on v1, `amount` on v2): a v2 challenge can carry both, and the v2 signer authorizes `amount`.
 
 Use the `@x402/*` packages, not the legacy `x402-fetch` / `x402` 1.x packages: those pull in browser wallet SDKs (`wagmi`, `@walletconnect/*`, `@metamask/*`) that a Node CLI never runs, which bring 29 transitive advisories with them.
 
