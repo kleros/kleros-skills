@@ -90,6 +90,13 @@ npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scri
 ```
 
 Use this exact form: a bare `npx tsx` outside `scripts/` fetches an unpinned tsx.
+
+**Known limitation — sandboxed Bash (Linux).** Under Claude Code's opt-in sandbox
+the helper can fail before doing anything (`listen EPERM … tsx …pipe`, or RPC/IPFS
+`fetch` failing with `EAI_AGAIN`): tsx's IPC socket is blocked and Node's `fetch`
+ignores the sandbox proxy. This is an environment failure, not a verdict on the
+case — run the same command outside the sandbox (ask the user to approve the
+unsandboxed retry); never hand-build the transaction instead.
 Every command prints one JSON object with a top-level `ok` (`preflight --human`
 prints text, with blocking items as a `BLOCKED — DO NOT SIGN` banner). Exit codes:
 
