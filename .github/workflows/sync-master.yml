@@ -108,6 +108,9 @@ jobs:
       # -----------------------------------------------------------------------
       # 4. Quality gate — test suite must pass before we touch master.
       # -----------------------------------------------------------------------
+      - name: Install skill helper deps (tests exercise them)
+        run: npm ci --prefix kleros-create-dispute/scripts
+
       - name: Quality gate — npm test
         run: npm test
 
@@ -131,7 +134,7 @@ jobs:
       #
       #    Strip-list:
       #      .planning/        — GSD planning artefacts
-      #      test/             — test suite
+      #      test/             — test suite + claude plugin eval suite (test/evals/)
       #      scripts/          — dev helper scripts
       #      package.json      — dev dependencies / npm scripts
       #      yarn.lock         — lockfile

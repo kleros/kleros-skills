@@ -6,20 +6,22 @@ Work style: telegraph; noun-phrases ok; drop filler/grammar; min tokens
 
 Claude Code plugin marketplace containing skills for the Kleros ecosystem. Each skill is a standalone markdown file (`SKILL.md`) inside its own directory, teaching AI agents how to interact with Kleros protocol components.
 
-Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet), `kleros-curate` (Curate registries — Light Curate, Stake Curate, Scout).
+Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet), `kleros-curate` (Curate registries — Light Curate, Stake Curate, Scout), `kleros-create-dispute` (Kleros V2 disputes via DisputeResolver on Arbitrum One/Sepolia + evidence).
 
 ## Commands
 
 ```bash
 npm test                    # Node built-in test runner (node --test)
 npm run update-digests      # Recalculate SHA-256 hashes in .well-known/agent-skills/index.json
+npm run eval:check          # Free: parse test/evals cases + sanity-test grader regexes (once: npm ci --prefix test/evals)
+npm run eval                # PAID claude plugin eval suite (test/evals/) — needs bubblewrap+socat; not part of npm test; see test/evals/README.md
 ```
 
 Run `update-digests` after editing any SKILL.md — it checks all digests and updates stale ones in-place. Commit the updated `index.json` alongside the skill change.
 
 No build step. No linting configured. The landing page is a static `index.html`.
 
-Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — they have their own `package.json` (no lockfile committed intentionally).
+Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — they have their own `package.json` and a committed `package-lock.json`. Same for `kleros-create-dispute/scripts/`. Lockfiles are committed so payment / tx-building deps are reproducible; install with `npm ci`, bump deps deliberately (`npm update` + review), never via unlocked installs.
 
 ## Claude Code setup
 
@@ -50,7 +52,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - `master` is NOT a git ancestor of `dev`; `git log master` will not match `dev` history.
 - Release tags reference dev commits, not master — `git tag --contains HEAD` on a master checkout finds nothing.
 - Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
-- Strip-list (excluded from master): `.planning/`, `test/`, `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
+- Strip-list (excluded from master): `.planning/`, `test/` (incl. `test/evals/`), `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
 - Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
 
 **Live infrastructure:**
@@ -81,7 +83,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 **Why no version in marketplace plugins[]:** redundant copy of plugin.json version → drift risk. Single source of truth = plugin.json.
 
 **Catalog version vs plugin version:**
-- `metadata.version` in marketplace.json — bump when plugins added/removed/restructured in catalog
+- `metadata.version` in marketplace.json — bump when plugins added/removed/restructured in catalog, incl. a skill added to/removed from `plugin.json` `skills[]` (RELEASING.md § Publishing a new skill)
 - `version` in plugin.json — bump when skill content changes (semver: patch = docs/bugfixes, minor = new features/env vars, major = breaking behavior changes)
 - Both are independent counters; they diverge once multiple plugins exist
 
@@ -150,7 +152,7 @@ Full step-by-step → **`RELEASING.md`** (dev-only, stripped from master). **Cut
 - Skill content changed → `skillname@vX.Y.Z` tag; no `plugin.json` bump
 - Plugin manifest / distribution behavior changed → `plugin.json` bump + `vX.Y.Z` tag
 - Skill + landing/manifest in one batch → one combined `vX.Y.Z` bundling both, OR two tags (see `RELEASING.md`)
-- Catalog shape changed (plugins added/removed/restructured) → ALSO bump `marketplace.json` `metadata.version`
+- Catalog shape changed (plugins added/removed/restructured, or a skill added to/removed from `plugin.json` `skills[]`) → ALSO bump `marketplace.json` `metadata.version`
 - Infra-only, no user-visible bundling → don't tag just to validate; ride the next real release
 
 **Key mechanic:** a tag push syncs the WHOLE dev tree to master regardless of tag _name_ — tag choice = labeling + which version counter advances, NOT what reaches master.

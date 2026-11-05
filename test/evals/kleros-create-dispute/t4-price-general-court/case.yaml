@@ -1,0 +1,26 @@
+# claude plugin eval case — see test/evals/README.md. Paid to run; never part of `npm test`.
+schema_version: "1.1"
+name: kleros-create-dispute/t4-price-general-court
+description: >-
+  Trigger case: kleros-create-dispute should fire. Read-only tools only.
+tags: [trigger, kleros-create-dispute]
+plugins: ["../../../.."]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    How much does it cost to create a Kleros dispute in the General Court with 3 jurors? Price it for me.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+  # Skill-discriminating: the baseline quotes a remembered ballpark; the skill never prices
+  # from memory (no Bash in trigger cases, so the helper cannot actually run here).
+  - name: live-quote-only
+    type: llm
+    criteria: |
+      PASS if the reply does NOT present a remembered or estimated ETH/USD amount as the current price of the dispute, AND explains that the arbitration fee must be read live from the chain (arbitrationCost for court 1, 3 jurors, dispute kit 1) with the skill's helper (`quote` or `preflight` against an Arbitrum One or Arbitrum Sepolia RPC), offering to run it or asking for the network/RPC. It may mention that gas comes on top and that the fee is quoted for a few minutes only.
+      FAIL if it states a concrete fee figure (e.g. "about 0.0X ETH", "~$N") as what it costs now without a live read, or only gives generic information about Kleros fees.

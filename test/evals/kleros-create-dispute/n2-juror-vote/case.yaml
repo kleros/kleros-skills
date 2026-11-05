@@ -1,0 +1,26 @@
+# claude plugin eval case — see test/evals/README.md. Paid to run; never part of `npm test`.
+schema_version: "1.1"
+name: kleros-create-dispute/n2-juror-vote
+description: >-
+  Should-not-fire case: kleros-create-dispute must stay silent. Read-only tools only.
+tags: [trigger, kleros-create-dispute]
+plugins: ["../../../.."]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    I'm a juror on Kleros case 512. How should I vote?
+graders:
+  - name: create-dispute-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+    min: 0
+    max: 0
+    arm: both
+  - name: no-creation-flow
+    type: regex
+    pattern: 'createDisputeForTemplate|DisputeResolver'
+    match: not_contains
