@@ -21,7 +21,7 @@ Tags use prefixed convention: skill releases `skillname@vX.Y.Z`; plugin-level re
 Use when shipping plugin manifest changes, distribution-mechanism changes (e.g. strip-list edits), bundled landing-page polish, or grouped docs that need to reach users — i.e. anything affecting the install but with NO skill content change.
 
 1. Bump `.claude-plugin/plugin.json` `version` (semver: patch = docs/infra fixes, minor = new packaging behavior/feature bundle, major = breaking install changes)
-2. Leave `marketplace.json` `metadata.version` UNCHANGED unless catalog shape (plugins added/removed/restructured) actually shifted
+2. Leave `marketplace.json` `metadata.version` UNCHANGED unless catalog shape actually shifted (plugins added/removed/restructured, or a skill added to/removed from `plugin.json` `skills[]`)
 3. Do NOT touch per-skill SKILL.md files unless their content changed (skill content change = separate `skillname@vX.Y.Z` tag instead — or a *deliberate* combined release, see **Versioning in depth** below; just don't bundle skill edits into a plugin release by accident)
 4. Add `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` with Added/Changed/Fixed grouping
 5. Add CHANGELOG link line. **First-of-its-kind plugin tag** (e.g. v2.1.0 was first because v2.0.0 was never tagged) → `releases/tag/vX.Y.Z`. Subsequent → `compare/vPREV...vX.Y.Z`.
@@ -35,7 +35,7 @@ The router in `CLAUDE.md` § Releasing gives the one-line rule per change type. 
 
 **Two tag namespaces, one trigger.** Skill-content releases use `skillname@vX.Y.Z`; plugin/distribution releases use digit-anchored `vX.Y.Z`. But a tag push syncs the **whole dev tree** to master regardless of tag _name_ (the workflow checks out the tagged dev commit, strips, force-pushes to master). So the tag is a **label + a trigger**, not a filter on what ships — choosing a tag name is about which version counter advances and how the release reads, not about what reaches consumers.
 
-**`plugin.json` is the version source of truth.** `marketplace.json` `metadata.version` is an independent counter — bump it ONLY when catalog shape changes (plugins added/removed/restructured, or a published skill added/removed — see **Publishing a new skill**). `package.json` `version` is dev-tooling, never part of plugin versioning.
+**`plugin.json` is the version source of truth.** `marketplace.json` `metadata.version` is an independent counter — bump it ONLY when catalog shape changes (plugins added/removed/restructured, or a skill added to/removed from `plugin.json` `skills[]` — see **Publishing a new skill**). `package.json` `version` is dev-tooling, never part of plugin versioning.
 
 **Combined releases are allowed (precedent: `v2.2.0`, 2026-06-29).** When skill content AND landing/manifest change in one batch, you may ship one combined plugin-level `vX.Y.Z` that bundles both rather than two tags. `v2.2.0` bundled kleros-curate hardening + landing a11y/SEO polish. Trade-off: one approval + one GH release + the changelog stays a single section, at the cost of soft-bending "skill content gets its own `skillname@` tag."
 

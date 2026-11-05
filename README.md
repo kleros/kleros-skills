@@ -56,6 +56,7 @@ feedback/                   # Agent-to-maintainer feedback channel (kleros-feedb
 
 ```bash
 npm install
+npm ci --prefix kleros-create-dispute/scripts
 npm test
 ```
 

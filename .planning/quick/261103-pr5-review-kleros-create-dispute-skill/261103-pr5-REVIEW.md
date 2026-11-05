@@ -68,9 +68,9 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}` — this commit (decision: `npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx …` instead of `npx tsx …` — bare npx outside scripts/ installs unpinned tsx@latest (verified); no `allowed-tools`: Claude-Code-only, per-turn grant, bypasses workspace trust, and approvals span turns anyway)
 - [x] **m-15** No copyable progress checklist in Flow — this commit
 - [x] **m-16** Missing "run exactly / don't edit calldata" low-freedom wording — this commit
-- [x] **m-17** Evidence submission not routable from surfaces — this commit ("Submitting evidence to a Kleros V2 dispute created through DisputeResolver" → create-dispute + ipfs-upload rows in root/openclaw; "Uploading dispute evidence" still ipfs-upload only; evidence + prepares-never-signs in root/openclaw/README/index.html/index.json descriptions; `skill-surfaces.test.js` asserts both rows)
-- [x] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link — this commit (option a: RELEASING.md puts the dated `## [X.Y.Z]` entry + link line in the release commit before the tag, no rename-at-tag step; `## [2.5.0] - 2026-11-05`, empty `[Unreleased]`, `[2.5.0]: compare/v2.4.0...v2.5.0`; entries rewritten to what the skill does now; date to be bumped if the tag lands later)
-- [x] **m-19** `CLAUDE.md:9` "Published:" not updated — this commit
+- [x] **m-17** Evidence submission not routable from surfaces — `14b78fb` ("Submitting evidence to a Kleros V2 dispute created through DisputeResolver" → create-dispute + ipfs-upload rows in root/openclaw; "Uploading dispute evidence" still ipfs-upload only; evidence + prepares-never-signs in root/openclaw/README/index.html/index.json descriptions; `skill-surfaces.test.js` asserts both rows)
+- [x] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link — `14b78fb` (option a: RELEASING.md puts the dated `## [X.Y.Z]` entry + link line in the release commit before the tag, no rename-at-tag step; `## [2.5.0] - 2026-11-05`, empty `[Unreleased]`, `[2.5.0]: compare/v2.4.0...v2.5.0`; entries rewritten to what the skill does now; date to be bumped if the tag lands later)
+- [x] **m-19** `CLAUDE.md:9` "Published:" not updated — `14b78fb`
 - [x] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG) — this commit
 - [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — 2fecec8
 - [x] **m-22** Description: missing trigger synonyms / "pushy" clause — this commit (941 chars)
@@ -87,9 +87,9 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **n-09** `--human yes` swallows value → JSON output
 - [x] **n-10** Node shebang on non-executable `.ts` — 2fecec8
 - [x] **n-11** Legacy `getGasPrice` vs EIP-1559 — 2fecec8
-- [x] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins — this commit (2.1.0 stays: RELEASING "Publishing a new skill" step 3 bumps it, precedent 2.0.0 for kleros-curate, and the catalog entry's description changed; CHANGELOG reason now says "new skill in the `kleros-skills` plugin entry; no plugins added/removed"; CLAUDE.md + RELEASING.md wording aligned: a published skill added/removed counts as a catalog change)
-- [x] **n-13** `plugin.json` keywords lack `arbitrum`/`v2` — this commit (+ `dispute`, `evidence`, `arbitrum`, `kleros-v2`; `arbitration` already present)
-- [x] **n-14** Landing card "Testnet" tag undersells mainnet target — this commit (tags V2 / Arbitrum / Sepolia, network-name style of the Curate card; short line + desc mention evidence)
+- [x] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins — `14b78fb` (2.1.0 stays: RELEASING "Publishing a new skill" step 3 bumps it, precedent 2.0.0 for kleros-curate, and the catalog entry's description changed; CHANGELOG reason now says "new skill in the `kleros-skills` plugin entry; no plugins added/removed"; CLAUDE.md + RELEASING.md wording aligned: a published skill added/removed counts as a catalog change)
+- [x] **n-13** `plugin.json` keywords lack `arbitrum`/`v2` — `14b78fb` (+ `dispute`, `evidence`, `arbitrum`, `kleros-v2`; `arbitration` already present)
+- [x] **n-14** Landing card "Testnet" tag undersells mainnet target — `14b78fb` (tags V2 / Arbitrum / Sepolia, network-name style of the Curate card; short line + desc mention evidence)
 - [x] **n-15** Reserved-ruling test redeclares regex instead of importing
 - [x] **n-16** `--max-fee` caps arbitration fee only, not gas — document — this commit
 
@@ -339,3 +339,15 @@ Per `RELEASING.md` (combined plugin-level release, precedent `v2.2.0`):
 6. `gh release create v2.5.0 --title "v2.5.0 — Kleros V2 dispute creation" --notes "<CHANGELOG [2.5.0] section>"` (and for the skill tag if cut).
 7. Check `https://skills.kleros.io/kleros-create-dispute/SKILL.md` stops 404ing after the Netlify deploy.
 
+
+## Batch 6 verification (2026-11-05)
+
+Independent review of `14b78fb` — verdict **push after fixes**.
+
+- [x] **I-1** `RELEASING.md` plugin-release step 2 still said "catalog shape (plugins added/removed/restructured)" — now includes a skill added to/removed from `plugin.json` `skills[]` (also aligned "Versioning in depth") — this commit
+- [x] **I-2** `openclaw-skill/SKILL.md` Example Workflow told agents to upload the evidence JSON and "submit CID to the dispute contract" — now: upload only attachments; V2 DisputeResolver case → `kleros-create-dispute` `evidence` prepares the tx (JSON inline) — this commit
+- [x] **I-3** `CLAUDE.md` versioning + router: "published skill added/removed" → "skill added to/removed from `plugin.json` `skills[]`" (`kleros-feedback` is published but not in skills[]) — this commit
+- [x] **I-4** Root `SKILL.md` "then submit evidence to it" → "then prepare evidence for it" (+ openclaw table row "preparing evidence for it") — this commit
+- [x] **I-5** `CHANGELOG.md` receipt wording: Evidence-not-JSON flag is unconditional; `--dispute <id>` adds the group-keying statement — this commit
+- [x] **I-6** `README.md` Development: `npm ci --prefix kleros-create-dispute/scripts` before `npm test` — this commit
+- [~] **I-7** sync-master / `.gitignore` dev-infra entries in CHANGELOG — kept per v2.1.0 precedent

@@ -53,7 +53,7 @@ curl -s https://skills.kleros.io/kleros-ipfs-upload/SKILL.md
 |-------|-----|---------------|
 | **Kleros IPFS Upload** | `kleros-ipfs-upload/SKILL.md` | Uploading dispute evidence, meta-evidence JSON, court policies, Curate item metadata, or juror justifications to IPFS. Costs $0.01 USDC per upload on Base mainnet. |
 | **Kleros Curate** | `kleros-curate/SKILL.md` | Submitting, challenging, or appealing items in Curate registries. Deploying new registries. Monitoring Scout registries on Gnosis. Covers Light Curate, Stake Curate (PGTCR), and Scout. |
-| **Kleros Create Dispute** | `kleros-create-dispute/SKILL.md` | Creating a standalone Kleros V2 case on Arbitrum One or Arbitrum Sepolia, then submitting evidence to it: policy upload, template validation, deployment preflight, live fee quote, prepared calldata, simulation, receipt parsing, and evidence keyed by the on-chain evidence group. Prepares transactions; never signs. Not for appeals, juror voting, or evidence on disputes created by other arbitrables. |
+| **Kleros Create Dispute** | `kleros-create-dispute/SKILL.md` | Creating a standalone Kleros V2 case on Arbitrum One or Arbitrum Sepolia, then preparing evidence for it: policy upload, template validation, deployment preflight, live fee quote, prepared calldata, simulation, receipt parsing, and evidence keyed by the on-chain evidence group. Prepares transactions; never signs. Not for appeals, juror voting, or evidence on disputes created by other arbitrables. |
 
 ## What to Fetch by Task
 
@@ -84,9 +84,11 @@ When an agent needs to submit evidence for a Kleros dispute (for a standalone V2
 
 ```
 1. Fetch https://skills.kleros.io/kleros-ipfs-upload/SKILL.md  -> Learn the upload flow
-2. Prepare evidence file (JSON, image, PDF)
-3. Upload via the x402 gateway                                   -> Get CID back
-4. Submit CID to the dispute contract                            -> Evidence on-chain
+2. Prepare attachments (image, PDF) and the evidence text
+3. Upload attachments via the x402 gateway                       -> Get CID back
+4. Submit to the arbitrable's evidence contract                  -> Evidence on-chain
+   (V2 DisputeResolver case: kleros-create-dispute `evidence` prepares
+   the transaction — evidence JSON inline; upload only attachments)
 ```
 
 When an agent needs to submit an item to a Curate registry:

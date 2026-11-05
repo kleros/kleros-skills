@@ -41,7 +41,7 @@ Operate Kleros Curate token-curated registries — submit, challenge, appeal, de
 - Derive policy and schema from on-chain MetaEvidence — never guess list fields or addresses.
 
 ### [Kleros Create Dispute](kleros-create-dispute/SKILL.md)
-Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (production) or Arbitrum Sepolia (test), then submit evidence to it. Prepares transactions; never signs.
+Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (production) or Arbitrum Sepolia (test), then prepare evidence for it. Prepares transactions; never signs.
 - Draft and validate the juror-facing question, options, and policy.
 - Upload the policy (and any evidence attachment) through the Kleros x402 IPFS skill.
 - Verify the live deployment, court, and dispute kit before quoting.

@@ -83,7 +83,7 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 **Why no version in marketplace plugins[]:** redundant copy of plugin.json version → drift risk. Single source of truth = plugin.json.
 
 **Catalog version vs plugin version:**
-- `metadata.version` in marketplace.json — bump when plugins added/removed/restructured in catalog, incl. a published skill added/removed (RELEASING.md § Publishing a new skill)
+- `metadata.version` in marketplace.json — bump when plugins added/removed/restructured in catalog, incl. a skill added to/removed from `plugin.json` `skills[]` (RELEASING.md § Publishing a new skill)
 - `version` in plugin.json — bump when skill content changes (semver: patch = docs/bugfixes, minor = new features/env vars, major = breaking behavior changes)
 - Both are independent counters; they diverge once multiple plugins exist
 
@@ -152,7 +152,7 @@ Full step-by-step → **`RELEASING.md`** (dev-only, stripped from master). **Cut
 - Skill content changed → `skillname@vX.Y.Z` tag; no `plugin.json` bump
 - Plugin manifest / distribution behavior changed → `plugin.json` bump + `vX.Y.Z` tag
 - Skill + landing/manifest in one batch → one combined `vX.Y.Z` bundling both, OR two tags (see `RELEASING.md`)
-- Catalog shape changed (plugins or published skills added/removed, plugins restructured) → ALSO bump `marketplace.json` `metadata.version`
+- Catalog shape changed (plugins added/removed/restructured, or a skill added to/removed from `plugin.json` `skills[]`) → ALSO bump `marketplace.json` `metadata.version`
 - Infra-only, no user-visible bundling → don't tag just to validate; ride the next real release
 
 **Key mechanic:** a tag push syncs the WHOLE dev tree to master regardless of tag _name_ — tag choice = labeling + which version counter advances, NOT what reaches master.
