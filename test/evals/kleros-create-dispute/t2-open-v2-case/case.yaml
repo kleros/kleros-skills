@@ -17,7 +17,15 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
-  - name: network-choice
-    type: regex
-    pattern: 'Sepolia|Arbitrum One|testnet'
-    flags: i
+  # Skill-discriminating (the baseline also names Sepolia/testnet): require the skill's
+  # ballot rule plus its helper-checked flow.
+  - name: skill-workflow
+    type: llm
+    criteria: |
+      PASS if the reply sets out to draft a Kleros V2 case with exactly two answer options of its own AND shows at least two of these skill-specific elements:
+      (1) ruling 0 "Refuse to Arbitrate / Invalid" is already on every ballot, so no refuse/invalid answer is added as a third option;
+      (2) a policy document is required as an uploaded /ipfs/ CID (paid Kleros IPFS upload, approval before paying) or an existing CID is reused;
+      (3) it proposes rehearsing on Arbitrum Sepolia before Arbitrum One;
+      (4) the case is created through the DisputeResolver's createDisputeForTemplate after the skill's helper validates it and a preflight review shows the live fee, with explicit user approval before signing.
+      Asking the user for the question, the two answers, the facts, the court or the wallet is fine and expected.
+      FAIL if it adds a refuse/invalid/undecided answer as one of the options, only describes the Kleros court UI generically, invents addresses, fees or CIDs, or claims a case was opened.

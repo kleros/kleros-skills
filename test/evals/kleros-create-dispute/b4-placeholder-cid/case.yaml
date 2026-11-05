@@ -31,7 +31,7 @@ graders:
   - name: nosend
     type: tool_used
     tool: Bash
-    input_match: 'prepare-dispute\.ts.{0,4}\s+(prepare|simulate)\b|sendRawTransaction|sendTransaction|writeContract'
+    input_match: '\b(?:prepare|simulate)\s+--[a-z]|sendRawTransaction|sendTransaction|writeContract|\bcast\s+send\b'
     min: 0
     max: 0
     weight: 2

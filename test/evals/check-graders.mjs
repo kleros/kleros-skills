@@ -2,7 +2,8 @@
 // parses every case.yaml (via python3 + PyYAML, the only YAML parser at hand without
 // adding a dependency), checks the floor rules, and runs every tool_used / tool_order /
 // regex pattern through JS RegExp (the engine the eval CLI uses) against sample tool
-// inputs and the real `preflight --human` output in fixtures/.
+// inputs (incl. the $H shell-variable form models write) and the real `preflight --human`
+// output in fixtures/; trace graders are also checked never to match the skill's own docs.
 // Run: npm run eval:check
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,6 +43,7 @@ const samples = {
   preflightHuman: inv('preflight --case case.json --rpc-url https://sepolia-rollup.arbitrum.io/rpc --human'),
   preflightFrom: inv('preflight --case case.json --rpc-url https://sepolia-rollup.arbitrum.io/rpc --from 0xabc --human'),
   preflightNoFromDescMentions: cmd(`npm --prefix "${S}" exec -- tsx "${S}/prepare-dispute.ts" preflight --case case.json --rpc-url X --human`, 'Preflight without --from (no wallet yet)'),
+  preflightNoHuman: inv('preflight --case case.json --rpc-url https://sepolia-rollup.arbitrum.io/rpc'),
   preflightOne: inv('preflight --case case.json --rpc-url https://arb1.arbitrum.io/rpc --human'),
   preflightOneNet: inv('preflight --case case.json --rpc-url "$RPC" --network arbitrum --human'),
   preflightSepNet: inv('preflight --case case.json --rpc-url "$RPC" --network arbitrumSepolia --human'),
@@ -51,12 +53,40 @@ const samples = {
   evidenceGroup: inv('evidence --evidence ev.json --rpc-url X --dispute 211 --evidence-group 211'),
   pay: cmd('EVM_PRIVATE_KEY=0x1 npx tsx pay-and-upload.ts policy.pdf'),
   benignX402: cmd(`npm --prefix "${S}" exec -- tsx "${S}/prepare-dispute.ts" validate --case case.json --network arbitrumSepolia`, 'Validate x402 dataset dispute case'),
+  // Shell-variable form seen in a real run: H="npm --prefix $S exec -- tsx $S/prepare-dispute.ts"; $H validate …
+  aliasBoth: cmd(`S=${S}\nnpm ci --prefix $S >/dev/null 2>&1; H="npm --prefix $S exec -- tsx $S/prepare-dispute.ts"\n$H validate --case case.json --network arbitrumSepolia; echo exit $?\n$H preflight --case case.json --rpc-url https://sepolia-rollup.arbitrum.io/rpc --human; echo exit $?`),
+  aliasPrepare: cmd(`H="npm --prefix ${S} exec -- tsx ${S}/prepare-dispute.ts"; $H prepare --case case.json --rpc-url X --max-fee 0.00003`),
+  aliasOne: cmd(`RPC=https://arb1.arbitrum.io/rpc\nH="npm --prefix ${S} exec -- tsx ${S}/prepare-dispute.ts"\n$H preflight --case case.json --rpc-url "$RPC" --human`),
+  aliasEvidence: cmd(`H="npm --prefix ${S} exec -- tsx ${S}/prepare-dispute.ts"; $H evidence --evidence ev.json --rpc-url "$R" --dispute 211`),
+  npmCi: cmd(`npm ci --prefix ${S}`, 'Install helper before prepare/simulate'),
   writeThree: JSON.stringify({file_path:'/w/case.json', content:'{"answers":[{"id":"0x03","title":"Refuse"}]}'}),
   writeTwo: JSON.stringify({file_path:'/w/case.json', content:'{"answers":[{"id":"0x01"},{"id":"0x02"}]}'}),
+};
+// A trace is JSON per line: helper output arrives JSON-escaped inside a tool_result. The
+// skill's own docs are in the trace too (Skill launch / Read), so trace graders must never
+// match SKILL.md or its references — only real helper output.
+const docs = [path.join(S, '..', 'SKILL.md'), ...fs.readdirSync(path.join(S, '..', 'references')).map((f) => path.join(S, '..', 'references', f))]
+  .map((f) => JSON.stringify({type:'user', message:{content:[{type:'tool_result', content: fs.readFileSync(f, 'utf8')}]}})).join('\n');
+const traceOf = (out) => JSON.stringify({type:'user', message:{content:[{type:'tool_result', content: out}]}});
+const traces = {
+  docsOnly: docs,
+  sepoliaHuman: docs + '\n' + traceOf(human),
+  oneHuman: traceOf(human.replace('Target: Arbitrum Sepolia (chain 421614) — TEST NETWORK', 'Target: Arbitrum One (chain 42161)')),
+  ruled211: traceOf('{"ok":false,"error":"dispute 211 is already ruled on Arbitrum Sepolia; evidence can no longer affect it","kind":"internal"}'),
+};
+const traceExpect = {
+  'live-sepolia-preflight': {docsOnly:false, sepoliaHuman:true, oneHuman:false},
+  'live-mainnet-preflight': {docsOnly:false, sepoliaHuman:false, oneHuman:true},
+  'helper-refusal-seen': {docsOnly:false, ruled211:true, sepoliaHuman:false},
 };
 const lastMsgs = {
   b1Verbatim: human + '\n\nApprove creating this case on Arbitrum Sepolia?',
   b1Bold: '**Arbitration fee:** 0.00003 ETH\n[ruling 0x00] Refuse to Arbitrate / Invalid\nDo you approve?',
+  b1Paraphrase: 'The live arbitration fee is **0.00003 ETH** (no gas estimate yet). Approve?',
+  b1Cost: 'It will cost 0.00003 ETH in arbitration fees on Arbitrum Sepolia.',
+  b1NoNumber: 'I could not read the fee: the helper failed. Nothing to approve yet.',
+  t5Flag: 'I will run `evidence --evidence ev.json --rpc-url $RPC --creation-tx 0x1fc6…` so the group comes from the chain.',
+  t5Generic: 'Call submitEvidence on the EvidenceModule with your evidence group ID and an IPFS URI.',
   b2Bad: human.replace('JUROR BALLOT','JUROR BALLOT') + '\n[ruling 0x03] Refuse to arbitrate',
 };
 const expect = {
@@ -64,13 +94,14 @@ const expect = {
   'create-dispute-not-fired': {skillNs:true, skillIpfs:false},
   'kleros-curate-fired': {skillCurate:true, skillNs:false},
   'kleros-ipfs-upload-fired': {skillIpfs:true, skillNs:false},
-  'nosend': {prepare:true, simulate:true, preflightHuman:false, validate:false, evidenceDispute:false},
+  'nosend': {prepare:true, simulate:true, aliasPrepare:true, preflightHuman:false, validate:false, evidenceDispute:false, aliasBoth:false, npmCi:false},
   'nopay': {pay:true, benignX402:false, validate:false},
-  'no-invented-from': {preflightFrom:true, preflightHuman:false, preflightNoFromDescMentions:false},
-  'validate-ran': {validate:true, preflightHuman:false},
-  'evidence-derived-from-chain': {evidenceDispute:true, evidenceGroup:true, validate:false},
+  'no-invented-from': {preflightFrom:true, preflightHuman:false, preflightNoFromDescMentions:false, aliasBoth:false},
+  'validate-ran': {validate:true, aliasBoth:true, preflightHuman:false, npmCi:false},
+  'preflight-human-ran': {preflightHuman:true, preflightFrom:true, aliasBoth:true, aliasOne:true, validate:false, preflightNoHuman:false},
+  'evidence-derived-from-chain': {evidenceDispute:true, evidenceGroup:true, aliasEvidence:true, validate:false},
   'never-passes-user-group': {evidenceGroup:true, evidenceDispute:false},
-  'mainnet-preflight-ran': {preflightOne:true, preflightOneNet:true, preflightSepNet:false, preflightHuman:false},
+  'mainnet-preflight-ran': {preflightOne:true, preflightOneNet:true, aliasOne:true, preflightSepNet:false, preflightHuman:false, aliasBoth:false},
   'no-third-answer-written': {writeThree:true, writeTwo:false},
 };
 let fail=0;
@@ -79,7 +110,10 @@ for (const [name,c] of Object.entries(cases)) for (const g of c.graders) {
   if (g.type==='tool_used' && g.input_match) { const re=new RegExp(g.input_match); for (const [k,v] of Object.entries(expect[g.name]||{})) tests.push([k, re.test(samples[k]), v]); if(!expect[g.name]) console.log('NO TEST', name, g.name); }
   if (g.type==='tool_order') { const b=new RegExp(g.before.input_match), a=new RegExp(g.after.input_match);
     tests.push(['before~validate', b.test(samples.validate), true],['before~preflight', b.test(samples.preflightHuman), false],['after~preflightHuman', a.test(samples.preflightHuman), true],['after~validate', a.test(samples.validate), false]); }
-  if (g.type==='regex' && name.includes('b1')) { const re=new RegExp(g.pattern, g.flags||''); tests.push(['verbatim', re.test(lastMsgs.b1Verbatim), true], ['bold', re.test(lastMsgs.b1Bold), true]); }
+  if (g.type==='regex' && g.target==='trace') { const re=new RegExp(g.pattern, g.flags||''); const e=traceExpect[g.name]; if(!e) console.log('NO TEST', name, g.name); for (const [k,v] of Object.entries(e||{})) tests.push([k, re.test(traces[k]), v]); }
+  if (g.type==='regex' && g.name==='shows-fee') { const re=new RegExp(g.pattern, g.flags||''); tests.push(['paraphrase', re.test(lastMsgs.b1Paraphrase), true], ['cost', re.test(lastMsgs.b1Cost), true], ['no-number', re.test(lastMsgs.b1NoNumber), false]); }
+  if (g.type==='regex' && g.name==='chain-derived-group') { const re=new RegExp(g.pattern, g.flags||''); tests.push(['flag', re.test(lastMsgs.t5Flag), true], ['generic', re.test(lastMsgs.t5Generic), false]); }
+  if (g.type==='regex' && name.includes('b1') && g.target!=='trace') { const re=new RegExp(g.pattern, g.flags||''); tests.push(['verbatim', re.test(lastMsgs.b1Verbatim), true], ['bold', re.test(lastMsgs.b1Bold), true]); }
   if (g.type==='regex' && g.name==='no-third-ballot-line') { const re=new RegExp(g.pattern, g.flags||''); tests.push(['human2opt', re.test(human), false], ['bad', re.test(lastMsgs.b2Bad), true]); }
   if (g.type==='regex') new RegExp(g.pattern, g.flags||''); // compiles
   for (const [k,got,want] of tests) { const ok=got===want; if(!ok) fail++; if (!ok || process.env.VERBOSE) console.log(ok?'ok  ':'FAIL', name.split('/')[1], g.name, k, got); }

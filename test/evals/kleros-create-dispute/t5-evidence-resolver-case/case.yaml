@@ -17,7 +17,8 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
+  # Skill-discriminating: only the skill derives the evidence group from the creation tx
+  # with its helper; the baseline offers generic submitEvidence advice.
   - name: chain-derived-group
     type: regex
-    pattern: 'creation-tx|creation tx|evidence group'
-    flags: i
+    pattern: '--creation-tx|prepare-dispute\.ts\S{0,4}\s+evidence\b|\bevidence\s+--(?:evidence|creation-tx|dispute)\b'

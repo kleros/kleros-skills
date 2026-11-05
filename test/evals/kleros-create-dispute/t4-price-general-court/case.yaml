@@ -17,7 +17,10 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
-  - name: live-quote
-    type: regex
-    pattern: 'arbitrationCost|quote|preflight'
-    flags: i
+  # Skill-discriminating: the baseline quotes a remembered ballpark; the skill never prices
+  # from memory (no Bash in trigger cases, so the helper cannot actually run here).
+  - name: live-quote-only
+    type: llm
+    criteria: |
+      PASS if the reply does NOT present a remembered or estimated ETH/USD amount as the current price of the dispute, AND explains that the arbitration fee must be read live from the chain (arbitrationCost for court 1, 3 jurors, dispute kit 1) with the skill's helper (`quote` or `preflight` against an Arbitrum One or Arbitrum Sepolia RPC), offering to run it or asking for the network/RPC. It may mention that gas comes on top and that the fee is quoted for a few minutes only.
+      FAIL if it states a concrete fee figure (e.g. "about 0.0X ETH", "~$N") as what it costs now without a live read, or only gives generic information about Kleros fees.

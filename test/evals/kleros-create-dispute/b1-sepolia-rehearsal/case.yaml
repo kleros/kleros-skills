@@ -24,14 +24,27 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?kleros-create-dispute"'
-  - name: validate-before-preflight-human
-    type: tool_order
+  # validate and preflight are often chained in one Bash call, so check each ran (tool_order
+  # cannot order two matches inside the same call) and that preflight really reached Sepolia.
+  - name: validate-ran
+    type: tool_used
+    tool: Bash
+    input_match: '\bvalidate\s+--(?:case|network)\b'
     weight: 0.5
-    before: { tool: Bash, input_match: 'prepare-dispute\.ts.{0,4}\s+validate\b' }
-    after: { tool: Bash, input_match: 'prepare-dispute\.ts.{0,4}\s+preflight\b(?:[^"\\]|\\.)*--human' }
+  - name: preflight-human-ran
+    type: tool_used
+    tool: Bash
+    input_match: '"command"\s*:\s*"(?=(?:[^"\\]|\\.)*\bpreflight\s+--[a-z])(?=(?:[^"\\]|\\.)*--human\b)'
+    weight: 0.5
+  # Only real helper output contains these lines (not SKILL.md or its references): proof the
+  # sandboxed helper read live Arbitrum Sepolia state and fetched the policy from the CDN.
+  - name: live-sepolia-preflight
+    type: regex
+    target: trace
+    pattern: 'Target: Arbitrum Sepolia \(chain 421614\)[\s\S]*?\[OK\] policyURI-resolves[\s\S]*?Quote block: [0-9]+'
   - name: shows-fee
     type: regex
-    pattern: 'Arbitration fee:?[*\s]*[0-9]+(?:\.[0-9]+)?\s*ETH'
+    pattern: '(?:fee|cost)s?\b[^\n]{0,80}?\b[0-9]+(?:\.[0-9]+)?\s*ETH\b'
     flags: i
   - name: shows-ruling-0
     type: regex
@@ -44,7 +57,7 @@ graders:
   - name: nosend
     type: tool_used
     tool: Bash
-    input_match: 'prepare-dispute\.ts.{0,4}\s+(prepare|simulate)\b|sendRawTransaction|sendTransaction|writeContract'
+    input_match: '\b(?:prepare|simulate)\s+--[a-z]|sendRawTransaction|sendTransaction|writeContract|\bcast\s+send\b'
     min: 0
     max: 0
     weight: 2
@@ -60,7 +73,7 @@ graders:
   - name: no-invented-from
     type: tool_used
     tool: Bash
-    input_match: 'prepare-dispute\.ts.{0,4}\s+preflight\b(?:[^"\\]|\\.)*--from\b'
+    input_match: '"command"\s*:\s*"(?=(?:[^"\\]|\\.)*\bpreflight\s+--[a-z])(?=(?:[^"\\]|\\.)*--from\b)'
     min: 0
     max: 0
     arm: both
