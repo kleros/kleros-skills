@@ -85,7 +85,7 @@ npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scri
 npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" preflight --case CASE --rpc-url RPC [--from 0x...] [--max-fee ETH] [--human]
 npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" prepare   --case CASE --rpc-url RPC [--max-fee ETH]
 npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" simulate  --case CASE --rpc-url RPC --from 0x... [--max-fee ETH]
-npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" evidence  --evidence EV --rpc-url RPC (--dispute ID | --creation-tx 0x...) [--evidence-group N]
+npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" evidence  --evidence EV --rpc-url RPC (--dispute ID | --creation-tx 0x...)
 npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx "${CLAUDE_SKILL_DIR}/scripts/prepare-dispute.ts" receipt   --tx 0x... --rpc-url RPC [--dispute ID]
 ```
 
@@ -169,8 +169,11 @@ The two are allocated by different contracts and must never be assumed to match;
 both are `uint256`, so a wrong key confirms cleanly and attaches the evidence to
 another case, permanently. Never type, count or guess the evidence group: `evidence` derives
 it from the chain (`DisputeRequest` with `--creation-tx`, else the resolver's
-`arbitratorDisputeIDToLocalID`), cross-checks both, and rejects a contradicting
-`--evidence-group`. Pass `--creation-tx` whenever the hash is at hand.
+`arbitratorDisputeIDToLocalID`) and cross-checks both. **Do not pass
+`--evidence-group`, even when the user states a group or says it equals the dispute
+ID** — omit it and let the helper derive it; tell the user the group is read from
+the chain. (The flag exists only as an optional assertion; the helper rejects one
+that contradicts the chain.) Pass `--creation-tx` whenever the hash is at hand.
 
 **Version caveat (verified 2026-11-04).** This holds for the deployed EvidenceModule
 implementations only (One `0x48e0…1EB3` → `0xA502A3942abCF8e71FBD87ed442B39b798b192C8`,

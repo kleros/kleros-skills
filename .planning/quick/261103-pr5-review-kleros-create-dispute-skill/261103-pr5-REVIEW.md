@@ -313,3 +313,12 @@ Two independent reviewers on 6337174: facts/consistency (all claims vs kleros-v2
 - [x] **G-9** (nit) description trimmed 941 → 848 chars (helper internals removed).
 - [x] **G-10** (nit) helper advised re-running with `--creation-tx` for a foreign arbitrable's dispute — a dead end (`decodeDisputeRequests` only accepts this resolver's logs). Fix: message now says the skill does not handle it.
 - Note: `https://skills.kleros.io/kleros-create-dispute/SKILL.md` 404s until released (expected).
+
+## Batch 5 — evals (2026-11-05)
+
+Suite: `test/evals/kleros-create-dispute/` (15 cases: b1–b5 behaviour, t1–t5 should-fire, n1–n5 should-not-fire), run via `test/evals/run.sh` / `npm run eval*` (paid; not part of `npm test`; stripped from master with `test/`). Commits 62b321d (suite), 87f134a (sandbox harness + sharper graders).
+
+Findings surfaced by the evals:
+- [x] **H-1** (minor, skill) b3: agent passed the user-asserted `--evidence-group 211` (true group 118) because SKILL.md said both "never type the group" and "the helper rejects a contradicting `--evidence-group`". Fix: SKILL.md now says never pass `--evidence-group` (even if the user states one); flag dropped from the command block.
+- [ ] **H-2** (major, portability, needs decision) the documented invocation `npm --prefix … exec -- tsx …` fails under Claude Code's Linux sandbox (bubblewrap): (a) deny rules on plugin symlinks hide `.bin/tsx`'s target; (b) the tsx CLI opens an IPC Unix socket (`listen EPERM`); (c) sandboxed Node `fetch` ignores the proxy (no DNS) unless `NODE_USE_ENV_PROXY=1`. The eval harness works around it (`test/evals/prepare-helper.sh`); real users running sandboxed hit it. Candidate fix: invoke `node --import "<scripts>/node_modules/tsx/dist/loader.mjs"` (no socket, no `.bin` symlink) with `NODE_USE_ENV_PROXY=1`; needs user decision + release note.
+- Pilot ($1.95 + $1.94 debug/re-pilot): triggers 10/10 with skill; Δ +1.00 on t1/t2/t4/t5 after grader fix; behaviour b1 +0.50, b2 +0.12, b3 +0.20 (failed → H-1), b4 +0.33, b5 +0.33.
