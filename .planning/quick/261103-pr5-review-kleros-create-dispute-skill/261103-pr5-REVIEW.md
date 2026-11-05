@@ -264,7 +264,8 @@ Independent adversarial verifier on 7f58b66: B-01, B-02, M-01, M-02, m-01, m-07 
 - [x] **n-15** reserved-ruling test uses real pattern — 7f58b66 (incidental).
 - [x] **n-09** `--human yes` now an error — 7f58b66 (incidental).
 
-- [ ] **L-1** (follow-up, out of PR scope) `kleros-ipfs-upload/scripts` lockfile surfaces 29 transitive advisories (18 high) via `x402-fetch@1.2.0` (latest) → wallet SDK tree (ws, viem, zod, uuid, …). Pre-existing for every unlocked install; non-breaking `npm audit fix` can't resolve. Needs upstream x402 bump / overrides review.
+- [x] **L-1** (follow-up, out of PR scope) `kleros-ipfs-upload/scripts` lockfile surfaces 29 transitive advisories (18 high) via `x402-fetch@1.2.0` (latest) → wallet SDK tree (ws, viem, zod, uuid, …). Pre-existing for every unlocked install; non-breaking `npm audit fix` can't resolve. Needs upstream x402 bump / overrides review.
+  - **Resolved (2026-11-05)** by migrating, not by `overrides`: scripts moved to `@x402/fetch` + `@x402/evm` 2.29.0 (no wallet-UI tree) → `npm audit --omit=dev` 29 → 3 high, all GHSA-mrhx-c7xc-m3w5 (zod 3) via `@coinbase/cdp-sdk` (policies schemas) + its pinned `abitype@1.0.6` (`abitype/zod`) — neither path is called by the scripts → accepted risk. Checks: gateway v1 `X-PAYMENT` payload identical in shape to the `x402-fetch` 1.x one (local mock capture); EIP-3009 signature recovers to the payer under the Base USDC domain; a 1 USDC request is refused before signing; live gateway gives the same `invalid_payload` for an unfunded key as the old client; strict `tsc` clean. Added a Base-USDC ≤ 0.10 policy (keeps the 1.x default cap; v2's default is $1). Revisit when `@coinbase/cdp-sdk` moves to zod ≥ 4.6.6.
 
 ## Batch 2 verification (2026-11-04)
 

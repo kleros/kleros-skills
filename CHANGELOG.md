@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - `kleros-create-dispute/scripts`: zod 4.4.3 → 4.6.7 (GHSA-mrhx-c7xc-m3w5).
+- `kleros-ipfs-upload/scripts`: migrated from `x402-fetch@1.2.0` (still the latest legacy release) to `@x402/fetch` + `@x402/evm` 2.29.0. The legacy package pulled browser wallet SDKs (`wagmi`, `@reown/appkit*`, `@walletconnect/*`, `@metamask/*`) into a Node CLI that holds `EVM_PRIVATE_KEY`, which brought 29 advisories with them (11 moderate, 18 high: `ws`, `decode-uri-component`, `uuid`, `zod`, `viem`, `abitype`). `npm audit --omit=dev` now reports 3 high, all one advisory, GHSA-mrhx-c7xc-m3w5 (zod 3 memory exhaustion). It is accepted as unreachable: zod 3 comes only from `@coinbase/cdp-sdk` (its policy-management schemas, used by `policies.create/update` and never called by the scripts) and from its pinned `abitype@1.0.6` (optional `abitype/zod` entry, never imported). The scripts' x402 payload validation uses zod 4.6.7 through `@x402/core`. No `overrides` were used: forcing zod 4 into `cdp-sdk` would break its semver contract for no reachable gain. The gateway still speaks x402 v1; the v2 client registers both the v1 (`base`) and v2 (`eip155:8453`) exact schemes and sends the same `X-PAYMENT` payload, which was checked against the previous client and by signature recovery.
+- Both IPFS upload scripts (and the inline snippet in `kleros-ipfs-upload/SKILL.md`) now refuse to sign any payment that is not Base USDC or is over 0.10 USDC. This keeps the per-request cap `x402-fetch` 1.x applied by default; the v2 SDK's default cap is $1.
 
 ## [2.4.0] - 2026-07-18
 

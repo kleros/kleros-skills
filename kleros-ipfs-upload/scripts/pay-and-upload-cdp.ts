@@ -5,14 +5,18 @@
  * is not an option.
  *
  * The CDP account object returned by `cdp.evm.getAccount()` implements
- * `signTypedData()`, which is exactly what `x402-fetch.wrapFetchWithPayment`
- * needs to sign the EIP-3009 USDC payment authorization — so the account is
- * passed directly to the SDK without any extra adapter code.
+ * `address` and `signTypedData()`, which is exactly what the @x402/evm exact
+ * scheme needs to sign the EIP-3009 USDC payment authorization — so the
+ * account is passed directly to the SDK without any extra adapter code.
+ *
+ * Payment guard: the client only signs for USDC on Base, at most 0.10 USDC
+ * per request. A gateway that asks for anything else is refused before any
+ * signature.
  *
  * Run standalone:
  *
  *   cd path/to/this-dir
- *   npm install
+ *   npm ci
  *   CDP_API_KEY_ID=... CDP_API_KEY_SECRET=... CDP_WALLET_SECRET=... \
  *     CDP_ACCOUNT_NAME=blaise-main npx tsx pay-and-upload-cdp.ts ./somefile.txt
  *
@@ -36,7 +40,15 @@
 import { readFile, readFile as fsReadFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { CdpClient } from "@coinbase/cdp-sdk";
-import { wrapFetchWithPayment } from "x402-fetch";
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import type { PaymentRequirements } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { ExactEvmSchemeV1 } from "@x402/evm/v1";
+
+// Native USDC on Base mainnet, and the per-request ceiling in atomic units
+// (6 decimals): 100000 = 0.10 USDC. The gateway currently charges 0.01 USDC.
+const BASE_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+const MAX_ATOMIC_PER_PAYMENT = 100_000n;
 
 const filePath = process.argv[2];
 if (!filePath) {
@@ -118,7 +130,24 @@ try {
   console.error(`balance_check_warning=${(err as Error)?.message ?? err}`);
 }
 
-const fetchWithPay = wrapFetchWithPayment(fetch, account);
+// The gateway speaks x402 v1 (network "base"); v2 ("eip155:8453") is
+// registered too so a future gateway upgrade keeps working. No other network
+// is registered, so nothing else can be signed.
+const client = new x402Client()
+  .registerV1("base", new ExactEvmSchemeV1(account))
+  .register("eip155:8453", new ExactEvmScheme(account))
+  .registerPolicy((_version, reqs) =>
+    reqs.filter((r: PaymentRequirements) => {
+      // v1 requirements carry maxAmountRequired, v2 carry amount.
+      const raw = (r as { maxAmountRequired?: string }).maxAmountRequired ?? r.amount;
+      return (
+        r.asset?.toLowerCase() === BASE_USDC &&
+        raw !== undefined &&
+        BigInt(raw) <= MAX_ATOMIC_PER_PAYMENT
+      );
+    })
+  );
+const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 const bytes = await readFile(filePath);
 const form = new FormData();

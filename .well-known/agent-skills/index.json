@@ -13,7 +13,7 @@
       "type": "skill-md",
       "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
       "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
-      "digest": "sha256:4553b08e644fd462f777b28dbfc79e44fd1a404f45f5f50b09169988a8a6472b"
+      "digest": "sha256:1543753917c718956069ace32fbcfd8becf8f89a065777fc2cf77e96d4f73817"
     },
     {
       "name": "kleros-curate",

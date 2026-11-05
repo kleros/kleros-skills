@@ -34,7 +34,7 @@ You are free to *upload* whatever the user wants (they're paying), but absent a 
 
 Two paths depending on what your agent already has:
 
-- **If you already have x402 tooling** (an x402 skill / SDK / a model that knows `x402-fetch`): skip the bundled scripts and inline the snippet further down — the gateway is a plain `POST /upload-to-ipfs` behind a standard x402 paywall, nothing Kleros-specific in the payment flow.
+- **If you already have x402 tooling** (an x402 skill / SDK / a model that knows `@x402/fetch` or the legacy `x402-fetch`): skip the bundled scripts and inline the snippet further down — the gateway is a plain `POST /upload-to-ipfs` behind a standard x402 paywall, nothing Kleros-specific in the payment flow.
 - **Otherwise**, run the bundled `scripts/pay-and-upload.ts` end-to-end — it exists so x402-unaware agents don't have to rediscover the flow:
 
 ```bash
@@ -79,12 +79,23 @@ even when both reference the same reusable policy, logo, or evidence display int
 If you're writing your own client inside an existing Node project, the core is small enough to inline:
 
 ```ts
-import { wrapFetchWithPayment, createSigner } from "x402-fetch";
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { ExactEvmSchemeV1 } from "@x402/evm/v1";
+import { privateKeyToAccount } from "viem/accounts";
 
 const operation = process.env.OPERATION ?? "evidence";
+const BASE_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 
-const signer = await createSigner("base", privateKey);
-const fetchWithPay = wrapFetchWithPayment(fetch, signer);
+const account = privateKeyToAccount(privateKey);
+const client = new x402Client()
+  .registerV1("base", new ExactEvmSchemeV1(account))     // gateway speaks x402 v1
+  .register("eip155:8453", new ExactEvmScheme(account))  // v2, Base only
+  // Never sign for anything but ≤ 0.10 USDC on Base.
+  .registerPolicy((_v, reqs) => reqs.filter((r: any) =>
+    r.asset?.toLowerCase() === BASE_USDC &&
+    BigInt(r.maxAmountRequired ?? r.amount) <= 100_000n));
+const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 const form = new FormData();
 form.append("file", new Blob([bytes]), "evidence.json");
@@ -97,7 +108,9 @@ if (!Array.isArray(cids) || cids.length === 0) throw new Error("Gateway returned
 const cid = cids[0];
 ```
 
-`x402-fetch` handles the `402 Payment Required` challenge, signs an EIP-3009 `transferWithAuthorization` over USDC, and retries the request with the `X-PAYMENT` header. The caller sees a normal 200 response containing the result for that one uploaded file.
+`@x402/fetch` handles the `402 Payment Required` challenge, signs an EIP-3009 `transferWithAuthorization` over USDC, and retries the request with the `X-PAYMENT` header. The caller sees a normal 200 response containing the result for that one uploaded file. Keep the spending policy: without it the client will sign whatever amount the server asks for, up to the SDK's default $1 cap.
+
+Use the `@x402/*` packages, not the legacy `x402-fetch` / `x402` 1.x packages: those pull in browser wallet SDKs (`wagmi`, `@walletconnect/*`, `@metamask/*`) that a Node CLI never runs, which bring 29 transitive advisories with them.
 
 ## Pre-flight (free, no key needed)
 
@@ -140,9 +153,9 @@ If the user doesn't already have a Base wallet ready:
 
 ## Using a Coinbase CDP server account (hosted agents)
 
-Hosted agents (OpenClaw, server-side workers, anything running with Coinbase CDP credentials) don't need an exported private key. CDP server accounts implement `signTypedData()` directly, which is exactly what `x402-fetch.wrapFetchWithPayment` needs to sign the EIP-3009 USDC authorization — so the CDP account object is passed straight to the SDK with no adapter code.
+Hosted agents (OpenClaw, server-side workers, anything running with Coinbase CDP credentials) don't need an exported private key. CDP server accounts expose `address` and `signTypedData()`, which is exactly what the `@x402/evm` exact scheme needs to sign the EIP-3009 USDC authorization — so the CDP account object is passed straight to the SDK with no adapter code.
 
-A bundled runner ships at `scripts/pay-and-upload-cdp.ts` for agents that prefer a ready-made entrypoint — agents already using `wrapFetchWithPayment` with a CDP account can skip it and inline the snippet further down:
+A bundled runner ships at `scripts/pay-and-upload-cdp.ts` for agents that prefer a ready-made entrypoint — agents already using `@x402/fetch` with a CDP account can skip it and inline the snippet further down:
 
 ```bash
 cd path/to/this-skill/scripts
@@ -162,15 +175,16 @@ For your own client code, the integration is one extra import and two extra line
 
 ```ts
 import { CdpClient } from "@coinbase/cdp-sdk";
-import { wrapFetchWithPayment } from "x402-fetch";
 
 const cdp = new CdpClient({ apiKeyId, apiKeySecret, walletSecret });
 const account = await cdp.evm.getAccount({ name: "blaise-main" });
-const fetchWithPay = wrapFetchWithPayment(fetch, account);
+// Build `client` exactly as in the raw-key snippet, passing `account` to
+// ExactEvmSchemeV1 / ExactEvmScheme instead of privateKeyToAccount(...).
+const fetchWithPay = wrapFetchWithPayment(fetch, client);
 // ... build FormData and POST as in Quickstart
 ```
 
-The CDP account is passed where the docs would otherwise show an EVM signer — no other change is needed.
+The CDP account is passed where the docs would otherwise show a viem account — no other change is needed.
 
 ## Request shape
 
@@ -188,7 +202,7 @@ The endpoint is `POST /upload-to-ipfs` with:
 
 - **Body**: `multipart/form-data` with exactly one part named `file`. Never append a second `file` part. Upload
   every distinct file in its own paid request; reuse the first CID instead of reuploading identical bytes.
-- **Headers**: `X-PAYMENT` is added automatically by the x402-fetch wrapper. Do not hand-craft it.
+- **Headers**: `X-PAYMENT` is added automatically by the `@x402/fetch` wrapper. Do not hand-craft it.
 - **Size limit**: the gateway caps the total request body at **4 MiB** (4,194,304 bytes) and replies `413 Payload Too Large` for anything bigger. The check runs **before** the x402 paywall, so an oversize attempt does not spend USDC. Multipart framing adds a small overhead on top of raw file bytes — if a single file is near the limit, expect a 413; shrink or compress it, or split it into distinct files and upload each through a separate paid request. Sanity-check sizes locally before posting:
 
   ```bash
@@ -233,7 +247,7 @@ On success the gateway returns `200` with JSON:
 |---|---|---|
 | `200` | Success. Require `cids[0]`; use `urls[0]` when present or derive the URL from the CID. | Surface extra entries as unexpected; they do not imply batch support. |
 | `400` | Missing `operation` query param. | Add `?operation=evidence` (or another tag). |
-| `402` | Payment challenge. | Should never reach user code — `x402-fetch` handles it transparently. If it bubbles up, the wrapper wasn't applied. |
+| `402` | Payment challenge. | Should never reach user code — `@x402/fetch` handles it transparently. If it bubbles up, the wrapper wasn't applied. |
 | `413` | Request body exceeds 4 MiB. **No USDC spent** — the check runs before the paywall. | Shrink or compress it, or split it and upload each resulting file separately. |
 | `5xx` | Transient upstream issue (Filebase, Graph Node, or the gateway itself). | Retry once after a short delay. Don't hammer. |
 | Facilitator error during 402 → 200 retry | CDP rate-limit, signing failure, insufficient USDC. | Inspect the wrapper's thrown error; check wallet balance and key correctness. |
@@ -308,12 +322,13 @@ Steps:
 
 ## Bundled
 
-Both scripts are **optional**. They exist so agents without x402 tooling can pay and upload without rediscovering `x402-fetch` from scratch. If your agent already speaks x402, ignore them and call the gateway directly.
+Both scripts are **optional**. They exist so agents without x402 tooling can pay and upload without rediscovering the x402 client flow from scratch. If your agent already speaks x402, ignore them and call the gateway directly.
 
 - `scripts/pay-and-upload.ts` — reference single-file Node implementation. Adapt to your project context, or run standalone.
-- `scripts/package.json` — declares the two deps (`x402-fetch`, `tsx`). `scripts/package-lock.json` pins the full dependency tree (install with `npm ci`). No tsconfig (tsx runs TS natively).
+- `scripts/pay-and-upload-cdp.ts` — same flow, signing with a Coinbase CDP server account.
+- `scripts/package.json` — declares the deps (`@x402/fetch`, `@x402/evm`, `viem`, `@coinbase/cdp-sdk`, and `tsx` for dev). `scripts/package-lock.json` pins the full dependency tree (install with `npm ci`). No tsconfig (tsx runs TS natively).
 
-If you're integrating into an existing Node project, you can ignore the bundled `package.json` and just `npm i x402-fetch` in your own project.
+If you're integrating into an existing Node project, you can ignore the bundled `package.json` and just `npm i @x402/fetch @x402/evm viem` in your own project.
 
 ## Feedback
 
