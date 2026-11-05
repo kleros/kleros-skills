@@ -14,6 +14,7 @@
 #   3. Sandboxed Bash has no DNS; the only way out is the sandbox's HTTP(S)_PROXY, which
 #      Node's fetch (viem, the IPFS check) ignores by default (EAI_AGAIN). Fix: the tsx shim
 #      sets NODE_USE_ENV_PROXY=1. The proxy still enforces the domain allowlist.
+#   Flags-first, bare `tsx` and `tsx watch` fall through to the stock CLI (not used by the skill).
 # A real `npm ci` restores the stock symlinks. Re-run this after any reinstall.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
@@ -28,7 +29,7 @@ for f in *; do
     cat > "$f" <<'EOF'
 #!/bin/sh
 # eval-sandbox shim written by test/evals/prepare-helper.sh (stock: symlink to ../tsx/dist/cli.mjs)
-case "${1:-}" in -*|"") exec node "$(dirname "$0")/../tsx/dist/cli.mjs" "$@" ;; esac
+case "${1:-}" in -*|""|watch) exec node "$(dirname "$0")/../tsx/dist/cli.mjs" "$@" ;; esac
 NODE_USE_ENV_PROXY=1 exec node --disable-warning=UNDICI-EHPA --import "$(cd "$(dirname "$0")/.." && pwd)/tsx/dist/loader.mjs" "$@"
 EOF
   else
