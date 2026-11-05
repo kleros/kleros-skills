@@ -344,10 +344,10 @@ Per `RELEASING.md` (combined plugin-level release, precedent `v2.2.0`):
 
 Independent review of `14b78fb` — verdict **push after fixes**.
 
-- [x] **I-1** `RELEASING.md` plugin-release step 2 still said "catalog shape (plugins added/removed/restructured)" — now includes a skill added to/removed from `plugin.json` `skills[]` (also aligned "Versioning in depth") — this commit
-- [x] **I-2** `openclaw-skill/SKILL.md` Example Workflow told agents to upload the evidence JSON and "submit CID to the dispute contract" — now: upload only attachments; V2 DisputeResolver case → `kleros-create-dispute` `evidence` prepares the tx (JSON inline) — this commit
-- [x] **I-3** `CLAUDE.md` versioning + router: "published skill added/removed" → "skill added to/removed from `plugin.json` `skills[]`" (`kleros-feedback` is published but not in skills[]) — this commit
-- [x] **I-4** Root `SKILL.md` "then submit evidence to it" → "then prepare evidence for it" (+ openclaw table row "preparing evidence for it") — this commit
-- [x] **I-5** `CHANGELOG.md` receipt wording: Evidence-not-JSON flag is unconditional; `--dispute <id>` adds the group-keying statement — this commit
-- [x] **I-6** `README.md` Development: `npm ci --prefix kleros-create-dispute/scripts` before `npm test` — this commit
+- [x] **I-1** `RELEASING.md` plugin-release step 2 still said "catalog shape (plugins added/removed/restructured)" — now includes a skill added to/removed from `plugin.json` `skills[]` (also aligned "Versioning in depth") — `34384e1`
+- [x] **I-2** `openclaw-skill/SKILL.md` Example Workflow told agents to upload the evidence JSON and "submit CID to the dispute contract" — now: upload only attachments; V2 DisputeResolver case → `kleros-create-dispute` `evidence` prepares the tx (JSON inline) — `34384e1`
+- [x] **I-3** `CLAUDE.md` versioning + router: "published skill added/removed" → "skill added to/removed from `plugin.json` `skills[]`" (`kleros-feedback` is published but not in skills[]) — `34384e1`
+- [x] **I-4** Root `SKILL.md` "then submit evidence to it" → "then prepare evidence for it" (+ openclaw table row "preparing evidence for it") — `34384e1`
+- [x] **I-5** `CHANGELOG.md` receipt wording: Evidence-not-JSON flag is unconditional; `--dispute <id>` adds the group-keying statement — `34384e1`
+- [x] **I-6** `README.md` Development: `npm ci --prefix kleros-create-dispute/scripts` before `npm test` — `34384e1`
 - [~] **I-7** sync-master / `.gitignore` dev-infra entries in CHANGELOG — kept per v2.1.0 precedent
