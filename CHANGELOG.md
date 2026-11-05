@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/sync-master.yml` sanity check learned the new skill directory; `CLAUDE.md` records the workflow allowlist as a multi-surface publication target so future skills cannot break the release sync.
 - `.gitignore` now ignores nested `node_modules/` so per-skill `scripts/` installs are never committed.
 - Script dependencies are now locked for both skills: `kleros-ipfs-upload/scripts/package-lock.json` is committed (previously deliberately omitted) alongside `kleros-create-dispute/scripts/package-lock.json`, and both skills install with `npm ci`. Both scripts sign payments or build transactions, so their dependency trees must be reproducible; deps are bumped deliberately instead of drifting on every install. The create-dispute helper runs the locked `tsx` via `npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx …` from any directory.
+- `npm run eval:check` parses the eval cases with the npm `yaml` package pinned in `test/evals/package-lock.json` (install once with `npm ci --prefix test/evals`) instead of an undeclared Python/PyYAML dependency.
 
 ### Security
 - `kleros-create-dispute/scripts`: zod 4.4.3 → 4.6.7 (GHSA-mrhx-c7xc-m3w5).

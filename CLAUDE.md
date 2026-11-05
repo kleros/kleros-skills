@@ -13,7 +13,7 @@ Published: `kleros-ipfs-upload` (x402-paid IPFS uploads on Base mainnet), `klero
 ```bash
 npm test                    # Node built-in test runner (node --test)
 npm run update-digests      # Recalculate SHA-256 hashes in .well-known/agent-skills/index.json
-npm run eval:check          # Free: parse test/evals cases + sanity-test grader regexes
+npm run eval:check          # Free: parse test/evals cases + sanity-test grader regexes (once: npm ci --prefix test/evals)
 npm run eval                # PAID claude plugin eval suite (test/evals/) — needs bubblewrap+socat; not part of npm test; see test/evals/README.md
 ```
 

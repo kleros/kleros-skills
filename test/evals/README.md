@@ -8,7 +8,7 @@ this ships to plugin users. `npm test` globs `test/*.test.js` only and never run
 
 | Command | What | Ceiling |
 |---|---|---|
-| `npm run eval:check` | **Free.** Parses every `case.yaml`, checks floor rules, runs every grader regex (JS `RegExp`, as the CLI does) against sample tool inputs (incl. the `$H` shell-variable form models write), the real `fixtures/preflight-human-sepolia.txt`, and the skill's own docs (trace graders must never match them) | $0 |
+| `npm run eval:check` | **Free.** One-time setup: `npm ci --prefix test/evals` (installs the `yaml` parser pinned in `test/evals/package-lock.json`; exits 1 with that hint if missing). Parses every `case.yaml`, checks floor rules, runs every grader regex (JS `RegExp`, as the CLI does) against sample tool inputs (incl. the `$H` shell-variable form models write), the real `fixtures/preflight-human-sepolia.txt`, and the skill's own docs (trace graders must never match them) | $0 |
 | `npm run eval:pilot` | **Paid.** Both tags, `--runs 1` | $3 + $5 |
 | `npm run eval:triggers` | **Paid.** 10 trigger cases, read-only tools, no grants | $6 |
 | `npm run eval:behaviour` | **Paid.** 5 behaviour cases; runs `prepare-helper.sh`, then grants below | $20 |

@@ -1,22 +1,37 @@
 // Free (no model calls) sanity check for the claude plugin eval suite:
-// parses every case.yaml (via python3 + PyYAML, the only YAML parser at hand without
-// adding a dependency), checks the floor rules, and runs every tool_used / tool_order /
+// parses every case.yaml (with the `yaml` package pinned in test/evals/package-lock.json;
+// install once with `npm ci --prefix test/evals`), checks the floor rules, and runs every tool_used / tool_order /
 // regex pattern through JS RegExp (the engine the eval CLI uses) against sample tool
 // inputs (incl. the $H shell-variable form models write) and the real `preflight --human`
 // output in fixtures/; trace graders are also checked never to match the skill's own docs.
 // Run: npm run eval:check
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { GATES, SAFETY_GATES, checkGate } from './gate.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const py = `import yaml,glob,json,sys
-out={}
-for f in sorted(glob.glob(sys.argv[1]+'/*/*/case.yaml')):
-    d=yaml.safe_load(open(f)); out[d['name']]=d
-json.dump(out,sys.stdout)`;
-const cases = JSON.parse(execFileSync('python3', ['-c', py, here], { encoding: 'utf8' }));
+let YAML;
+try {
+  YAML = await import('yaml');
+} catch (err) {
+  if (err?.code !== 'ERR_MODULE_NOT_FOUND') throw err;
+  console.error('eval:check: the `yaml` package is missing. Run `npm ci --prefix test/evals` once, then re-run `npm run eval:check`.');
+  process.exit(1);
+}
+const cases = {};
+// Suite dirs hold <case>/case.yaml (the eval CLI's <suite>/<case> names); skip deps, data and dot dirs.
+const caseFiles = fs.readdirSync(here, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && !d.name.startsWith('.') && !['node_modules', 'fixtures', 'results'].includes(d.name))
+  .flatMap((d) => fs.readdirSync(path.join(here, d.name), { withFileTypes: true })
+    .filter((c) => c.isDirectory() && fs.existsSync(path.join(here, d.name, c.name, 'case.yaml')))
+    .map((c) => path.join(here, d.name, c.name, 'case.yaml')))
+  .sort();
+for (const f of caseFiles) {
+  const d = YAML.parse(fs.readFileSync(f, 'utf8'));
+  if (Object.hasOwn(cases, d.name)) { console.error(`eval:check: duplicate case name ${d.name} (${f})`); process.exit(1); }
+  cases[d.name] = d;
+}
+if (Object.keys(cases).length === 0) { console.error('eval:check: no case.yaml found'); process.exit(1); }
 const human = fs.readFileSync(path.join(here, 'fixtures', 'preflight-human-sepolia.txt'), 'utf8');
 const S = path.resolve(here, '..', '..', 'kleros-create-dispute', 'scripts');
 let floor = 0, shouldNotFire = 0;
