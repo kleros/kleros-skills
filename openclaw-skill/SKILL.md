@@ -1,6 +1,6 @@
 ---
 name: kleros-skills
-description: "Kleros protocol knowledge for AI agents — standalone V2 dispute creation, Curate registries, IPFS evidence uploads, and arbitration integration. Use when: (1) creating a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia, (2) uploading dispute evidence or metadata to IPFS, (3) submitting, challenging, or appealing items in Curate registries, (4) deploying new Curate registries, (5) the user mentions Kleros, PNK, Curate, arbitration, or decentralized justice, (6) working with ERC-792 Arbitrable/Arbitrator interfaces. NOT for: generic IPFS uploads with no Kleros context, non-Kleros dispute systems, or general Ethereum development — use ethskills for those."
+description: "Kleros protocol knowledge for AI agents — standalone V2 dispute creation, Curate registries, IPFS evidence uploads, and arbitration integration. Use when: (1) creating a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia, or submitting evidence to one, (2) uploading dispute evidence or metadata to IPFS, (3) submitting, challenging, or appealing items in Curate registries, (4) deploying new Curate registries, (5) the user mentions Kleros, PNK, Curate, arbitration, or decentralized justice, (6) working with ERC-792 Arbitrable/Arbitrator interfaces. NOT for: generic IPFS uploads with no Kleros context, non-Kleros dispute systems, or general Ethereum development — use ethskills for those."
 metadata:
   {
     "openclaw": {
@@ -40,7 +40,7 @@ Working with Curate registries? Fetch **Kleros Curate**:
 curl -s https://skills.kleros.io/kleros-curate/SKILL.md
 ```
 
-Creating a standalone V2 dispute? Fetch **Kleros Create Dispute** and the IPFS upload skill:
+Creating a standalone V2 dispute, or submitting evidence to one? Fetch **Kleros Create Dispute** and the IPFS upload skill:
 
 ```bash
 curl -s https://skills.kleros.io/kleros-create-dispute/SKILL.md
@@ -53,7 +53,7 @@ curl -s https://skills.kleros.io/kleros-ipfs-upload/SKILL.md
 |-------|-----|---------------|
 | **Kleros IPFS Upload** | `kleros-ipfs-upload/SKILL.md` | Uploading dispute evidence, meta-evidence JSON, court policies, Curate item metadata, or juror justifications to IPFS. Costs $0.01 USDC per upload on Base mainnet. |
 | **Kleros Curate** | `kleros-curate/SKILL.md` | Submitting, challenging, or appealing items in Curate registries. Deploying new registries. Monitoring Scout registries on Gnosis. Covers Light Curate, Stake Curate (PGTCR), and Scout. |
-| **Kleros Create Dispute** | `kleros-create-dispute/SKILL.md` | Creating a standalone Kleros V2 case on Arbitrum One or Arbitrum Sepolia: policy upload, template validation, deployment preflight, live fee quote, prepared calldata, simulation, and receipt parsing. |
+| **Kleros Create Dispute** | `kleros-create-dispute/SKILL.md` | Creating a standalone Kleros V2 case on Arbitrum One or Arbitrum Sepolia, then submitting evidence to it: policy upload, template validation, deployment preflight, live fee quote, prepared calldata, simulation, receipt parsing, and evidence keyed by the on-chain evidence group. Prepares transactions; never signs. Not for appeals, juror voting, or evidence on disputes created by other arbitrables. |
 
 ## What to Fetch by Task
 
@@ -61,6 +61,7 @@ curl -s https://skills.kleros.io/kleros-ipfs-upload/SKILL.md
 |---|---|
 | Uploading dispute evidence or metadata | `kleros-ipfs-upload/` |
 | Creating a standalone Kleros V2 dispute | `kleros-create-dispute/`, `kleros-ipfs-upload/` |
+| Submitting evidence to a Kleros V2 dispute created through DisputeResolver | `kleros-create-dispute/`, `kleros-ipfs-upload/` (attachment) |
 | Rehearsing a dispute on testnet | `kleros-create-dispute/` |
 | Submitting items to a Curate registry | `kleros-curate/`, `kleros-ipfs-upload/` |
 | Challenging or appealing a registry submission | `kleros-curate/` |
@@ -72,14 +73,14 @@ curl -s https://skills.kleros.io/kleros-ipfs-upload/SKILL.md
 
 - **IPFS uploads cost $0.01 USDC** on Base mainnet via the x402 payment gateway. The payer doesn't need ETH for gas — EIP-3009 makes it gasless.
 - **Gateway endpoint**: `POST https://kleros-ipfs-gateway.fly.dev/upload-to-ipfs` behind an x402 paywall.
-- **Standalone V2 disputes** use DisputeResolver on Arbitrum One (`42161`) or Arbitrum Sepolia (`421614`); the RPC chain ID picks the deployment. The payable creation call takes native ETH, while policy upload is paid separately in Base USDC on both networks.
+- **Standalone V2 disputes** use DisputeResolver on Arbitrum One (`42161`) or Arbitrum Sepolia (`421614`); the RPC chain ID picks the deployment. The payable creation call takes native ETH, while policy upload is paid separately in Base USDC on both networks. Evidence on such a dispute goes to its EvidenceModule keyed by the resolver's evidence group (read from the chain), which is not the dispute ID.
 - **Curate registries** are token-curated lists on Ethereum, Gnosis, and Sepolia. Three flavors: Light Curate (LightGeneralizedTCR), Stake Curate (PermanentGTCR/PGTCR), and Scout.
 - **Never guess list fields or addresses** — derive policy and schema from on-chain MetaEvidence.
 - **CID URLs**: `cids[]` from the gateway already includes `/ipfs/` prefix. Build URLs as `"https://cdn.kleros.link" + cid`, not `"https://cdn.kleros.link/ipfs/" + cid` (double-slash trap).
 
 ## Example Workflow
 
-When an agent needs to submit evidence for a Kleros dispute:
+When an agent needs to submit evidence for a Kleros dispute (for a standalone V2 dispute created through DisputeResolver, also fetch https://skills.kleros.io/kleros-create-dispute/SKILL.md — it prepares the evidence transaction):
 
 ```
 1. Fetch https://skills.kleros.io/kleros-ipfs-upload/SKILL.md  -> Learn the upload flow

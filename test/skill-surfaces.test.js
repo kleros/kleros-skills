@@ -140,3 +140,22 @@ describe("published skills", () => {
     });
   }
 });
+
+// Skill-specific routing (review m-17): evidence on a DisputeResolver dispute must
+// reach kleros-create-dispute, while plain evidence uploads stay with kleros-ipfs-upload.
+describe("evidence routing", () => {
+  for (const [name, source] of [["root SKILL.md", rootSkill], ["openclaw SKILL.md", openclaw]]) {
+    it(`${name} routes evidence submission and uploads to the right skills`, () => {
+      const rows = section(source, "## What to Fetch by Task").split("\n").filter((line) => line.startsWith("|"));
+      const submit = rows.filter((row) => /submitting evidence/i.test(row));
+      assert.equal(submit.length, 1, "expected one 'Submitting evidence' row");
+      assert.match(submit[0], /DisputeResolver/);
+      assert.match(submit[0], token("kleros-create-dispute"));
+      assert.match(submit[0], token("kleros-ipfs-upload"));
+      const upload = rows.filter((row) => /uploading dispute evidence/i.test(row));
+      assert.equal(upload.length, 1, "expected one 'Uploading dispute evidence' row");
+      assert.match(upload[0], token("kleros-ipfs-upload"));
+      assert.doesNotMatch(upload[0], token("kleros-create-dispute"));
+    });
+  }
+});

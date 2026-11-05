@@ -68,9 +68,9 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **m-14** Script path assumes cwd — use `${CLAUDE_SKILL_DIR}` — this commit (decision: `npm --prefix "${CLAUDE_SKILL_DIR}/scripts" exec -- tsx …` instead of `npx tsx …` — bare npx outside scripts/ installs unpinned tsx@latest (verified); no `allowed-tools`: Claude-Code-only, per-turn grant, bypasses workspace trust, and approvals span turns anyway)
 - [x] **m-15** No copyable progress checklist in Flow — this commit
 - [x] **m-16** Missing "run exactly / don't edit calldata" low-freedom wording — this commit
-- [ ] **m-17** Evidence submission not routable from surfaces
-- [ ] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link
-- [ ] **m-19** `CLAUDE.md:9` "Published:" not updated
+- [x] **m-17** Evidence submission not routable from surfaces — this commit ("Submitting evidence to a Kleros V2 dispute created through DisputeResolver" → create-dispute + ipfs-upload rows in root/openclaw; "Uploading dispute evidence" still ipfs-upload only; evidence + prepares-never-signs in root/openclaw/README/index.html/index.json descriptions; `skill-surfaces.test.js` asserts both rows)
+- [x] **m-18** CHANGELOG lacks `[2.5.0]` section + compare link — this commit (option a: RELEASING.md puts the dated `## [X.Y.Z]` entry + link line in the release commit before the tag, no rename-at-tag step; `## [2.5.0] - 2026-11-05`, empty `[Unreleased]`, `[2.5.0]: compare/v2.4.0...v2.5.0`; entries rewritten to what the skill does now; date to be bumped if the tag lands later)
+- [x] **m-19** `CLAUDE.md:9` "Published:" not updated — this commit
 - [x] **m-20** `skill-surfaces.test.js` gaps (substring match, no index.html/marketplace/CHANGELOG) — this commit
 - [x] **m-21** No top-level catch; `--evidence` JSON.parse unfriendly — 2fecec8
 - [x] **m-22** Description: missing trigger synonyms / "pushy" clause — this commit (941 chars)
@@ -87,9 +87,9 @@ Mark `[x]` + commit SHA when addressed; `[~]` = won't fix (state reason inline).
 - [x] **n-09** `--human yes` swallows value → JSON output
 - [x] **n-10** Node shebang on non-executable `.ts` — 2fecec8
 - [x] **n-11** Legacy `getGasPrice` vs EIP-1559 — 2fecec8
-- [ ] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins
-- [ ] **n-13** `plugin.json` keywords lack `arbitrum`/`v2`
-- [ ] **n-14** Landing card "Testnet" tag undersells mainnet target
+- [x] **n-12** marketplace `metadata.version` 2.1.0 justification conflates skills vs plugins — this commit (2.1.0 stays: RELEASING "Publishing a new skill" step 3 bumps it, precedent 2.0.0 for kleros-curate, and the catalog entry's description changed; CHANGELOG reason now says "new skill in the `kleros-skills` plugin entry; no plugins added/removed"; CLAUDE.md + RELEASING.md wording aligned: a published skill added/removed counts as a catalog change)
+- [x] **n-13** `plugin.json` keywords lack `arbitrum`/`v2` — this commit (+ `dispute`, `evidence`, `arbitrum`, `kleros-v2`; `arbitration` already present)
+- [x] **n-14** Landing card "Testnet" tag undersells mainnet target — this commit (tags V2 / Arbitrum / Sepolia, network-name style of the Curate card; short line + desc mention evidence)
 - [x] **n-15** Reserved-ruling test redeclares regex instead of importing
 - [x] **n-16** `--max-fee` caps arbitration fee only, not gas — document — this commit
 
@@ -323,3 +323,19 @@ Findings surfaced by the evals:
 - [~] **H-2** (portability) — decision 2026-11-05 (jaybuidl): note only, no fix planned; SKILL.md "Known limitation — sandboxed Bash (Linux)" added. Original finding: the documented invocation `npm --prefix … exec -- tsx …` fails under Claude Code's Linux sandbox (bubblewrap): (a) deny rules on plugin symlinks hide `.bin/tsx`'s target; (b) the tsx CLI opens an IPC Unix socket (`listen EPERM`); (c) sandboxed Node `fetch` ignores the proxy (no DNS) unless `NODE_USE_ENV_PROXY=1`. The eval harness works around it (`test/evals/prepare-helper.sh`); real users running sandboxed hit it. Candidate fix: invoke `node --import "<scripts>/node_modules/tsx/dist/loader.mjs"` (no socket, no `.bin` symlink) with `NODE_USE_ENV_PROXY=1`; needs user decision + release note.
 - Pilot ($1.95 + $1.94 debug/re-pilot): triggers 10/10 with skill; Δ +1.00 on t1/t2/t4/t5 after grader fix; behaviour b1 +0.50, b2 +0.12, b3 +0.20 (failed → H-1), b4 +0.33, b5 +0.33.
 - Full run (e9ed075 + t5 grader fix): behaviour 5/5 (mean Δ +0.89), triggers 10/10 after t5 rubric fix; gate PASS on every with-arm safety and firing check. Details in `test/evals/README.md`. Batch-5 spend ≈ $10.75.
+
+## Batch 6 — surfaces & release prep (2026-11-05)
+
+m-17, m-18, m-19, n-12, n-13, n-14 closed in one commit (see checklist). Multi-surface rows re-checked for the skill: sitemap, plugin.json `skills[]`, marketplace `plugins[]`, sync-master `EXPECTED_ROOT` + keep-list all present (`skill-surfaces.test.js`). Not in CHANGELOG: eval suite (`test/evals/`, stripped from master, dev-only); `maxFeePerGasWei` described as the output field, not as a rename (`gasPriceWei` existed only in unreleased PR #5 drafts).
+
+## Release checklist for v2.5.0 (after #6 → #5 → dev)
+
+Per `RELEASING.md` (combined plugin-level release, precedent `v2.2.0`):
+1. Merge #6 into #5, #5 into `dev`; `git push origin dev` (the sync runs against `origin/dev`).
+2. If the release day ≠ 2026-11-05: change the `## [2.5.0] - 2026-11-05` date in `CHANGELOG.md` on dev (commit). Link lines already in place: `[Unreleased]: compare/v2.5.0...HEAD`, `[2.5.0]: compare/v2.4.0...v2.5.0`. If a `kleros-create-dispute@v1.0.0` tag is also cut, add `[kleros-create-dispute@v1.0.0]: …/releases/tag/kleros-create-dispute@v1.0.0` (precedent: kleros-curate@v1.0.0 link line).
+3. On dev HEAD: `npm run update-digests` (expect no change) + `npm test` green (`npm ci --prefix kleros-create-dispute/scripts` first so the helper suites run).
+4. **User only (GPG passphrase):** `git tag -s v2.5.0 <dev sha> -m "v2.5.0 — kleros-create-dispute"` + `git push origin v2.5.0`. Optional second label on the same sha: `git tag -s kleros-create-dispute@v1.0.0 <sha> -m …` + push (fires a second sync of the same tree — needs its own approval).
+5. jaybuidl approves the `sync-master` run in Actions (`production-sync`); confirm master has `kleros-create-dispute/` incl. `scripts/package-lock.json`, and no `test/`, `.planning/`, `RELEASING.md`.
+6. `gh release create v2.5.0 --title "v2.5.0 — Kleros V2 dispute creation" --notes "<CHANGELOG [2.5.0] section>"` (and for the skill tag if cut).
+7. Check `https://skills.kleros.io/kleros-create-dispute/SKILL.md` stops 404ing after the Netlify deploy.
+

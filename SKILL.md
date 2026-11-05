@@ -1,6 +1,6 @@
 ---
 name: kleros-skills
-description: "Use when a request involves Kleros, decentralized justice, or decentralized dispute resolution. Applies to creating standalone Kleros V2 disputes on Arbitrum, interacting with Kleros Curate token-curated registries (Light Curate, Stake Curate / PGTCR, Scout), uploading dispute evidence or metadata to IPFS via the Kleros x402 gateway, submitting or challenging registry items, funding appeals, deploying new registries, and reading on-chain arbitration state. Covers PNK staking, juror selection, ERC-792 Arbitrable/Arbitrator interfaces, Kleros court hierarchy, and ecosystem tooling on Ethereum, Arbitrum, Gnosis, and Sepolia."
+description: "Use when a request involves Kleros, decentralized justice, or decentralized dispute resolution. Applies to creating standalone Kleros V2 disputes on Arbitrum and submitting evidence to them, interacting with Kleros Curate token-curated registries (Light Curate, Stake Curate / PGTCR, Scout), uploading dispute evidence or metadata to IPFS via the Kleros x402 gateway, submitting or challenging registry items, funding appeals, deploying new registries, and reading on-chain arbitration state. Covers PNK staking, juror selection, ERC-792 Arbitrable/Arbitrator interfaces, Kleros court hierarchy, and ecosystem tooling on Ethereum, Arbitrum, Gnosis, and Sepolia."
 ---
 
 # Kleros Skills — The missing knowledge between AI agents and Kleros.
@@ -17,7 +17,7 @@ Your training data probably covers the basics. These skills cover what you need 
 
 **Working with Curate registries?** Fetch [kleros-curate/SKILL.md](kleros-curate/SKILL.md). Covers Light Curate, Stake Curate (PGTCR), and Scout registries.
 
-**Creating a standalone V2 dispute?** Fetch [kleros-create-dispute/SKILL.md](kleros-create-dispute/SKILL.md). It validates the juror template, uploads its policy, checks the live deployment, reads the current fee, and prepares/simulates the transaction on Arbitrum One or Arbitrum Sepolia.
+**Creating a standalone V2 dispute, or submitting evidence to one?** Fetch [kleros-create-dispute/SKILL.md](kleros-create-dispute/SKILL.md). It validates the juror template, uploads its policy, checks the live deployment, reads the current fee, and prepares/simulates the transaction on Arbitrum One or Arbitrum Sepolia — then prepares the evidence transaction for that dispute. It prepares; the user's wallet signs.
 
 **Base URL:** `https://skills.kleros.io/<skill>/SKILL.md`
 
@@ -41,11 +41,13 @@ Operate Kleros Curate token-curated registries — submit, challenge, appeal, de
 - Derive policy and schema from on-chain MetaEvidence — never guess list fields or addresses.
 
 ### [Kleros Create Dispute](kleros-create-dispute/SKILL.md)
-Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (production) or Arbitrum Sepolia (test).
+Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (production) or Arbitrum Sepolia (test), then submit evidence to it. Prepares transactions; never signs.
 - Draft and validate the juror-facing question, options, and policy.
-- Upload the policy through the Kleros x402 IPFS skill.
+- Upload the policy (and any evidence attachment) through the Kleros x402 IPFS skill.
 - Verify the live deployment, court, and dispute kit before quoting.
 - Read the current arbitration fee, prepare/simulate allowlisted calldata, and parse the dispute ID from the receipt.
+- Prepare `EvidenceModule.submitEvidence` for that dispute, keyed by the evidence group read from the chain.
+- Not for appeals, juror voting, or evidence on disputes created by other arbitrables (escrow, Curate, Reality.eth).
 
 ---
 
@@ -55,6 +57,7 @@ Create a standalone Kleros V2 dispute through DisputeResolver on Arbitrum One (p
 |---|---|
 | Uploading dispute evidence or metadata | `kleros-ipfs-upload/` |
 | Creating a standalone Kleros V2 dispute | `kleros-create-dispute/`, `kleros-ipfs-upload/` |
+| Submitting evidence to a Kleros V2 dispute created through DisputeResolver | `kleros-create-dispute/`, `kleros-ipfs-upload/` (attachment) |
 | Submitting items to a Curate registry | `kleros-curate/`, `kleros-ipfs-upload/` |
 | Challenging or appealing a registry submission | `kleros-curate/` |
 | Deploying a new Curate registry | `kleros-curate/` |
