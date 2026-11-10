@@ -5,7 +5,7 @@
 !.claude/package.json
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -52,3 +52,6 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# claude plugin eval output (test/evals/README.md)
+test/evals/results/
