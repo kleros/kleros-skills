@@ -59,8 +59,8 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Workflow: `.github/workflows/sync-master.yml`
 - Identity: GitHub App `kleros-skills-sync` in `kleros` org, scoped to this repo, Contents R/W only
 - Secret: `GH_APP_PRIVATE_KEY` is a `production-sync` **environment** secret (no repo-level copy) — only a job declaring that environment can mint the token
-- Environment: `production-sync` — required reviewer (jaybuidl); deployment-allowlist: `dev` branch + `*@v*` + `v[0-9]*` tag patterns. **Keep tag-pattern allowlist in sync with workflow's `on.push.tags`.**
-- Tag protection: ruleset `release tags` restricts creation/update/deletion of release tags to bypass list
+- Environment: `production-sync` — required reviewer (jaybuidl); deployment-allowlist: `dev` branch + `*@v*.*.*` + `v[0-9]*` tag patterns (exactly the workflow's `on.push.tags`). **Keep tag-pattern allowlist in sync with workflow's `on.push.tags`.**
+- Tag protection: ruleset `release tags` (`*@v*`, `v[0-9]*`) restricts creation/update/deletion of release tags to bypass list — must stay a superset of the environment's tag allowlist (else an unprotected tag could deploy)
 - Master branch ruleset (`master`): restricts direct push to bypass list (sync App + admins)
 
 **Operational gotchas worth knowing:**
