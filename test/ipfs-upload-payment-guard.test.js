@@ -34,7 +34,9 @@ const tsxLoader = path.join(scriptsDir, "node_modules", "tsx", "dist", "loader.m
 const tsxApi = path.join(scriptsDir, "node_modules", "tsx", "dist", "esm", "api", "index.cjs");
 const haveDeps =
   fs.existsSync(tsxLoader) && fs.existsSync(path.join(scriptsDir, "node_modules", "@x402", "fetch"));
-const skipReason = haveDeps ? false : "upload deps missing: run `npm ci` in kleros-ipfs-upload/scripts";
+// Locally, missing deps skip; in CI (the release gate installs them) they fail.
+const inCI = process.env.CI === "true";
+const skipReason = haveDeps || inCI ? false : "upload deps missing: run `npm ci` in kleros-ipfs-upload/scripts";
 
 const BASE_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 const TEST_KEY = "0x" + "11".repeat(32);
@@ -89,6 +91,10 @@ const CASES = [
 ];
 
 describe("kleros-ipfs-upload payment guard (source)", () => {
+  it("upload deps are installed in CI (else the behaviour suites would not run)", { skip: !inCI && "local run" }, () => {
+    assert.ok(haveDeps, "CI must `npm ci --ignore-scripts --prefix kleros-ipfs-upload/scripts` before npm test");
+  });
+
   it("CDP runner guard is identical to the raw-key runner guard", () => {
     assert.equal(guardBlock(cdpRunner), guardBlock(rawRunner));
   });

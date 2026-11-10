@@ -111,6 +111,13 @@ jobs:
       - name: Install skill helper deps (tests exercise them)
         run: npm ci --prefix kleros-create-dispute/scripts
 
+      # Payment-guard tests (test/ipfs-upload-payment-guard.test.js) run the
+      # upload runner against the locked x402 SDK. --ignore-scripts: no
+      # third-party install hooks next to the App token persisted by checkout;
+      # the tests need no native builds.
+      - name: Install IPFS upload script deps (payment-guard tests)
+        run: npm ci --ignore-scripts --prefix kleros-ipfs-upload/scripts
+
       - name: Quality gate — npm test
         run: npm test
 
