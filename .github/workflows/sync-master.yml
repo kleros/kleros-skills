@@ -19,59 +19,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  sync:
+  # =========================================================================
+  # Job 1 — quality gate. Runs everything that executes repo or third-party
+  # code (npm install hooks, tsx/viem/@x402/cdp-sdk loaded by the tests).
+  # Token-less by design: no GitHub App token, no protected Environment,
+  # read-only GITHUB_TOKEN that is NOT persisted to .git/config. Nothing
+  # this job runs can reach a credential that pushes master.
+  #
+  # It resolves the dev commit to release ONCE and hands that SHA to `sync`,
+  # so the job that pushes master strips exactly the commit tested here.
+  # =========================================================================
+  quality-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 15   # hard cap; default is 6h — refuse to silently burn budget
-
-    # REV-07: gate the job on a protected Environment.
-    # Configure `production-sync` in repo Settings → Environments with:
-    #   - Required reviewers: org owners only (or named maintainers)
-    #   - Deployment branches: restrict to `dev` (defense in depth)
-    # workflow_dispatch then requires reviewer approval before the App token
-    # is minted, closing the privilege-amplification vector for non-tag runs.
-    environment: production-sync
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
 
     steps:
       # -----------------------------------------------------------------------
-      # 1. Mint a short-lived GitHub App installation token (auto-revoked at job end).
-      #    App must be registered in the kleros org, scoped to this repo only,
-      #    with Contents: Read and write.  No other permissions needed.
-      #
-      #    SHA-pinned (REV-02): this Action sees GH_APP_PRIVATE_KEY as input.
-      #    A mutable @v2 tag would let a compromised release exfiltrate the PEM.
-      #    Update the pin alongside any deliberate version bump.
-      # -----------------------------------------------------------------------
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
-        with:
-          # client-id (not app-id) per action v3.1.0+ deprecation.
-          # Inlined because client-id is a non-sensitive identifier (visible
-          # on the App's public page); only the private key is a real secret.
-          client-id: Iv23liKuhygE4qmFei7w
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-
-      # -----------------------------------------------------------------------
-      # 2. Check out dev (shallow — full history not needed for strip+push).
+      # 1. Check out dev. Full history (repo is a few MB) so the ancestry check
+      #    below needs no extra authenticated fetch.
+      #    persist-credentials: false — GITHUB_TOKEN is used for this fetch
+      #    only and never written to .git/config where test code could read it.
       # -----------------------------------------------------------------------
       - name: Checkout dev
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v6.0.3
         with:
           ref: dev
-          token: ${{ steps.app-token.outputs.token }}
-          fetch-depth: 1
+          fetch-depth: 0
+          persist-credentials: false
 
-      # Fetch origin/master so --force-with-lease has a known remote-tracking ref.
-      # The "|| true" handles the edge case where master does not yet exist on origin
-      # (e.g. very first bootstrap run before any master commits).
-      - name: Fetch origin/master for force-with-lease safety
-        run: git fetch origin master:refs/remotes/origin/master || true
+      # Pin the commit under test. `sync` checks out this SHA and asserts it,
+      # so a dev push landing between the two jobs cannot ship untested code.
+      - name: Resolve commit under test
+        id: resolve
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Commit under test: $SHA"
 
       # -----------------------------------------------------------------------
       # REV-03: Tag ancestry check.
-      # Verify the triggering commit is reachable from origin/dev before any
-      # destructive operation. Closes the privilege-amplification vector where
-      # a contributor pushes a tag at an arbitrary (e.g. malicious) commit.
+      # Verify the triggering commit is reachable from the dev commit under
+      # test before any destructive operation. Closes the privilege-
+      # amplification vector where a contributor pushes a tag at an arbitrary
+      # (e.g. malicious) commit. Fails here, before the reviewer is asked to
+      # approve; `sync` re-asserts it before pushing.
       #
       # github.sha is a 40-char hex hash from GitHub itself (not user-controllable
       # text), so direct interpolation in `run:` is safe. The env-var pattern is
@@ -86,19 +81,16 @@ jobs:
           TRIGGER_SHA: ${{ github.sha }}
           TRIGGER_REF: ${{ github.ref_name }}
         run: |
-          # Fetch enough dev history for the merge-base lookup.
-          # 500 commits is generous; the existing checkout was --depth=1.
-          git fetch origin dev --depth=500
-          if ! git merge-base --is-ancestor "$TRIGGER_SHA" origin/dev; then
+          if ! git merge-base --is-ancestor "$TRIGGER_SHA" HEAD; then
             echo "ERROR: tag $TRIGGER_REF (commit $TRIGGER_SHA) is not reachable"
-            echo "       from origin/dev. Refusing to sync master — release tags"
+            echo "       from dev HEAD. Refusing to sync master — release tags"
             echo "       must point to commits on dev's history."
             exit 1
           fi
           echo "OK: $TRIGGER_REF ($TRIGGER_SHA) is on dev ancestry."
 
       # -----------------------------------------------------------------------
-      # 3. Set up Node for the quality gates.
+      # 2. Set up Node for the quality gates.
       # -----------------------------------------------------------------------
       - name: Set up Node 24
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444  # v6.4.0
@@ -106,15 +98,14 @@ jobs:
           node-version: "24"
 
       # -----------------------------------------------------------------------
-      # 4. Quality gate — test suite must pass before we touch master.
+      # 3. Quality gate — test suite must pass before `sync` may run.
       # -----------------------------------------------------------------------
       - name: Install skill helper deps (tests exercise them)
         run: npm ci --prefix kleros-create-dispute/scripts
 
       # Payment-guard tests (test/ipfs-upload-payment-guard.test.js) run the
-      # upload runner against the locked x402 SDK. --ignore-scripts: no
-      # third-party install hooks next to the App token persisted by checkout;
-      # the tests need no native builds.
+      # upload runner against the locked x402 SDK. --ignore-scripts: the tests
+      # need no native builds, so skip third-party install hooks.
       - name: Install IPFS upload script deps (payment-guard tests)
         run: npm ci --ignore-scripts --prefix kleros-ipfs-upload/scripts
 
@@ -122,7 +113,7 @@ jobs:
         run: npm test
 
       # -----------------------------------------------------------------------
-      # 5. Quality gate — index.json digests must be fresh.
+      # 4. Quality gate — index.json digests must be fresh.
       #    Re-running update-digests and checking for a diff ensures no stale
       #    SHA-256 hashes ship to user machines.
       # -----------------------------------------------------------------------
@@ -135,8 +126,92 @@ jobs:
             exit 1
           fi
 
+  # =========================================================================
+  # Job 2 — sync. Strips the gate-tested commit and pushes it to master.
+  # Runs no npm installs and no repo code: only git + shell, plus the two
+  # SHA-pinned actions (checkout, create-github-app-token).
+  # Starts only if quality-gate succeeded (default `needs` semantics: a
+  # failed, cancelled or skipped gate skips this job).
+  # =========================================================================
+  sync:
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15   # hard cap; default is 6h — refuse to silently burn budget
+    permissions:
+      contents: read
+
+    # REV-07: gate the job on a protected Environment.
+    # Configure `production-sync` in repo Settings → Environments with:
+    #   - Required reviewers: org owners only (or named maintainers)
+    #   - Deployment branches/tags: `dev` + the release-tag patterns (defense in depth)
+    # workflow_dispatch then requires reviewer approval before the App token
+    # is minted, closing the privilege-amplification vector for non-tag runs.
+    # Because this job `needs: quality-gate`, the approval request only
+    # appears once the gate has passed — the reviewer approves a tested commit.
+    environment: production-sync
+
+    steps:
       # -----------------------------------------------------------------------
-      # 6. Strip dev-only files.
+      # 1. Check out the exact commit quality-gate tested. Full history fetches
+      #    origin/dev (ancestry re-check) and origin/master (force-with-lease
+      #    remote-tracking ref) with the read-only GITHUB_TOKEN; credentials are
+      #    not persisted. A missing master (very first bootstrap) is tolerated.
+      # -----------------------------------------------------------------------
+      - name: Checkout tested commit
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v6.0.3
+        with:
+          ref: ${{ needs.quality-gate.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Re-assert, before any destructive step, that we hold the tested commit,
+      # that it is still on dev (not rewritten away by a force-push between
+      # jobs), and — for tag pushes — that the tag is on its ancestry (REV-03).
+      - name: Verify pinned commit
+        env:
+          TESTED_SHA: ${{ needs.quality-gate.outputs.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_SHA: ${{ github.sha }}
+          TRIGGER_REF: ${{ github.ref_name }}
+        run: |
+          if ! [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "FATAL: quality-gate did not output a commit SHA ('$TESTED_SHA')."
+            exit 1
+          fi
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [ "$HEAD_SHA" != "$TESTED_SHA" ]; then
+            echo "FATAL: checked out $HEAD_SHA, but quality-gate tested $TESTED_SHA."
+            exit 1
+          fi
+          git rev-parse --verify --quiet refs/remotes/origin/dev >/dev/null || {
+            echo "FATAL: origin/dev not fetched — cannot verify dev ancestry."
+            exit 1
+          }
+          if ! git merge-base --is-ancestor "$TESTED_SHA" refs/remotes/origin/dev; then
+            echo "FATAL: tested commit $TESTED_SHA is no longer on origin/dev."
+            exit 1
+          fi
+          if [ "$EVENT_NAME" = "push" ] && \
+             ! git merge-base --is-ancestor "$TRIGGER_SHA" "$TESTED_SHA"; then
+            echo "FATAL: tag $TRIGGER_REF ($TRIGGER_SHA) is not on the ancestry"
+            echo "       of the tested commit $TESTED_SHA."
+            exit 1
+          fi
+          # Rollback guard: each master sync commit's first parent is the dev
+          # commit it was synced from. Re-running an old run's sync job reuses
+          # that run's (older) tested SHA — refuse to move master backwards.
+          if PREV=$(git rev-parse --verify --quiet 'refs/remotes/origin/master^1'); then
+            if [ "$PREV" != "$TESTED_SHA" ] && \
+               git merge-base --is-ancestor "$TESTED_SHA" "$PREV"; then
+              echo "FATAL: master was already synced from $PREV, a descendant of"
+              echo "       $TESTED_SHA. Refusing to roll master back (stale re-run?)."
+              exit 1
+            fi
+          fi
+          echo "OK: syncing tested commit $TESTED_SHA (on origin/dev)."
+
+      # -----------------------------------------------------------------------
+      # 2. Strip dev-only files.
       #    Everything removed here will NOT appear on master or in plugin installs.
       #
       #    Strip-list:
@@ -148,6 +223,7 @@ jobs:
       #      .yarnrc.yml       — Yarn config
       #      *FEEDBACK*.md     — AI session feedback scratch files (root only)
       #      HANDOVER*.md      — Handover scratch files (root only)
+      #      RELEASING.md      — maintainer release how-to
       # -----------------------------------------------------------------------
       - name: Strip dev-only files
         run: |
@@ -225,7 +301,29 @@ jobs:
           echo "OK: stripped tree looks correct."
 
       # -----------------------------------------------------------------------
-      # 7. Configure git identity for the bot commit on master.
+      # 3. Mint a short-lived GitHub App installation token (auto-revoked at job end).
+      #    App must be registered in the kleros org, scoped to this repo only,
+      #    with Contents: Read and write.  No other permissions needed.
+      #    Minted as late as possible: after every check, right before the push,
+      #    and only ever exposed to the push step below (never to checkout or
+      #    .git/config).
+      #
+      #    SHA-pinned (REV-02): this Action sees GH_APP_PRIVATE_KEY as input.
+      #    A mutable @v2 tag would let a compromised release exfiltrate the PEM.
+      #    Update the pin alongside any deliberate version bump.
+      # -----------------------------------------------------------------------
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          # client-id (not app-id) per action v3.1.0+ deprecation.
+          # Inlined because client-id is a non-sensitive identifier (visible
+          # on the App's public page); only the private key is a real secret.
+          client-id: Iv23liKuhygE4qmFei7w
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      # -----------------------------------------------------------------------
+      # 4. Configure git identity for the bot commit on master.
       #    REV-11: identity derived dynamically from the App token output.
       #    Whatever name the user registered the App with (e.g. kleros-skills-bot
       #    or kleros-sync), the commit author will match the actual App slug —
@@ -239,12 +337,27 @@ jobs:
           git config user.email "${APP_SLUG}[bot]@users.noreply.github.com"
 
       # -----------------------------------------------------------------------
-      # 8. Commit the stripped tree and push to master.
-      #    --force-with-lease rejects the push if someone manually pushed to
-      #    master between our checkout and this step (safer than --force).
+      # 5. Commit the stripped tree (no token in this step's environment), then
+      #    push it to master.
+      #    --force-with-lease rejects the push if someone pushed to master
+      #    since the checkout fetched origin/master (safer than --force).
       #    The commit is created even when deletions are the only changes.
+      #
+      #    Token handoff: the App token reaches git only through a one-shot
+      #    credential helper on this command line (`-c`, nothing written to
+      #    .git/config). The helper reads $GH_APP_TOKEN from the environment
+      #    at runtime, so the token never appears in argv or the log; the
+      #    action registers it as a masked secret. `credential.helper=` first
+      #    clears any inherited helper; the helper answers only for github.com.
       # -----------------------------------------------------------------------
-      - name: Commit stripped tree and push to master
+      - name: Commit stripped tree
         run: |
           git commit -m "chore(master): sync from dev (strip dev-only files)"
-          git push origin HEAD:master --force-with-lease
+
+      - name: Push to master
+        env:
+          GH_APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git -c credential.helper= \
+              -c 'credential.helper=!f() { test "$1" = get || exit 0; grep -qx host=github.com || exit 0; echo username=x-access-token; echo "password=${GH_APP_TOKEN}"; }; f' \
+              push origin HEAD:master --force-with-lease
