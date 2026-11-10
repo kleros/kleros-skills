@@ -6,14 +6,14 @@
       "type": "skill-md",
       "description": "Root index — routes agents to the right Kleros skill for decentralized justice, dispute resolution, Curate registries, and IPFS uploads",
       "url": "https://skills.kleros.io/SKILL.md",
-      "digest": "sha256:a8bac417a1d8db818d138f83902b7c56475b72c2951f4d6ab7235ecf2cc6de5d"
+      "digest": "sha256:0eb487628899a71cb84231a9ccbe1d38d09bf5a614fbc1edbda717c6d9689760"
     },
     {
       "name": "kleros-ipfs-upload",
       "type": "skill-md",
       "description": "Upload files to IPFS through the Kleros x402 payment gateway ($0.01 USDC on Base mainnet)",
       "url": "https://skills.kleros.io/kleros-ipfs-upload/SKILL.md",
-      "digest": "sha256:c33d3d2e3a351fef9097840ba82767d56ebc4aa4feeea090dcc8bdf836ed6bf4"
+      "digest": "sha256:1df96f3aad3a72d4f938d3115b82ac3d03ffc3ea486cc4877890fbcbcab27ada"
     },
     {
       "name": "kleros-curate",
@@ -25,16 +25,16 @@
     {
       "name": "kleros-create-dispute",
       "type": "skill-md",
-      "description": "Create a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia with policy upload, validation, deployment preflight, live fee quote, prepared calldata, simulation, and receipt parsing",
+      "description": "Create a standalone Kleros V2 dispute on Arbitrum One or Arbitrum Sepolia, then prepare evidence for it — policy upload, validation, deployment preflight, live fee quote, prepared calldata, simulation, receipt parsing, and evidence keyed by the on-chain evidence group; prepares transactions, never signs",
       "url": "https://skills.kleros.io/kleros-create-dispute/SKILL.md",
-      "digest": "sha256:35a14f428fecdc0fdc565c2e8c05bf4dbe9d344a7ec72199b0dfbbe1b09fb7fa"
+      "digest": "sha256:24671849b5312c696c2242ebcd03941951a726a5de8d33373ea98ad9eb3083b3"
     },
     {
       "name": "openclaw-skill",
       "type": "skill-md",
       "description": "OpenClaw integration for Kleros skills — install and manage skills via the clawhub CLI",
       "url": "https://skills.kleros.io/openclaw-skill/SKILL.md",
-      "digest": "sha256:31fff5153f275fe8f675cadd623d005d732821df72065243312d8f02c6e5e742"
+      "digest": "sha256:fe9367107edb6dd6b37499cf2cde7f4d14503397ec9f9fe9abf419e83fbbd26f"
     },
     {
       "name": "kleros-feedback",
