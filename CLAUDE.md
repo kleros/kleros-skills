@@ -53,7 +53,9 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Release tags reference dev commits, not master — `git tag --contains HEAD` on a master checkout finds nothing.
 - Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
 - Strip-list (excluded from master): `.planning/`, `test/` (incl. `test/evals/`), `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
-- Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
+- Every workflow run that would change master requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; ~5-clean-cycle revisit point reached at v2.5.0.
+- Tag push publishes the TAGGED commit (must be on `origin/dev` → push dev first; must contain master's current source); `workflow_dispatch` publishes `dev` HEAD.
+- Tag-push runs where master already holds the strip of the tagged commit or a descendant of it (extra tags of a multi-tag release, late tag on an older commit) skip `sync` with no approval prompt — `quality-gate` already-synced check. Max 3 tags per `git push` (more → GitHub fires no events). Strip-list = workflow-level `env` `STRIP_PATHS`/`STRIP_ROOT_PATTERN`, shared by the strip and the check.
 
 **Live infrastructure:**
 - Workflow: `.github/workflows/sync-master.yml`
@@ -156,7 +158,7 @@ Full step-by-step → **`RELEASING.md`** (dev-only, stripped from master). **Cut
 - Catalog shape changed (plugins added/removed/restructured, or a skill added to/removed from `plugin.json` `skills[]`) → ALSO bump `marketplace.json` `metadata.version`
 - Infra-only, no user-visible bundling → don't tag just to validate; ride the next real release
 
-**Key mechanic:** a tag push syncs the WHOLE dev tree to master regardless of tag _name_ — tag choice = labeling + which version counter advances, NOT what reaches master.
+**Key mechanic:** a tag push syncs the WHOLE tree of the tagged dev commit to master regardless of tag _name_ — tag choice = labeling + which version counter advances, NOT what reaches master.
 
 ## Gotcha: plugin install ships the WHOLE repo
 
