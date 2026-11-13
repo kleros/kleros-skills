@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.5.0] - 2026-11-05
+## [2.5.0] - 2026-11-13
+
+Skill tags on the same commit: [kleros-create-dispute@v1.0.0] (new skill), [kleros-ipfs-upload@v1.2.0] (x402 v2 SDK migration, payment caps, locked deps), [kleros-curate@v1.1.0] (Mainnet verification registry; also rolls up the untagged Curate changes from 2.2.0–2.4.0).
 
 ### Added
 - Published `kleros-create-dispute`, a standalone Kleros V2 skill that creates a dispute (arbitration case) through the deployed `DisputeResolver` on Arbitrum One (production) or Arbitrum Sepolia (rehearsal), then prepares evidence for it. Its bundled helper validates, prices and prepares transactions for the user's wallet to send — it never signs or broadcasts. Commands: `validate`, `quote`, `preflight` (`--human` for the user-facing review), `prepare`, `simulate`, `evidence`, `receipt`.
@@ -119,6 +121,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.0]: https://github.com/kleros/kleros-skills/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/kleros/kleros-skills/releases/tag/v2.1.0
 [2.0.0]: https://github.com/kleros/kleros-skills/compare/v1.1.0...v2.0.0
+[kleros-create-dispute@v1.0.0]: https://github.com/kleros/kleros-skills/releases/tag/kleros-create-dispute@v1.0.0
+[kleros-ipfs-upload@v1.2.0]: https://github.com/kleros/kleros-skills/compare/kleros-ipfs-upload@v1.1.0...kleros-ipfs-upload@v1.2.0
+[kleros-curate@v1.1.0]: https://github.com/kleros/kleros-skills/compare/kleros-curate@v1.0.0...kleros-curate@v1.1.0
 [kleros-curate@v1.0.0]: https://github.com/kleros/kleros-skills/releases/tag/kleros-curate@v1.0.0
 [1.1.0]: https://github.com/kleros/kleros-skills/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kleros/kleros-skills/releases/tag/v1.0.0
