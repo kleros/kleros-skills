@@ -4,6 +4,8 @@
     "research": true,
     "commit_docs": true,
     "text_mode": false,
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "nyquist_validation": true,
+    "ai_integration_phase": true
   }
 }

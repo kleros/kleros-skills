@@ -11,5 +11,8 @@
     "eval": "npm run eval:triggers; t=$?; npm run eval:behaviour; b=$?; [ $t -eq 0 ] && [ $b -eq 0 ]",
     "eval:pilot": "sh test/evals/run.sh trigger --runs 1 --max-cost-usd 3; t=$?; sh test/evals/run.sh behaviour --runs 1 --max-cost-usd 5; b=$?; [ $t -eq 0 ] && [ $b -eq 0 ]"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "volta": {
+    "node": "24.22.3"
+  }
 }

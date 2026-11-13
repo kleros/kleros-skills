@@ -1,8 +1,8 @@
-# claude — commit only settings.json, hooks/, package.json
+# claude — commit only settings.json; GSD (incl. hooks) is a per-contributor local install
 .claude/*
 !.claude/settings.json
-!.claude/hooks/
-!.claude/package.json
+# GSD runtime state
+.gsd/
 
 # dependencies
 node_modules/

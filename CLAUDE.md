@@ -25,13 +25,15 @@ Scripts in `kleros-ipfs-upload/scripts/` are TypeScript run via `npx tsx` — th
 
 ## Claude Code setup
 
-Repo commits only the minimal `.claude/` surface: `settings.json`, `hooks/`, `package.json`. Plugin code (GSD, commands, agents) is gitignored — each contributor installs independently:
+Repo commits only `.claude/settings.json`. GSD (OpenGSD `@opengsd/gsd-core`, commands `/gsd-*`) is a per-contributor local install — code, agents, commands, `hooks/` and hook registrations (in gitignored `settings.local.json`) all untracked. Needs Node ≥24 (volta pin in `package.json`):
 
 ```bash
-npx @opengsd/get-shit-done-redux   # install GSD workflow plugin
+npx -y @opengsd/gsd-core@1.20.1 --claude --local   # pin exact version; ~/.npmrc min-release-age + stale npx cache make @latest unreliable
 ```
 
-If hooks reference missing scripts, Claude Code warns but still works.
+- Installer sets `worktree.baseRef: "head"` in `settings.local.json` → isolated worktrees fork off HEAD, not origin/master (CC #2015 fix). Without the install, the pre-merge diff-stat rule below is the only guard.
+- Statusline: local install skips it; copy `statusLine` from `../agentkit/.claude/settings.local.json`. `hooks/gsd-statusline.js` carries agentkit's between-milestones local patch (3-way merged onto 1.20.1) — `/gsd-update` backs it up to `gsd-local-patches/`; reapply with `/gsd-update --reapply`.
+- Predecessor `get-shit-done-cc` (≤1.42.3) is retired; remove with `npx -y get-shit-done-cc@1.42.3 --claude --local --uninstall` before installing gsd-core.
 
 ## Git
 
