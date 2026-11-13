@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Release workflow (`sync-master.yml`): a tag-push run whose commit master already holds now skips `sync`, so extra tags of a multi-tag release (`vX.Y.Z` + `skillname@vX.Y.Z` on one commit) end green with an "Already synced" summary instead of asking for an approval that would sync nothing. `quality-gate` decides this before any third-party code runs: master must be a single-parent sync commit of exactly the tested commit, and its tree must equal a fresh strip of that commit, replayed on a throwaway index. Anything else syncs normally, including manual dispatch runs. The strip list now lives once in workflow-level `env`, shared by the strip and the check.
+- Release workflow (`sync-master.yml`): a tag-push run whose commit master already holds now skips `sync`, so extra tags of a multi-tag release (`vX.Y.Z` + `skillname@vX.Y.Z` on one commit) end green with an "Already synced" summary instead of asking for an approval that would sync nothing. `quality-gate` decides this before any third-party code runs: master must be a single-parent sync commit whose parent is the tested commit or a descendant of it, and its tree must equal a fresh strip of that parent, replayed on a throwaway index. Anything else syncs normally, including manual dispatch runs. The strip list now lives once in workflow-level `env`, shared by the strip and the check.
 
 ### Fixed
 - Release workflow strip step no longer fails when `dev` has no root `*FEEDBACK*.md` / `HANDOVER*.md` files left (`grep` exits 1 on no match under `pipefail`).
+
+### Security
+- Release workflow (`sync-master.yml`): a tag-push run now publishes the tagged commit, not `dev` HEAD at run time. Previously the tag only had to be an ancestor of `dev` HEAD, so commits landing on `dev` between tagging and the run shipped under the release label without review. `quality-gate` checks out `github.sha`, asserts it is on `origin/dev` before any third-party code, and `sync` re-asserts that the tested commit is the tagged one. A tag push only moves master forward: a tag on a commit that does not contain master's current source fails before the push, and a tag on a commit master already contains (e.g. a late skill tag) ends green as already synced. `workflow_dispatch` still publishes `dev` HEAD.
 
 ## [2.5.0] - 2026-11-13
 

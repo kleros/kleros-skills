@@ -35,8 +35,11 @@ jobs:
   # read-only GITHUB_TOKEN that is NOT persisted to .git/config. Nothing
   # this job runs can reach a credential that pushes master.
   #
-  # It resolves the dev commit to release ONCE and hands that SHA to `sync`,
-  # so the job that pushes master strips exactly the commit tested here.
+  # It resolves the commit to release ONCE and hands that SHA to `sync`, so
+  # the job that pushes master strips exactly the commit tested here:
+  #   tag push          → the TAGGED commit (must be on dev). Commits landing
+  #                       on dev after tagging never ship under the tag.
+  #   workflow_dispatch → dev HEAD at run time (deliberate manual re-sync).
   # =========================================================================
   quality-gate:
     runs-on: ubuntu-latest
@@ -49,71 +52,91 @@ jobs:
 
     steps:
       # -----------------------------------------------------------------------
-      # 1. Check out dev. Full history (repo is a few MB) so the ancestry check
-      #    below needs no extra authenticated fetch.
+      # 1. Check out the commit to release: the tagged commit on a tag push
+      #    (github.sha — for tag pushes GitHub sets it to the commit the tag
+      #    points at), dev HEAD on workflow_dispatch. Full history (repo is a
+      #    few MB) also fetches refs/remotes/origin/dev and origin/master, so
+      #    the dev-ancestry and already-synced checks need no extra fetch.
       #    persist-credentials: false — GITHUB_TOKEN is used for this fetch
       #    only and never written to .git/config where test code could read it.
       # -----------------------------------------------------------------------
-      - name: Checkout dev
+      - name: Checkout commit to release
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v6.0.3
         with:
-          ref: dev
+          ref: ${{ github.event_name == 'push' && github.sha || 'dev' }}
           fetch-depth: 0
           persist-credentials: false
 
       # Pin the commit under test. `sync` checks out this SHA and asserts it,
-      # so a dev push landing between the two jobs cannot ship untested code.
+      # so nothing landing on dev between (or during) the two jobs can ship
+      # untested code. On a tag push it must be the tagged commit itself.
       - name: Resolve commit under test
         id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_SHA: ${{ github.sha }}
+          TRIGGER_REF: ${{ github.ref_name }}
         run: |
           SHA=$(git rev-parse HEAD)
+          if [ "$EVENT_NAME" = "push" ] && [ "$SHA" != "$TRIGGER_SHA" ]; then
+            echo "FATAL: checked out $SHA, but tag $TRIGGER_REF points at $TRIGGER_SHA."
+            exit 1
+          fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "Commit under test: $SHA"
 
       # -----------------------------------------------------------------------
       # REV-03: Tag ancestry check.
-      # Verify the triggering commit is reachable from the dev commit under
-      # test before any destructive operation. Closes the privilege-
-      # amplification vector where a contributor pushes a tag at an arbitrary
-      # (e.g. malicious) commit. Fails here, before the reviewer is asked to
-      # approve; `sync` re-asserts it before pushing.
+      # The tagged commit must be on dev (ancestor of, or equal to, origin/dev)
+      # before anything else runs. Closes the privilege-amplification vector
+      # where a contributor pushes a tag at an arbitrary (e.g. malicious,
+      # never-reviewed) commit. Fails here, before any third-party code and
+      # before the reviewer is asked to approve; `sync` re-asserts it.
       #
       # github.sha is a 40-char hex hash from GitHub itself (not user-controllable
       # text), so direct interpolation in `run:` is safe. The env-var pattern is
       # used anyway as defensive coding consistent with the workflow's other steps.
       #
-      # Skipped for workflow_dispatch — that path is gated by the Environment
-      # required-reviewers check (REV-07).
+      # Skipped for workflow_dispatch — that path checks out dev itself and is
+      # gated by the Environment required-reviewers check (REV-07).
       # -----------------------------------------------------------------------
-      - name: Verify trigger commit is on dev ancestry
+      - name: Verify tagged commit is on dev
         if: github.event_name == 'push'
         env:
-          TRIGGER_SHA: ${{ github.sha }}
+          SHA: ${{ steps.resolve.outputs.sha }}
           TRIGGER_REF: ${{ github.ref_name }}
         run: |
-          if ! git merge-base --is-ancestor "$TRIGGER_SHA" HEAD; then
-            echo "ERROR: tag $TRIGGER_REF (commit $TRIGGER_SHA) is not reachable"
-            echo "       from dev HEAD. Refusing to sync master — release tags"
-            echo "       must point to commits on dev's history."
+          git rev-parse --verify --quiet refs/remotes/origin/dev >/dev/null || {
+            echo "FATAL: origin/dev not fetched — cannot verify dev ancestry."
+            exit 1
+          }
+          if ! git merge-base --is-ancestor "$SHA" refs/remotes/origin/dev; then
+            echo "ERROR: tag $TRIGGER_REF (commit $SHA) is not on dev's history."
+            echo "       Refusing to sync master — release tags must point to"
+            echo "       commits on dev."
             exit 1
           fi
-          echo "OK: $TRIGGER_REF ($TRIGGER_SHA) is on dev ancestry."
+          echo "OK: $TRIGGER_REF ($SHA) is on dev ancestry."
 
       # -----------------------------------------------------------------------
       # Already-synced check. A release often pushes several tags at the same
       # commit (`vX.Y.Z` + `skillname@vX.Y.Z`); each fires its own run, but only
-      # the first has anything to publish. When master already holds exactly
-      # what this run would push — master is a sync commit whose only parent is
-      # the commit under test AND its tree equals a fresh strip of that commit —
-      # `already_synced=true` makes `sync` skip, so no approval is requested
-      # and the run ends green with a summary saying why.
+      # the first has anything to publish. Likewise a tag pushed late, on a
+      # commit older than the one master was last synced from, has nothing to
+      # add (and `sync`'s rollback guard would refuse it). With T = the commit
+      # under test and P = master's parent (the dev commit master was synced
+      # from), `already_synced=true` iff master is a single-parent sync commit,
+      # T is an ancestor of (or equal to) P, AND master's tree equals a fresh
+      # strip of P. `sync` then skips, so no approval is requested and the run
+      # ends green with a summary saying why.
       #
-      # Fail-safe: anything else (dispatch, no master yet, different parent,
-      # tree drift from a manual push or strip-list change) yields `false` and
-      # the normal gated sync. A wrongly-true flag can only withhold a sync,
-      # never ship one. Runs before any third-party code. The strip is replayed
-      # on a throwaway index, so the working tree under test is untouched.
-      # workflow_dispatch never skips: a manual run is a deliberate re-sync.
+      # Fail-safe: anything else (dispatch, no master yet, T newer than or
+      # unrelated to P, tree drift from a manual push or strip-list change)
+      # yields `false` and the normal gated sync. A wrongly-true flag can only
+      # withhold a sync, never ship one. Runs before any third-party code. The
+      # strip is replayed on a throwaway index, so the working tree under test
+      # is untouched. workflow_dispatch never skips: a manual run is a
+      # deliberate re-sync.
       # -----------------------------------------------------------------------
       - name: Check whether master already has this commit
         id: synced
@@ -129,11 +152,13 @@ jobs:
             echo "No origin/master yet: first sync."
           else
             read -r -a COMMIT_AND_PARENTS <<< "$(git rev-list --parents -n 1 "$MASTER")"
-            if [ "${#COMMIT_AND_PARENTS[@]}" -eq 2 ] && [ "${COMMIT_AND_PARENTS[1]}" = "$SHA" ]; then
+            PARENT="${COMMIT_AND_PARENTS[1]:-}"
+            if [ "${#COMMIT_AND_PARENTS[@]}" -eq 2 ] && \
+               git merge-base --is-ancestor "$SHA" "$PARENT" 2>/dev/null; then
               EXPECTED_TREE=$(
                 export GIT_INDEX_FILE="$RUNNER_TEMP/expected-master.index"
                 read -r -a STRIP <<< "$STRIP_PATHS"
-                git read-tree "$SHA"
+                git read-tree "$PARENT"
                 git rm -r --cached --quiet --ignore-unmatch -- "${STRIP[@]}"
                 git ls-files -z | { grep -zE "$STRIP_ROOT_PATTERN" || true; } | \
                   xargs -0 --no-run-if-empty git rm --cached --quiet --
@@ -144,16 +169,21 @@ jobs:
               if [ "$EXPECTED_TREE" = "$MASTER_TREE" ]; then
                 SYNCED=true
               else
-                echo "master was synced from $SHA but its tree ($MASTER_TREE)"
+                echo "master was synced from $PARENT but its tree ($MASTER_TREE)"
                 echo "differs from a fresh strip ($EXPECTED_TREE): syncing again."
               fi
             else
-              echo "master ($MASTER) was not synced from $SHA: sync needed."
+              echo "master ($MASTER) was not synced from $SHA or a descendant: sync needed."
             fi
           fi
           echo "already_synced=$SYNCED" >> "$GITHUB_OUTPUT"
           if [ "$SYNCED" = true ]; then
-            MSG="Nothing to sync for \`$TRIGGER_REF\`: master (\`${MASTER:0:7}\`) already holds dev commit \`${SHA:0:7}\` with the expected stripped tree. \`sync\` is skipped, so no approval is requested."
+            if [ "$PARENT" = "$SHA" ]; then
+              STATE="master (\`${MASTER:0:7}\`) is already at commit \`${SHA:0:7}\`"
+            else
+              STATE="master (\`${MASTER:0:7}\`) is already ahead: synced from \`${PARENT:0:7}\`, which contains commit \`${SHA:0:7}\`"
+            fi
+            MSG="Nothing to sync for \`$TRIGGER_REF\`: $STATE, with the expected stripped tree. \`sync\` is skipped, so no approval is requested."
             echo "$MSG"
             echo "### Already synced" >> "$GITHUB_STEP_SUMMARY"
             echo "$MSG" >> "$GITHUB_STEP_SUMMARY"
@@ -202,7 +232,8 @@ jobs:
   # SHA-pinned actions (checkout, create-github-app-token).
   # Starts only if quality-gate succeeded (explicit `success()`: a failed,
   # cancelled or skipped gate skips this job) AND master does not already
-  # hold the tested commit (see the already-synced check). A job skipped by
+  # hold the tested commit or a descendant of it (see the already-synced
+  # check). A job skipped by
   # `if:` never reaches the environment, so no approval is requested.
   # =========================================================================
   sync:
@@ -239,7 +270,7 @@ jobs:
 
       # Re-assert, before any destructive step, that we hold the tested commit,
       # that it is still on dev (not rewritten away by a force-push between
-      # jobs), and — for tag pushes — that the tag is on its ancestry (REV-03).
+      # jobs), and — for tag pushes — that it IS the tagged commit (REV-03).
       - name: Verify pinned commit
         env:
           TESTED_SHA: ${{ needs.quality-gate.outputs.sha }}
@@ -264,6 +295,11 @@ jobs:
             echo "FATAL: tested commit $TESTED_SHA is no longer on origin/dev."
             exit 1
           fi
+          if [ "$EVENT_NAME" = "push" ] && [ "$TESTED_SHA" != "$TRIGGER_SHA" ]; then
+            echo "FATAL: tag $TRIGGER_REF points at $TRIGGER_SHA, but quality-gate"
+            echo "       tested $TESTED_SHA. A tag push publishes the tagged commit only."
+            exit 1
+          fi
           if [ "$EVENT_NAME" = "push" ] && \
              ! git merge-base --is-ancestor "$TRIGGER_SHA" "$TESTED_SHA"; then
             echo "FATAL: tag $TRIGGER_REF ($TRIGGER_SHA) is not on the ancestry"
@@ -278,6 +314,18 @@ jobs:
                git merge-base --is-ancestor "$TESTED_SHA" "$PREV"; then
               echo "FATAL: master was already synced from $PREV, a descendant of"
               echo "       $TESTED_SHA. Refusing to roll master back (stale re-run?)."
+              exit 1
+            fi
+            # Tag pushes publish the tagged commit, not dev HEAD, so a tag on a
+            # dev commit that does not contain $PREV (e.g. a merged PR branch's
+            # own commit) would drop already-published changes. Tag pushes
+            # only move master forward; workflow_dispatch (dev HEAD) is the
+            # deliberate override.
+            if [ "$EVENT_NAME" = "push" ] && \
+               ! git merge-base --is-ancestor "$PREV" "$TESTED_SHA"; then
+              echo "FATAL: master was synced from $PREV, which tag $TRIGGER_REF"
+              echo "       ($TESTED_SHA) does not contain. Refusing to drop published"
+              echo "       changes: tag a commit that contains it, or dispatch manually."
               exit 1
             fi
           fi
