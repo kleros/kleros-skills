@@ -1,9 +1,0 @@
-{
-  "name": "kleros-skills-evals",
-  "private": true,
-  "description": "Dev-only deps for the claude plugin eval suite checks (test/ is stripped from master).",
-  "type": "module",
-  "devDependencies": {
-    "yaml": "2.9.1"
-  }
-}
