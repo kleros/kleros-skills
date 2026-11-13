@@ -10,7 +10,7 @@ Adapted from [ethskills](https://github.com/austintgriffith/ethskills), credits 
 
 ```
 /plugin marketplace add kleros/kleros-skills
-/plugin install kleros-ipfs-upload@kleros-skills
+/plugin install kleros-skills@kleros-skills
 ```
 
 **OpenClaw:**
