@@ -44,7 +44,7 @@ Three draft curate skills (2,366 lines across LGTCR, PGTCR, Scout) restructured 
 
 Plans:
 
-- [ ] TBD (promote with /gsd:review-backlog when ready)
+- [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ### Phase 999.3: Agent feedback channel — Tier 2 AgentKit MCP endpoint (BACKLOG)
 
@@ -61,4 +61,4 @@ Plans:
 
 Plans:
 
-- [ ] TBD (promote with /gsd:review-backlog when ready)
+- [ ] TBD (promote with /gsd-review-backlog when ready)

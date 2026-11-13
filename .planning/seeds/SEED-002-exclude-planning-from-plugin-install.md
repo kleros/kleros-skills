@@ -31,7 +31,7 @@ markdown files at repo root, `evals/`, `*-workspace/` dirs, `CHANGELOG`-adjacent
 **Trigger:** when packaging/distribution or repo hygiene is on the agenda, or before the
 next marketplace publish.
 
-This seed will surface during `/gsd:new-milestone` when the milestone scope matches.
+This seed will surface during `/gsd-new-milestone` when the milestone scope matches.
 
 ## Scope Estimate
 

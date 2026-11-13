@@ -80,7 +80,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Decisions to log? Add to Key Decisions
 5. "What This Is" still accurate? Update if drifted
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?

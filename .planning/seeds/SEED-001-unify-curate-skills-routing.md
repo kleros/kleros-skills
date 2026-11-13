@@ -11,17 +11,17 @@ scope: unknown
 
 ## Why This Matters
 
-_To be filled in. Run `/gsd:capture --seed --enrich SEED-001` to add context._
+_To be filled in. Run `/gsd-capture --seed --enrich SEED-001` to add context._
 
 ## When to Surface
 
 **Trigger:** when relevant
 
-This seed will surface during `/gsd:new-milestone` when the milestone scope matches.
+This seed will surface during `/gsd-new-milestone` when the milestone scope matches.
 
 ## Scope Estimate
 
-**Unknown** — run `/gsd:capture --seed --enrich SEED-001` to estimate effort.
+**Unknown** — run `/gsd-capture --seed --enrich SEED-001` to estimate effort.
 
 ## Breadcrumbs
 
