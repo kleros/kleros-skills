@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Release workflow (`sync-master.yml`): a tag-push run whose commit master already holds now skips `sync`, so extra tags of a multi-tag release (`vX.Y.Z` + `skillname@vX.Y.Z` on one commit) end green with an "Already synced" summary instead of asking for an approval that would sync nothing. `quality-gate` decides this before any third-party code runs: master must be a single-parent sync commit of exactly the tested commit, and its tree must equal a fresh strip of that commit, replayed on a throwaway index. Anything else syncs normally, including manual dispatch runs. The strip list now lives once in workflow-level `env`, shared by the strip and the check.
+
+### Fixed
+- Release workflow strip step no longer fails when `dev` has no root `*FEEDBACK*.md` / `HANDOVER*.md` files left (`grep` exits 1 on no match under `pipefail`).
+
 ## [2.5.0] - 2026-11-13
 
 Skill tags on the same commit: [kleros-create-dispute@v1.0.0] (new skill), [kleros-ipfs-upload@v1.2.0] (x402 v2 SDK migration, payment caps, locked deps), [kleros-curate@v1.1.0] (Mainnet verification registry; also rolls up the untagged Curate changes from 2.2.0–2.4.0).

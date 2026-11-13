@@ -18,6 +18,15 @@ concurrency:
   group: sync-master
   cancel-in-progress: false
 
+# Single source of truth for what never reaches master. Read by `sync` (the
+# strip itself) and by `quality-gate` (the already-synced check, which must
+# reproduce the strip exactly to compare trees). Not secrets.
+#   STRIP_PATHS        — removed recursively wherever they sit (whitespace-separated)
+#   STRIP_ROOT_PATTERN — root-level scratch markdown, matched against `git ls-files`
+env:
+  STRIP_PATHS: .planning test scripts package.json yarn.lock .yarnrc.yml RELEASING.md
+  STRIP_ROOT_PATTERN: '^[^/]*FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$'
+
 jobs:
   # =========================================================================
   # Job 1 — quality gate. Runs everything that executes repo or third-party
@@ -36,6 +45,7 @@ jobs:
       contents: read
     outputs:
       sha: ${{ steps.resolve.outputs.sha }}
+      already_synced: ${{ steps.synced.outputs.already_synced }}
 
     steps:
       # -----------------------------------------------------------------------
@@ -90,6 +100,66 @@ jobs:
           echo "OK: $TRIGGER_REF ($TRIGGER_SHA) is on dev ancestry."
 
       # -----------------------------------------------------------------------
+      # Already-synced check. A release often pushes several tags at the same
+      # commit (`vX.Y.Z` + `skillname@vX.Y.Z`); each fires its own run, but only
+      # the first has anything to publish. When master already holds exactly
+      # what this run would push — master is a sync commit whose only parent is
+      # the commit under test AND its tree equals a fresh strip of that commit —
+      # `already_synced=true` makes `sync` skip, so no approval is requested
+      # and the run ends green with a summary saying why.
+      #
+      # Fail-safe: anything else (dispatch, no master yet, different parent,
+      # tree drift from a manual push or strip-list change) yields `false` and
+      # the normal gated sync. A wrongly-true flag can only withhold a sync,
+      # never ship one. Runs before any third-party code. The strip is replayed
+      # on a throwaway index, so the working tree under test is untouched.
+      # workflow_dispatch never skips: a manual run is a deliberate re-sync.
+      # -----------------------------------------------------------------------
+      - name: Check whether master already has this commit
+        id: synced
+        env:
+          SHA: ${{ steps.resolve.outputs.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_REF: ${{ github.ref_name }}
+        run: |
+          SYNCED=false
+          if [ "$EVENT_NAME" != "push" ]; then
+            echo "Manual run: always sync."
+          elif ! MASTER=$(git rev-parse --verify --quiet 'refs/remotes/origin/master^{commit}'); then
+            echo "No origin/master yet: first sync."
+          else
+            read -r -a COMMIT_AND_PARENTS <<< "$(git rev-list --parents -n 1 "$MASTER")"
+            if [ "${#COMMIT_AND_PARENTS[@]}" -eq 2 ] && [ "${COMMIT_AND_PARENTS[1]}" = "$SHA" ]; then
+              EXPECTED_TREE=$(
+                export GIT_INDEX_FILE="$RUNNER_TEMP/expected-master.index"
+                read -r -a STRIP <<< "$STRIP_PATHS"
+                git read-tree "$SHA"
+                git rm -r --cached --quiet --ignore-unmatch -- "${STRIP[@]}"
+                git ls-files -z | { grep -zE "$STRIP_ROOT_PATTERN" || true; } | \
+                  xargs -0 --no-run-if-empty git rm --cached --quiet --
+                git write-tree
+                rm -f "$GIT_INDEX_FILE"
+              )
+              MASTER_TREE=$(git rev-parse "$MASTER^{tree}")
+              if [ "$EXPECTED_TREE" = "$MASTER_TREE" ]; then
+                SYNCED=true
+              else
+                echo "master was synced from $SHA but its tree ($MASTER_TREE)"
+                echo "differs from a fresh strip ($EXPECTED_TREE): syncing again."
+              fi
+            else
+              echo "master ($MASTER) was not synced from $SHA: sync needed."
+            fi
+          fi
+          echo "already_synced=$SYNCED" >> "$GITHUB_OUTPUT"
+          if [ "$SYNCED" = true ]; then
+            MSG="Nothing to sync for \`$TRIGGER_REF\`: master (\`${MASTER:0:7}\`) already holds dev commit \`${SHA:0:7}\` with the expected stripped tree. \`sync\` is skipped, so no approval is requested."
+            echo "$MSG"
+            echo "### Already synced" >> "$GITHUB_STEP_SUMMARY"
+            echo "$MSG" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # -----------------------------------------------------------------------
       # 2. Set up Node for the quality gates.
       # -----------------------------------------------------------------------
       - name: Set up Node 24
@@ -130,11 +200,14 @@ jobs:
   # Job 2 — sync. Strips the gate-tested commit and pushes it to master.
   # Runs no npm installs and no repo code: only git + shell, plus the two
   # SHA-pinned actions (checkout, create-github-app-token).
-  # Starts only if quality-gate succeeded (default `needs` semantics: a
-  # failed, cancelled or skipped gate skips this job).
+  # Starts only if quality-gate succeeded (explicit `success()`: a failed,
+  # cancelled or skipped gate skips this job) AND master does not already
+  # hold the tested commit (see the already-synced check). A job skipped by
+  # `if:` never reaches the environment, so no approval is requested.
   # =========================================================================
   sync:
     needs: quality-gate
+    if: success() && needs.quality-gate.outputs.already_synced != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15   # hard cap; default is 6h — refuse to silently burn budget
     permissions:
@@ -214,27 +287,22 @@ jobs:
       # 2. Strip dev-only files.
       #    Everything removed here will NOT appear on master or in plugin installs.
       #
-      #    Strip-list:
+      #    Strip-list (workflow-level env STRIP_PATHS / STRIP_ROOT_PATTERN —
+      #    shared with quality-gate's already-synced check):
       #      .planning/        — GSD planning artefacts
       #      test/             — test suite + claude plugin eval suite (test/evals/)
       #      scripts/          — dev helper scripts
       #      package.json      — dev dependencies / npm scripts
       #      yarn.lock         — lockfile
       #      .yarnrc.yml       — Yarn config
+      #      RELEASING.md      — maintainer release how-to
       #      *FEEDBACK*.md     — AI session feedback scratch files (root only)
       #      HANDOVER*.md      — Handover scratch files (root only)
-      #      RELEASING.md      — maintainer release how-to
       # -----------------------------------------------------------------------
       - name: Strip dev-only files
         run: |
-          git rm -r --quiet --ignore-unmatch \
-            .planning \
-            test \
-            scripts \
-            package.json \
-            yarn.lock \
-            .yarnrc.yml \
-            RELEASING.md
+          read -r -a STRIP <<< "$STRIP_PATHS"
+          git rm -r --quiet --ignore-unmatch -- "${STRIP[@]}"
           # Remove root feedback/handover md files by pattern.
           # REV-01: root-anchored with [^/]* — previous '^.*_FEEDBACK.*\.md$' over-matched
           # paths at ANY depth (e.g. kleros-curate/MIGRATION_FEEDBACK.md), which would
@@ -242,9 +310,12 @@ jobs:
           # 2026-06-11 fix: dropped the leading underscore requirement — earlier
           # '_FEEDBACK' pattern missed files like FEEDBACK_FROM_CLAUDE_MARKETPLACE.md
           # where FEEDBACK is at position 0. Sanity check below was also broadened.
+          # `|| true`: steps run under `bash -e -o pipefail`, and grep exits 1
+          # when nothing matches, which would fail the release once dev has no
+          # root scratch files left.
           git ls-files -z | \
-            grep -zE '^[^/]*FEEDBACK[^/]*\.md$|^HANDOVER[^/]*\.md$' | \
-            xargs -0 --no-run-if-empty git rm --quiet
+            { grep -zE "$STRIP_ROOT_PATTERN" || true; } | \
+            xargs -0 --no-run-if-empty git rm --quiet --
           echo "Strip complete. Remaining tracked files:"
           git ls-files | head -60
 

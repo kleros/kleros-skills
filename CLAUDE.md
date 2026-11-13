@@ -53,7 +53,8 @@ Tags use prefixed convention: `skillname@vX.Y.Z` (e.g. `kleros-ipfs-upload@v1.1.
 - Release tags reference dev commits, not master — `git tag --contains HEAD` on a master checkout finds nothing.
 - Sync fires on tag push matching `*@v*.*.*` or `v[0-9]*`, and on `workflow_dispatch`.
 - Strip-list (excluded from master): `.planning/`, `test/` (incl. `test/evals/`), `scripts/`, `package.json`, root `*FEEDBACK*.md` / `HANDOVER*.md`.
-- Every workflow run (tag push or dispatch) requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; revisit after ~5 clean cycles.
+- Every workflow run that would change master requires jaybuidl approval in Actions tab — `production-sync` Environment reviewer rule. Feature for now; ~5-clean-cycle revisit point reached at v2.5.0.
+- Tag-push runs where master already holds the strip of `dev` HEAD (extra tags of a multi-tag release) skip `sync` with no approval prompt — `quality-gate` already-synced check. Max 3 tags per `git push` (more → GitHub fires no events). Strip-list = workflow-level `env` `STRIP_PATHS`/`STRIP_ROOT_PATTERN`, shared by the strip and the check.
 
 **Live infrastructure:**
 - Workflow: `.github/workflows/sync-master.yml`

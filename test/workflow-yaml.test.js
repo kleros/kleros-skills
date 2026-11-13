@@ -67,6 +67,11 @@ describe("sync-master.yml privilege split", { skip: !hasYq && !inCI && "yq not i
     }
     assert.match(runs(gate), /npm test/);
     assert.match(gate.outputs.sha, /steps\.resolve\.outputs\.sha/);
+    assert.match(gate.outputs.already_synced, /steps\.synced\.outputs\.already_synced/);
+    // The already-synced decision is made before any third-party code runs.
+    const synced = gate.steps.findIndex((s) => s.id === "synced");
+    const firstThirdParty = gate.steps.findIndex((s) => /setup-node|npm/.test((s.uses || "") + (s.run || "")));
+    assert.ok(synced >= 0 && synced < firstThirdParty, "already-synced check must run before setup-node / npm");
     // A soft-failing or conditionally skipped gate step would still satisfy `needs`.
     assert.strictEqual(gate["continue-on-error"], undefined);
     for (const step of gate.steps) {
@@ -81,7 +86,9 @@ describe("sync-master.yml privilege split", { skip: !hasYq && !inCI && "yq not i
     const sync = wf().jobs.sync;
     const needs = [].concat(sync.needs);
     assert.ok(needs.includes("quality-gate"), "sync must need quality-gate");
-    assert.strictEqual(sync.if, undefined, "an `if:` on sync could let it run after a failed/skipped gate");
+    // Pinned verbatim: any other `if:` (e.g. without success(), or always())
+    // could let sync run after a failed/skipped gate.
+    assert.strictEqual(sync.if, "success() && needs.quality-gate.outputs.already_synced != 'true'");
     assert.strictEqual(sync.environment, "production-sync");
     const syncCode = runs(sync).replace(/^\s*#.*$/gm, "");
     assert.doesNotMatch(
@@ -129,5 +136,135 @@ describe("sync-master.yml privilege split", { skip: !hasYq && !inCI && "yq not i
     for (const job of Object.values(wf().jobs)) {
       for (const u of uses(job)) assert.match(u, /@[0-9a-f]{40}$/, `unpinned action: ${u}`);
     }
+  });
+});
+
+// Behaviour of the already-synced check: the step's own script, extracted from
+// the workflow, run against throwaway git repos. A wrongly-true result would
+// silently withhold a release, so every "must sync" case is pinned too.
+describe("sync-master.yml already-synced check", { skip: !hasYq && !inCI && "yq not installed locally" }, () => {
+  const os = require("node:os");
+  const wf = JSON.parse(
+    execFileSync("yq", ["-o=json", ".", path.join(workflowDir, "sync-master.yml")], { encoding: "utf8" }),
+  );
+  const checkScript = wf.jobs["quality-gate"].steps.find((s) => s.id === "synced").run;
+  const stripScript = wf.jobs.sync.steps.find((s) => s.name === "Strip dev-only files").run;
+  const baseEnv = { ...process.env, ...wf.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+
+  const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+  const write = (dir, rel, body = "x\n") => {
+    fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(dir, rel), body);
+  };
+  const runBash = (cwd, script, env) =>
+    execFileSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", script], {
+      cwd,
+      env: { ...baseEnv, ...env },
+      encoding: "utf8",
+    });
+
+  // dev commit with skill content + every kind of dev-only file.
+  function makeRepo({ scratchFiles = true } = {}) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-check-"));
+    git(dir, "init", "-q", "-b", "dev");
+    git(dir, "config", "user.email", "t@example.com");
+    git(dir, "config", "user.name", "t");
+    for (const f of ["SKILL.md", "kleros-curate/SKILL.md", "kleros-curate/MIGRATION_FEEDBACK.md", ".planning/STATE.md",
+      "test/a.test.js", "scripts/x.js", "package.json", "RELEASING.md"]) write(dir, f);
+    if (scratchFiles) for (const f of ["FEEDBACK_X.md", "DNS_AID_FEEDBACK.md", "HANDOVER_Y.md"]) write(dir, f);
+    git(dir, "add", "-A");
+    git(dir, "commit", "-qm", "dev");
+    return { dir, sha: git(dir, "rev-parse", "HEAD") };
+  }
+
+  // Build a master sync commit exactly as the `sync` job does, on a side checkout.
+  function syncMaster(dir, devSha) {
+    git(dir, "checkout", "-q", "--detach", devSha);
+    runBash(dir, stripScript, {});
+    git(dir, "commit", "-qm", "chore(master): sync from dev (strip dev-only files)");
+    const master = git(dir, "rev-parse", "HEAD");
+    git(dir, "update-ref", "refs/remotes/origin/master", master);
+    git(dir, "checkout", "-q", "dev");
+    return master;
+  }
+
+  function check(dir, sha, { event = "push" } = {}) {
+    const runnerTemp = fs.mkdtempSync(path.join(os.tmpdir(), "runner-temp-"));
+    const out = path.join(runnerTemp, "out");
+    const summary = path.join(runnerTemp, "summary");
+    fs.writeFileSync(out, "");
+    fs.writeFileSync(summary, "");
+    runBash(dir, checkScript, {
+      SHA: sha, EVENT_NAME: event, TRIGGER_REF: "kleros-curate@v9.9.9",
+      RUNNER_TEMP: runnerTemp, GITHUB_OUTPUT: out, GITHUB_STEP_SUMMARY: summary,
+    });
+    const value = /already_synced=(\w+)/.exec(fs.readFileSync(out, "utf8"));
+    assert.ok(value, "step must always write already_synced");
+    assert.strictEqual(git(dir, "status", "--porcelain"), "", "check must not touch the working tree or index");
+    return { synced: value[1], summary: fs.readFileSync(summary, "utf8") };
+  }
+
+  it("is true only when master is the strip of exactly the commit under test", () => {
+    const { dir, sha } = makeRepo();
+    syncMaster(dir, sha);
+    const r = check(dir, sha);
+    assert.strictEqual(r.synced, "true");
+    assert.match(r.summary, /Already synced/);
+    assert.match(r.summary, new RegExp(sha.slice(0, 7)));
+  });
+
+  it("replays the strip exactly: works with no root scratch files (pipefail-safe)", () => {
+    const { dir, sha } = makeRepo({ scratchFiles: false });
+    syncMaster(dir, sha);
+    assert.strictEqual(check(dir, sha).synced, "true");
+  });
+
+  it("is false for workflow_dispatch, even when already synced", () => {
+    const { dir, sha } = makeRepo();
+    syncMaster(dir, sha);
+    assert.strictEqual(check(dir, sha, { event: "workflow_dispatch" }).synced, "false");
+  });
+
+  it("is false when there is no master yet", () => {
+    const { dir, sha } = makeRepo();
+    const r = check(dir, sha);
+    assert.strictEqual(r.synced, "false");
+    assert.strictEqual(r.summary, "");
+  });
+
+  it("is false when dev has moved past the synced commit", () => {
+    const { dir, sha } = makeRepo();
+    syncMaster(dir, sha);
+    write(dir, "kleros-curate/SKILL.md", "changed\n");
+    git(dir, "commit", "-qam", "skill change");
+    assert.strictEqual(check(dir, git(dir, "rev-parse", "HEAD")).synced, "false");
+  });
+
+  it("is false when dev moved by dev-only files (same stripped tree, different commit)", () => {
+    // Conservative on purpose: the tag still names a commit master was not
+    // synced from, so a human decides — even though the tree would not change.
+    const { dir, sha } = makeRepo();
+    syncMaster(dir, sha);
+    write(dir, ".planning/STATE.md", "changed\n");
+    git(dir, "commit", "-qam", "planning only");
+    assert.strictEqual(check(dir, git(dir, "rev-parse", "HEAD")).synced, "false");
+  });
+
+  it("is false when master's tree drifted from a fresh strip (manual push, strip-list change)", () => {
+    const { dir, sha } = makeRepo();
+    const master = syncMaster(dir, sha);
+    // Same single parent, different tree: e.g. an admin amended master by hand.
+    const tampered = git(dir, "commit-tree", git(dir, "rev-parse", `${sha}^{tree}`), "-p", sha, "-m", "unstripped");
+    git(dir, "update-ref", "refs/remotes/origin/master", tampered);
+    assert.notStrictEqual(tampered, master);
+    assert.strictEqual(check(dir, sha).synced, "false");
+  });
+
+  it("is false when master has extra parents", () => {
+    const { dir, sha } = makeRepo();
+    const master = syncMaster(dir, sha);
+    const merge = git(dir, "commit-tree", git(dir, "rev-parse", `${master}^{tree}`), "-p", sha, "-p", master, "-m", "merge");
+    git(dir, "update-ref", "refs/remotes/origin/master", merge);
+    assert.strictEqual(check(dir, sha).synced, "false");
   });
 });
