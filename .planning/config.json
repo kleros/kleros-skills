@@ -2,10 +2,29 @@
   "project_code": "KS",
   "workflow": {
     "research": true,
-    "commit_docs": true,
     "text_mode": false,
     "_auto_chain_active": false,
     "nyquist_validation": true,
     "ai_integration_phase": true
+  },
+  "mode": "interactive",
+  "granularity": "coarse",
+  "model_profile": "quality",
+  "git": {
+    "base_branch": "dev"
+  },
+  "review": {
+    "models": {
+      "codex": "gpt-5.6-sol"
+    },
+    "default_reviewers": [
+      "codex",
+      "cursor"
+    ]
+  },
+  "effort": {
+    "agent_overrides": {
+      "gsd-plan-checker": "xhigh"
+    }
   }
 }
