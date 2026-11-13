@@ -75,7 +75,7 @@ quote, the transaction reverts: re-quote, do not top up by hand.
 ## Helper
 
 `${CLAUDE_SKILL_DIR}` is the directory containing this SKILL.md; substitute it if
-your host does not. Install once (committed lockfile), then run commands from any
+your host does not. Requires Node.js 18 or newer. Install once (committed lockfile), then run commands from any
 directory (relative `--case` / `--evidence` paths resolve against yours):
 
 ```bash

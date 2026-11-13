@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `kleros-ipfs-upload` and `kleros-create-dispute` now state their Node.js floor: the upload script needs Node 20.18 or newer (its payment SDK's `@solana/*` dependencies require it), the dispute helper Node 18 or newer. Both skills say so next to the install step, and their `scripts/package.json` declare it in `engines`, so an older Node gets npm's engine warning instead of an unexplained failure.
+- Release workflow (`sync-master.yml`) takes its Node version from the `package.json` Volta pin (`node-version-file`) instead of a floating `"24"`, so CI and local development run the same Node. The repo's dev tooling now declares `engines.node >=24` (the GSD workflow tool requires it); this is dev-only and does not apply to the skills' scripts.
 - Release workflow (`sync-master.yml`): a tag-push run whose commit master already holds now skips `sync`, so extra tags of a multi-tag release (`vX.Y.Z` + `skillname@vX.Y.Z` on one commit) end green with an "Already synced" summary instead of asking for an approval that would sync nothing. `quality-gate` decides this before any third-party code runs: master must be a single-parent sync commit whose parent is the tested commit or a descendant of it, and its tree must equal a fresh strip of that parent, replayed on a throwaway index. Anything else syncs normally, including manual dispatch runs. The strip list now lives once in workflow-level `env`, shared by the strip and the check.
 
 ### Fixed

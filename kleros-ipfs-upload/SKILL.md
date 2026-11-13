@@ -43,7 +43,7 @@ npm ci
 EVM_PRIVATE_KEY=0xYourPayerKey npx tsx pay-and-upload.ts /path/to/file.json
 ```
 
-`npm ci` installs the exact dependency versions pinned in the committed `package-lock.json` into `node_modules/` in the scripts dir (fine to leave in place or delete after use). The lockfile is committed on purpose: this script signs payments, so its dependency tree must be reproducible.
+Requires Node.js 20.18 or newer (the payment SDK's dependencies need it). `npm ci` installs the exact dependency versions pinned in the committed `package-lock.json` into `node_modules/` in the scripts dir (fine to leave in place or delete after use). The lockfile is committed on purpose: this script signs payments, so its dependency tree must be reproducible.
 
 On success the script prints every CID reported by the gateway, one per line (so you can capture the normal
 single CID with `$(npx tsx pay-and-upload.ts ...)`). The array-shaped response is legacy API structure, not

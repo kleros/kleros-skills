@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=20.18"
   }
 }
